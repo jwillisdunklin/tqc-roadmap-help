@@ -64,7 +64,7 @@
       "all"
     ],
     "video": "videos/getting-around.mp4",
-    "seconds": 43,
+    "seconds": 68,
     "shots": [
       {
         "file": "shots/getting-around-01.png",
@@ -88,23 +88,263 @@
       },
       {
         "file": "shots/getting-around-05.png",
+        "title": "Phases",
+        "text": "Select a phase to review its requirements and classes."
+      },
+      {
+        "file": "shots/getting-around-06.png",
+        "title": "Badges",
+        "text": "Review phase, Competency Series, and session badges."
+      },
+      {
+        "file": "shots/getting-around-07.png",
+        "title": "Hours",
+        "text": "See totals and the log, and submit learning hours."
+      },
+      {
+        "file": "shots/getting-around-08.png",
+        "title": "Evaluation",
+        "text": "Choose MSBA, MARE, a local tool, or standards only. This tab is hidden from mentors."
+      },
+      {
+        "file": "shots/getting-around-09.png",
+        "title": "Standards Alignment",
+        "text": "Review evidence by DESE standard and print your report."
+      },
+      {
+        "file": "shots/getting-around-10.png",
         "title": "Back",
         "text": "Goes back one screen, for example from the calendar to your pathway."
       },
       {
-        "file": "shots/getting-around-06.png",
+        "file": "shots/getting-around-11.png",
         "title": "Help",
         "text": "Opens the how-to guide, with pictures and Show me buttons."
       },
       {
-        "file": "shots/getting-around-07.png",
+        "file": "shots/getting-around-12.png",
         "title": "Change password",
         "text": "The key button changes your password."
       },
       {
-        "file": "shots/getting-around-08.png",
+        "file": "shots/getting-around-13.png",
         "title": "Sign out",
         "text": "Ends your session on this device."
+      }
+    ]
+  },
+  {
+    "id": "demo-roles",
+    "title": "Explore the demo by role",
+    "summary": "Choose and switch roles, including coach, mentor, board, superintendent, and administrator previews.",
+    "roles": [
+      "all"
+    ],
+    "video": "videos/demo-roles.mp4",
+    "seconds": 43,
+    "shots": [
+      {
+        "file": "shots/demo-roles-01.png",
+        "title": "Choose a role",
+        "text": "Explore the demo opens four choices. Every public preview is view only and uses sample people."
+      },
+      {
+        "file": "shots/demo-roles-02.png",
+        "title": "Mentor/coach: coach view",
+        "text": "The coach preview shows a sample roster, pathways, and evaluation alignment."
+      },
+      {
+        "file": "shots/demo-roles-03.png",
+        "title": "Mentor view",
+        "text": "Switch to Mentor/coach: mentor view. Evaluation and coaching notes are hidden."
+      },
+      {
+        "file": "shots/demo-roles-04.png",
+        "title": "Board president preview",
+        "text": "A sample-only presentation of learning progress and evaluation alignment. It is not a live board login."
+      },
+      {
+        "file": "shots/demo-roles-05.png",
+        "title": "Evaluation preview",
+        "text": "Explore how badges support an evaluation. Public demo choices are not saved."
+      },
+      {
+        "file": "shots/demo-roles-06.png",
+        "title": "Superintendent preview",
+        "text": "One sample My Pathway, with Calendar, Course Catalog, Phases, Badges, Hours, Evaluation, and Standards Alignment."
+      },
+      {
+        "file": "shots/demo-roles-07.png",
+        "title": "Site administrator preview",
+        "text": "Explore the sample roster and all pathway tabs. Approvals remain disabled."
+      },
+      {
+        "file": "shots/demo-roles-08.png",
+        "title": "Sample People page",
+        "text": "This view explains accounts without showing real accounts or allowing invitations or role changes."
+      }
+    ]
+  },
+  {
+    "id": "phases",
+    "title": "Using the Phases tab",
+    "summary": "Read each phase’s requirements and open its classes.",
+    "roles": [
+      "sup",
+      "coach"
+    ],
+    "video": "videos/phases.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/phases-01.png",
+        "title": "Phases",
+        "text": "Open Phases for Onboarding, Year 1, Year 2, and Year 3. Cards show badge status, hours, and required events."
+      },
+      {
+        "file": "shots/phases-02.png",
+        "title": "Phase details",
+        "text": "Select a phase to see required events, your strand or academy, and progress toward its badge."
+      },
+      {
+        "file": "shots/phases-03.png",
+        "title": "Open a class",
+        "text": "Click a class title for session details, materials, and assignments."
+      },
+      {
+        "file": "shots/phases-04.png",
+        "title": "Back to the phase",
+        "text": "Back returns to the Phases tab and the phase you selected."
+      }
+    ]
+  },
+  {
+    "id": "badges",
+    "title": "Using the Badges tab",
+    "summary": "Understand phase, series, and session badges and follow their standards.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/badges.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/badges-01.png",
+        "title": "Badges",
+        "text": "Open Badges to review phase badges, Competency Series, and the MASA/TQC Pathway Certificate."
+      },
+      {
+        "file": "shots/badges-02.png",
+        "title": "Session badges",
+        "text": "Session badges show aligned DESE and AASA standards and earned hours."
+      },
+      {
+        "file": "shots/badges-03.png",
+        "title": "Follow a standard",
+        "text": "Click a session badge to open its standard in Standards Alignment, with events and a sample goal."
+      },
+      {
+        "file": "shots/badges-04.png",
+        "title": "Back to badges",
+        "text": "Back returns to Badges. The certificate recognizes professional learning, not Missouri educator certification."
+      }
+    ]
+  },
+  {
+    "id": "hours",
+    "title": "Using the Hours tab",
+    "summary": "Read totals and the log, and submit hours for approval.",
+    "roles": [
+      "sup",
+      "coach"
+    ],
+    "video": "videos/hours.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/hours-01.png",
+        "title": "Hours by category",
+        "text": "Open Hours to see coaching, mentoring, and other learning totals."
+      },
+      {
+        "file": "shots/hours-02.png",
+        "title": "Hours log",
+        "text": "Review dates, categories, phases, hours, and approval status. Notes follow the role’s privacy rules."
+      },
+      {
+        "file": "shots/hours-03.png",
+        "title": "Log hours",
+        "text": "Choose the category, hours, date, and phase, and add a short note. Do not enter student names."
+      },
+      {
+        "file": "shots/hours-04.png",
+        "title": "Approval and counting",
+        "text": "Member entries wait for administrator approval before they count toward phase badges. Mentors log Mentoring hours only."
+      }
+    ]
+  },
+  {
+    "id": "evaluation",
+    "title": "Using the Evaluation tab",
+    "summary": "Choose the board’s evaluation tool and prepare a blank local tool.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/evaluation.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/evaluation-01.png",
+        "title": "Evaluation",
+        "text": "Open Evaluation and choose MSBA, MARE, a local tool, or standards only. Mentors cannot see this tab."
+      },
+      {
+        "file": "shots/evaluation-02.png",
+        "title": "Choose a tool",
+        "text": "Select the tool your board uses. Its alignment connects badges to evaluation areas once mappings are added."
+      },
+      {
+        "file": "shots/evaluation-03.png",
+        "title": "Your local tool",
+        "text": "Name the district’s tool and upload a blank copy only. Do not upload ratings, board comments, or student information."
+      },
+      {
+        "file": "shots/evaluation-04.png",
+        "title": "Use the alignment report",
+        "text": "Standards Alignment organizes the evidence for board discussion and printing. Public preview choices are not saved."
+      }
+    ]
+  },
+  {
+    "id": "standards-alignment",
+    "title": "Using Standards Alignment",
+    "summary": "Expand your evidence by standard and print a board-ready report.",
+    "roles": [
+      "sup",
+      "coach"
+    ],
+    "video": "videos/standards-alignment.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/standards-alignment-01.png",
+        "title": "Standards Alignment",
+        "text": "Open Standards Alignment for pathway work grouped under the five DESE superintendent standards, with the AASA crosswalk."
+      },
+      {
+        "file": "shots/standards-alignment-02.png",
+        "title": "Expand the evidence",
+        "text": "Expand all or open a single standard to review events, completed work, earned hours, and sample goals."
+      },
+      {
+        "file": "shots/standards-alignment-03.png",
+        "title": "Print report",
+        "text": "Print or save the report as a PDF to discuss with your board. Adapt sample goals to your district."
+      },
+      {
+        "file": "shots/standards-alignment-04.png",
+        "title": "Collapse the report",
+        "text": "Collapse all returns to a compact list. Evaluation details appear only for authorized roles."
       }
     ]
   },
