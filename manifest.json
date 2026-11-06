@@ -291,7 +291,7 @@
       "sup"
     ],
     "video": "videos/evaluation.mp4",
-    "seconds": 23,
+    "seconds": 28,
     "shots": [
       {
         "file": "shots/evaluation-01.png",
@@ -300,16 +300,21 @@
       },
       {
         "file": "shots/evaluation-02.png",
-        "title": "Choose a tool",
-        "text": "Select the tool your board uses. Its alignment connects badges to evaluation areas once mappings are added."
+        "title": "Aligning evaluation",
+        "text": "The selection and labels update immediately. This message stays visible while the choice saves; you can browse other tabs."
       },
       {
         "file": "shots/evaluation-03.png",
+        "title": "Saved alignment",
+        "text": "Wait for Evaluation saved before changing this person’s choice again. If saving fails, the previous alignment returns with a refresh or retry message."
+      },
+      {
+        "file": "shots/evaluation-04.png",
         "title": "Your local tool",
         "text": "Name the district’s tool and upload a blank copy only. Do not upload ratings, board comments, or student information."
       },
       {
-        "file": "shots/evaluation-04.png",
+        "file": "shots/evaluation-05.png",
         "title": "Use the alignment report",
         "text": "Standards Alignment organizes the evidence for board discussion and printing. Public preview choices are not saved."
       }
