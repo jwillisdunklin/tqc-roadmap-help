@@ -7,7 +7,7 @@
       "all"
     ],
     "video": "videos/signing-in.mp4",
-    "seconds": 43,
+    "seconds": 48,
     "shots": [
       {
         "file": "shots/signing-in-01.png",
@@ -42,10 +42,15 @@
       {
         "file": "shots/signing-in-07.png",
         "title": "Explore the demo",
-        "text": "A view-only tour of sample superintendents. Demo superintendent logins use their email and the shared demo password."
+        "text": "Choose mentor/coach, board president, superintendent, or site administrator. All public demo views use sample people and are view only."
       },
       {
         "file": "shots/signing-in-08.png",
+        "title": "Choose a role",
+        "text": "View as a mentor/coach, board president, superintendent, or site administrator. Board president is a sample preview, not a live login."
+      },
+      {
+        "file": "shots/signing-in-09.png",
         "title": "How-to guide",
         "text": "Step-by-step help with pictures, even before you sign in."
       }
@@ -64,7 +69,7 @@
       {
         "file": "shots/getting-around-01.png",
         "title": "Tabs",
-        "text": "Switch between My Pathway, Calendar, and Course Catalog."
+        "text": "Switch between My Pathway, Calendar, Course Catalog, Phases, Badges, Hours, Evaluation, and Standards Alignment."
       },
       {
         "file": "shots/getting-around-02.png",
