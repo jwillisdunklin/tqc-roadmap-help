@@ -1,0 +1,455 @@
+[
+  {
+    "id": "signing-in",
+    "title": "Signing in",
+    "summary": "Get your password link, sign in, and find the demo and the guide.",
+    "roles": [
+      "all"
+    ],
+    "video": "videos/signing-in.mp4",
+    "seconds": 43,
+    "shots": [
+      {
+        "file": "shots/signing-in-01.png",
+        "title": "Email",
+        "text": "Type the email address the program has for you."
+      },
+      {
+        "file": "shots/signing-in-02.png",
+        "title": "Password",
+        "text": "Type your password. Passwords are stored only as scrambled hashes."
+      },
+      {
+        "file": "shots/signing-in-03.png",
+        "title": "Sign in",
+        "text": "Opens your pathway. Five wrong tries lock the email for 15 minutes."
+      },
+      {
+        "file": "shots/signing-in-04.png",
+        "title": "First time here, or forgot your password?",
+        "text": "Click this the first time you sign in, or whenever you forget your password."
+      },
+      {
+        "file": "shots/signing-in-05.png",
+        "title": "Email me a link",
+        "text": "Type your email and click Email me a link. The link works once and lasts 24 hours."
+      },
+      {
+        "file": "shots/signing-in-06.png",
+        "title": "Set your password",
+        "text": "The link opens this page. Choose 10+ characters with a letter and a number, type it twice, and click Set password and sign in."
+      },
+      {
+        "file": "shots/signing-in-07.png",
+        "title": "Explore the demo",
+        "text": "A view-only tour of sample superintendents. Demo superintendent logins use their email and the shared demo password."
+      },
+      {
+        "file": "shots/signing-in-08.png",
+        "title": "How-to guide",
+        "text": "Step-by-step help with pictures, even before you sign in."
+      }
+    ]
+  },
+  {
+    "id": "getting-around",
+    "title": "Getting around",
+    "summary": "Tabs, Back, Help, your password, and signing out.",
+    "roles": [
+      "all"
+    ],
+    "video": "videos/getting-around.mp4",
+    "seconds": 43,
+    "shots": [
+      {
+        "file": "shots/getting-around-01.png",
+        "title": "Tabs",
+        "text": "Switch between My Pathway, Calendar, and Course Catalog."
+      },
+      {
+        "file": "shots/getting-around-02.png",
+        "title": "My Pathway",
+        "text": "Where you are, what is coming up, your phases, badges, hours, and evaluation."
+      },
+      {
+        "file": "shots/getting-around-03.png",
+        "title": "Calendar",
+        "text": "Sessions, coaching, assignments due, and offerings you can enroll in, by month."
+      },
+      {
+        "file": "shots/getting-around-04.png",
+        "title": "Course Catalog",
+        "text": "Sign up for workshops and events, and choose your strand or academy."
+      },
+      {
+        "file": "shots/getting-around-05.png",
+        "title": "Back",
+        "text": "Goes back one screen, for example from the calendar to your pathway."
+      },
+      {
+        "file": "shots/getting-around-06.png",
+        "title": "Help",
+        "text": "Opens the how-to guide, with pictures and Show me buttons."
+      },
+      {
+        "file": "shots/getting-around-07.png",
+        "title": "Change password",
+        "text": "The key button changes your password."
+      },
+      {
+        "file": "shots/getting-around-08.png",
+        "title": "Sign out",
+        "text": "Ends your session on this device."
+      }
+    ]
+  },
+  {
+    "id": "your-pathway",
+    "title": "Your pathway",
+    "summary": "Where you are, what is next, and how phases work.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/your-pathway.mp4",
+    "seconds": 33,
+    "shots": [
+      {
+        "file": "shots/your-pathway-01.png",
+        "title": "Where you are",
+        "text": "Your phase (Onboarding, Year 1, Year 2, or Year 3), your coach, and your mentor."
+      },
+      {
+        "file": "shots/your-pathway-02.png",
+        "title": "Leadership pipeline",
+        "text": "Your total hours, phases completed, and what is left for the current phase badge."
+      },
+      {
+        "file": "shots/your-pathway-03.png",
+        "title": "Coming up",
+        "text": "Your next sessions, coaching calls, and assignments due. Click one to open the class."
+      },
+      {
+        "file": "shots/your-pathway-04.png",
+        "title": "The four phases",
+        "text": "Each phase earns a badge. Click a phase to see its events."
+      },
+      {
+        "file": "shots/your-pathway-05.png",
+        "title": "Phase details",
+        "text": "Required events, your strand or academy, and the hours you have toward the badge."
+      },
+      {
+        "file": "shots/your-pathway-06.png",
+        "title": "Class titles",
+        "text": "Click any class title to open its class page."
+      }
+    ]
+  },
+  {
+    "id": "calendar",
+    "title": "Using the calendar",
+    "summary": "See every session, coaching call, and due date by month.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/calendar.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/calendar-01.png",
+        "title": "Change months",
+        "text": "Use ‹ and › to move between months, and Today to come back."
+      },
+      {
+        "file": "shots/calendar-02.png",
+        "title": "Colors",
+        "text": "Sessions, coaching, assignments due, offerings you can still enroll in, and completed classes."
+      },
+      {
+        "file": "shots/calendar-03.png",
+        "title": "An item",
+        "text": "Click any item to open that class."
+      },
+      {
+        "file": "shots/calendar-04.png",
+        "title": "The month",
+        "text": "Today is circled. Dates marked as samples are filled in for the demo."
+      }
+    ]
+  },
+  {
+    "id": "class-page",
+    "title": "Inside a class",
+    "summary": "When it meets, how to join, materials, and the assignment.",
+    "roles": [
+      "sup",
+      "coach"
+    ],
+    "video": "videos/class-page.mp4",
+    "seconds": 33,
+    "shots": [
+      {
+        "file": "shots/class-page-01.png",
+        "title": "When and where",
+        "text": "The date and time, how it meets, who leads it, and your status."
+      },
+      {
+        "file": "shots/class-page-02.png",
+        "title": "Join the session",
+        "text": "The join link appears here once your coach posts it."
+      },
+      {
+        "file": "shots/class-page-03.png",
+        "title": "Your progress",
+        "text": "Mark the session complete here after it meets, or ask for a substitution."
+      },
+      {
+        "file": "shots/class-page-04.png",
+        "title": "Materials",
+        "text": "Handouts and pre-reading. Click View or Open."
+      },
+      {
+        "file": "shots/class-page-05.png",
+        "title": "Assignment",
+        "text": "What to turn in, and when it is due."
+      },
+      {
+        "file": "shots/class-page-06.png",
+        "title": "Back",
+        "text": "Returns to where you were."
+      }
+    ]
+  },
+  {
+    "id": "complete-and-turn-in",
+    "title": "Mark complete and turn in work",
+    "summary": "Finish a session, turn in the assignment, and read your coach’s feedback.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/complete-and-turn-in.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/complete-and-turn-in-01.png",
+        "title": "Mark complete",
+        "text": "After the session, click Mark complete."
+      },
+      {
+        "file": "shots/complete-and-turn-in-02.png",
+        "title": "Date and reflection",
+        "text": "Choose the date and write a short reflection. A program administrator confirms it, then it counts."
+      },
+      {
+        "file": "shots/complete-and-turn-in-03.png",
+        "title": "Turn in your work",
+        "text": "Write about your work, add a link if you have one, and click Turn in."
+      },
+      {
+        "file": "shots/complete-and-turn-in-04.png",
+        "title": "Coach feedback",
+        "text": "Your coach’s feedback appears under your work."
+      }
+    ]
+  },
+  {
+    "id": "enrolling",
+    "title": "Enrolling in courses",
+    "summary": "Use the Course Catalog to sign up for workshops and events.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/enrolling.mp4",
+    "seconds": 28,
+    "shots": [
+      {
+        "file": "shots/enrolling-01.png",
+        "title": "Browse & enroll",
+        "text": "Opens the Course Catalog (so does the Course Catalog tab)."
+      },
+      {
+        "file": "shots/enrolling-02.png",
+        "title": "My enrollments",
+        "text": "Everything you have signed up for."
+      },
+      {
+        "file": "shots/enrolling-03.png",
+        "title": "An offering",
+        "text": "Date, format, hours, and the DESE standard it is aligned to."
+      },
+      {
+        "file": "shots/enrolling-04.png",
+        "title": "Enroll",
+        "text": "Signs you up. It goes on your Coming up list and calendar."
+      },
+      {
+        "file": "shots/enrolling-05.png",
+        "title": "Enrolled",
+        "text": "Click Drop if your plans change."
+      }
+    ]
+  },
+  {
+    "id": "hours-and-badges",
+    "title": "Hours, badges, and your evaluation",
+    "summary": "Log hours, request a substitution, and use your badges with your board.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/hours-and-badges.mp4",
+    "seconds": 33,
+    "shots": [
+      {
+        "file": "shots/hours-and-badges-01.png",
+        "title": "Log hours",
+        "text": "Log coaching, mentoring, conferences, and other learning. An administrator approves them."
+      },
+      {
+        "file": "shots/hours-and-badges-02.png",
+        "title": "Hours form",
+        "text": "Pick the category, hours, date, and phase, add a note, and click Log hours."
+      },
+      {
+        "file": "shots/hours-and-badges-03.png",
+        "title": "Request substitution",
+        "text": "Count equivalent learning (prior experience, district training) in place of an event."
+      },
+      {
+        "file": "shots/hours-and-badges-04.png",
+        "title": "Badges",
+        "text": "Phase and Competency Series badges, and the MASA/TQC Pathway Certificate when all four phases are done."
+      },
+      {
+        "file": "shots/hours-and-badges-05.png",
+        "title": "Evaluation",
+        "text": "Choose MSBA, MARE, your district’s own tool, or standards only."
+      },
+      {
+        "file": "shots/hours-and-badges-06.png",
+        "title": "Print report",
+        "text": "Prints the Standards Alignment Report to bring to your board."
+      }
+    ]
+  },
+  {
+    "id": "coach-tools",
+    "title": "For coaches and mentors",
+    "summary": "See your people, log hours for them, and give feedback.",
+    "roles": [
+      "coach"
+    ],
+    "video": "videos/coach-tools.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/coach-tools-01.png",
+        "title": "Your roster",
+        "text": "You see only the superintendents assigned to you."
+      },
+      {
+        "file": "shots/coach-tools-02.png",
+        "title": "Pick a person",
+        "text": "Switch between the people you coach or mentor."
+      },
+      {
+        "file": "shots/coach-tools-03.png",
+        "title": "Log hours for them",
+        "text": "Mentors log Mentoring hours only. Hours wait for an administrator’s approval."
+      },
+      {
+        "file": "shots/coach-tools-04.png",
+        "title": "Give feedback",
+        "text": "Open a class and write feedback under the work they turned in."
+      }
+    ]
+  },
+  {
+    "id": "admin-roster",
+    "title": "Administrators: roster and approvals",
+    "summary": "Approve work, record attendance, and add superintendents.",
+    "roles": [
+      "admin"
+    ],
+    "video": "videos/admin-roster.mp4",
+    "seconds": 43,
+    "shots": [
+      {
+        "file": "shots/admin-roster-01.png",
+        "title": "At a glance",
+        "text": "How many superintendents are in each phase."
+      },
+      {
+        "file": "shots/admin-roster-02.png",
+        "title": "Waiting for approval",
+        "text": "Sessions marked complete, hours logged, and substitution requests."
+      },
+      {
+        "file": "shots/admin-roster-03.png",
+        "title": "Approve or Decline",
+        "text": "Approved items count toward badges right away. A decline asks for a short reason."
+      },
+      {
+        "file": "shots/admin-roster-04.png",
+        "title": "Search",
+        "text": "Find someone by name or district. Click View to open their pathway."
+      },
+      {
+        "file": "shots/admin-roster-05.png",
+        "title": "Superintendent View",
+        "text": "See exactly what that superintendent sees."
+      },
+      {
+        "file": "shots/admin-roster-06.png",
+        "title": "Record attendance",
+        "text": "Give credit for a session to everyone who attended, at once."
+      },
+      {
+        "file": "shots/admin-roster-07.png",
+        "title": "Attendance",
+        "text": "Pick the session and date, check who attended, and click Save attendance."
+      },
+      {
+        "file": "shots/admin-roster-08.png",
+        "title": "Add superintendent",
+        "text": "Adds them to the roster and emails a link to set a password."
+      }
+    ]
+  },
+  {
+    "id": "admin-people",
+    "title": "Administrators: people and sign-in",
+    "summary": "Add people, send sign-in links, change roles, and turn accounts off.",
+    "roles": [
+      "admin"
+    ],
+    "video": "videos/admin-people.mp4",
+    "seconds": 28,
+    "shots": [
+      {
+        "file": "shots/admin-people-01.png",
+        "title": "Add a person",
+        "text": "For coaches, mentors, MASA staff, and program staff."
+      },
+      {
+        "file": "shots/admin-people-02.png",
+        "title": "Email link",
+        "text": "Emails a one-time link to set a password."
+      },
+      {
+        "file": "shots/admin-people-03.png",
+        "title": "Copy link",
+        "text": "Makes a link you can send yourself."
+      },
+      {
+        "file": "shots/admin-people-04.png",
+        "title": "Role",
+        "text": "Member sees what the roster connects them to; Admin sees everything."
+      },
+      {
+        "file": "shots/admin-people-05.png",
+        "title": "Status and last sign-in",
+        "text": "Who can sign in, whose link is waiting, and when each person last signed in."
+      }
+    ]
+  }
+]
