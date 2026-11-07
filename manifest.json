@@ -604,6 +604,96 @@
     ]
   },
   {
+    "id": "teaching",
+    "title": "Teaching a class",
+    "summary": "Edit your class, add videos, slide shows, and discussions, and give feedback.",
+    "roles": [
+      "coach",
+      "admin"
+    ],
+    "video": "videos/teaching.mp4",
+    "seconds": 43,
+    "shots": [
+      {
+        "file": "shots/teaching-01.png",
+        "title": "My classes",
+        "text": "Instructors get this tab. Coaches and mentors who teach keep their usual tabs too."
+      },
+      {
+        "file": "shots/teaching-02.png",
+        "title": "Your classes",
+        "text": "Every class you teach. Admins see every class here."
+      },
+      {
+        "file": "shots/teaching-03.png",
+        "title": "Instructor tools",
+        "text": "Edit the class, add content, and see who is taking it."
+      },
+      {
+        "file": "shots/teaching-04.png",
+        "title": "Videos and slide shows",
+        "text": "Videos and slides play right on the class page for everyone taking it."
+      },
+      {
+        "file": "shots/teaching-05.png",
+        "title": "Add content",
+        "text": "Choose Video, Slide show, Discussion board, Resource, or Assignment, then paste a link or write the prompt."
+      },
+      {
+        "file": "shots/teaching-06.png",
+        "title": "Edit class",
+        "text": "Change the date and time, join link, who leads it, and what it covers."
+      },
+      {
+        "file": "shots/teaching-07.png",
+        "title": "Discussion board",
+        "text": "Read and reply to posts. Instructors can remove posts."
+      },
+      {
+        "file": "shots/teaching-08.png",
+        "title": "Roster and turned-in work",
+        "text": "Who is taking the class, their status, and their work, with a place for your feedback."
+      }
+    ]
+  },
+  {
+    "id": "discussion",
+    "title": "Class discussions, videos, and slides",
+    "summary": "Watch, read the slides, and join the conversation on a class page.",
+    "roles": [
+      "sup"
+    ],
+    "video": "videos/discussion.mp4",
+    "seconds": 28,
+    "shots": [
+      {
+        "file": "shots/discussion-01.png",
+        "title": "Watch the video",
+        "text": "Videos your instructor posts play right on the class page."
+      },
+      {
+        "file": "shots/discussion-02.png",
+        "title": "Slide show",
+        "text": "Slides show here too. Open in a new tab to see them full size."
+      },
+      {
+        "file": "shots/discussion-03.png",
+        "title": "The discussion",
+        "text": "Read what others taking the class have posted. Replies appear under each post."
+      },
+      {
+        "file": "shots/discussion-04.png",
+        "title": "Reply",
+        "text": "Click Reply to answer someone."
+      },
+      {
+        "file": "shots/discussion-05.png",
+        "title": "Post",
+        "text": "Write your own post and click Post. You can remove your own posts later."
+      }
+    ]
+  },
+  {
     "id": "admin-roster",
     "title": "Administrators: roster and approvals",
     "summary": "Approve work, record attendance, and add superintendents.",

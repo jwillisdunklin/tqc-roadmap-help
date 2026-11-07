@@ -670,6 +670,24 @@
   @media (max-width: 760px) { .help-topic { grid-template-columns: 1fr; } }
   @media (max-width: 560px) { #helpBtn .btn-label { display: none; } }
   .help-actions { display: flex; flex-wrap: wrap; gap: 8px; } .help-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+  /* Teaching: embeds, discussion boards, instructor tools */
+  .embed { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+  .embed.slides { aspect-ratio: 16 / 10; background: var(--bg); }
+  .embed iframe, .embed video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .content-item + .content-item { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .content-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .content-head h2 { margin: 0; }
+  .item-tools { display: inline-flex; gap: 2px; margin-left: auto; } .item-tools .linkish { font-size: 12.5px; padding: 2px 6px; }
+  .mat .item-tools, .asg-head .item-tools { margin-left: 6px; }
+  .teach-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--brand-tint); color: var(--brand); font-size: 14px; }
+  .teach-bar span { margin-right: auto; font-weight: 600; }
+  .disc .post { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin-top: 10px; background: var(--surface); }
+  .disc .post.reply { margin: 8px 0 0 26px; background: var(--bg); }
+  .disc .post.hidden-post { opacity: .55; }
+  .post-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .post-head .muted { margin-left: auto; }
+  .avatar.sm { width: 26px; height: 26px; font-size: 11px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--brand); color: #fff; }
+  .disc .post p { margin: 6px 0 2px; } .post-actions .linkish { font-size: 12.5px; padding: 2px 6px 2px 0; }
+  .post-form { margin-top: 14px; } .post-form textarea { width: 100%; margin-top: 5px; } .post-form label { font-size: 13px; color: var(--muted); }
+  .reply-form { margin: 8px 0 0 26px; display: grid; gap: 6px; } .reply-form .btn { justify-self: start; }
 </style>
 
 <script>/* demo mode */
@@ -1074,7 +1092,7 @@ var SEED = {
       indicator: 'Leads an academic council that guides curriculum and instruction', evidence: 'Academic council charter and agenda' },
     { code: 'INS 202', option: 'INSTR', standard: 2, competencies: 'LC 4, 5, 6, 9', title: 'Instructional Alignment', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
       indicator: 'Aligns curriculum, instruction, and feedback across buildings', evidence: 'Walkthrough look-fors and a PLC plan' },
-    { code: 'INS 203', option: 'INSTR', standard: 2, competencies: 'LC 4, 7', title: 'Curriculum Development Cycles', format: 'SuperSprint', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
+    { code: 'INS 203', instructors: 'demo.coach@example.org', option: 'INSTR', standard: 2, competencies: 'LC 4, 7', title: 'Curriculum Development Cycles', format: 'SuperSprint', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
       indicator: 'Sets a cycle for writing, reviewing, and revising curriculum', evidence: 'A multi-year curriculum review cycle' },
     { code: 'INS 204', option: 'INSTR', standard: 2, competencies: 'LC 9, 21', title: 'Leading Your Team (Instructional Strand)', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
       indicator: 'Builds principals’ capacity as instructional leaders', evidence: 'Principal development plan' },
@@ -1113,7 +1131,7 @@ var SEED = {
       indicator: 'Anticipates how pending legislation affects the district', evidence: 'Notes for a board legislative update' },
     { code: 'OPN 201', phase: 3, standard: 4, competencies: 'LC 20, 22', title: 'Crisis Communications Workshop', format: 'Leadership 90', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
       indicator: 'Plans how the district communicates during a crisis', evidence: 'Crisis communication plan' },
-    { code: 'OPN 202', phase: 3, standard: 4, competencies: 'LC 24, 25', title: 'Planning a Board Retreat', format: 'SuperSprint', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
+    { code: 'OPN 202', instructors: 'demo.coach@example.org', phase: 3, standard: 4, competencies: 'LC 24, 25', title: 'Planning a Board Retreat', format: 'SuperSprint', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
       indicator: 'Designs a board retreat that builds trust and sets goals', evidence: 'Board retreat agenda' },
     { code: 'OPN 203', phase: 3, standard: 5, competencies: 'LC 27', title: 'Peer Learning Visit', format: 'Site visit', hours: 3, status: 'Open', window: 'Spring', kind: 'external', modality: 'In person', provider: 'The Quality Coach (sample offering)',
       indicator: 'Visits a peer district to study a practice worth adapting', evidence: 'Visit reflection' },
@@ -1228,6 +1246,27 @@ var SEED = {
     { id: 'C-SAMPLE-2026', name: '2026 Cohort (sample)', year1: '2026-09-01', description: 'Sample cohort in Year 1.', coaches: '' },
     { id: 'C-SAMPLE-2027', name: '2027 Cohort (sample)', year1: '2027-09-01', description: 'Hired next spring; still in the Aspiring pathway.', coaches: '' }
   ],
+  // Sample class content for the demo (Teaching.js adds it once; the team edits or removes it from the class page).
+  // {HELP} is the help site, where the sample video and slide show live.
+  sampleContent: [
+    { id: 'smpvid01', code: 'INS 203', type: 'Video', title: 'Watch before the session: a tour of your class page (sample)', link: '{HELP}videos/class-page.mp4',
+      details: 'A short sample video. Instructors can embed YouTube, Vimeo, Loom, or Google Drive videos the same way.' },
+    { id: 'smpsld01', code: 'INS 203', type: 'Slides', title: 'Session slides (sample)', link: '{HELP}TQC-Leadership-Roadmap-How-To.pdf',
+      details: 'A sample slide show. Instructors can post Google Slides, PowerPoint or PDF files from Google Drive, or a PDF link.' },
+    { id: 'smpdsc01', code: 'INS 203', type: 'Discussion', title: 'Discussion: where does your curriculum cycle stall? (sample)',
+      details: 'Share one place your district’s curriculum review cycle gets stuck and one idea to keep it moving. Reply to at least one colleague.' },
+    { id: 'smpdsc02', code: 'OPN 202', type: 'Discussion', title: 'Discussion: board retreat ideas (sample)',
+      details: 'What is one activity that built trust at a board retreat you led or attended?' }
+  ],
+  sampleDiscussion: [
+    { id: 'smppost01', code: 'INS 203', board: 'smpdsc01', email: 'wpayton.sample@example.org', hoursAgo: 50,
+      body: 'Ours stalls after adoption: we buy materials but never schedule the review year. We are adding the review year to the board calendar this spring. (Sample)' },
+    { id: 'smppost02', code: 'INS 203', board: 'smpdsc01', email: 'jrice.sample@example.org', hoursAgo: 30, replyTo: 'smppost01',
+      body: 'Same here. Putting it on the board calendar made it real for us. We also named one principal to own each subject. (Sample)' },
+    { id: 'smppost03', code: 'INS 203', board: 'smpdsc01', email: 'demo.coach@example.org', name: 'Sample Coach A', hoursAgo: 20, replyTo: 'smppost01',
+      body: 'Great start. Bring your draft calendar to the session and we will pressure-test it together. (Sample)' }
+  ],
+
   // Demo logins (DEMO_LOGINS on Settings): each person gets their own copy of this sample superintendent. Year 2 of the
   // 2025 cohort: Onboarding and Year 1 badges earned; in Year 2 enrolled in the Instructional Strand and Year 2 Coaching,
   // with two strand sessions finished and three still to come, and coaching hours under way.
@@ -1324,6 +1363,7 @@ var SHEETS = {
   CONNECTIONS: 'Assigned People',
   SHARING: 'Sharing Settings',
   GOALS: 'Evaluation Goals',
+  DISCUSSIONS: 'Discussions',
   LOG: 'Sync Log'
 };
 
@@ -1337,13 +1377,14 @@ var HEADERS = {
   HOURS: ['Entry ID', 'Email', 'Date', 'Category', 'Phase', 'Hours', 'Description', 'Status', 'Logged By', 'Decided By', 'Decided On'],
   SUBS: ['Request ID', 'Email', 'Course Code', 'Evidence', 'Status', 'Requested On', 'Decided By', 'Decided On', 'Note'],
   COURSES: ['Code', 'Link', 'Course Title', 'Phase', 'Status', 'Format', 'Hours', 'Window', 'Option', 'Series', 'Kind', 'Category',
-    'Standard #', 'DESE Competencies', 'Level', 'Indicator', 'Evidence', 'Modality', 'Provider', 'Minutes', 'Active', 'Session Date', 'Session Time'],
+    'Standard #', 'DESE Competencies', 'Level', 'Indicator', 'Evidence', 'Modality', 'Provider', 'Minutes', 'Active', 'Session Date', 'Session Time', 'Instructor Emails'],
   SUPTS: ['Name', 'Email', 'District', 'Title', 'Start Date', 'Year 1 Starts', 'Coach', 'Mentor', 'Current Level', 'Courses Completed', 'Active',
     'Evaluation System', 'Local Evaluation Name', 'Evaluation File', 'Certificate Awarded', 'Coach Email', 'Mentor Email'],
   PROGRESS: ['Email', 'Course Code', 'Status', 'Completion %', 'Completed On', 'Source', 'Updated', 'Note'],
   ALIGN: ['System', 'Superintendent Email', 'Standard #', 'Evaluation Area', 'Notes'],
   ACCOUNTS: ['Email', 'Name', 'Role', 'Active', 'Created', 'Last Sign-in', 'Password Hash', 'Salt', 'Setup Code Hash', 'Setup Expires'],
-  MATERIALS: ['Code', 'Type', 'Title', 'Details', 'Link', 'Due (days after session)', 'Active'],
+  MATERIALS: ['Code', 'Type', 'Title', 'Details', 'Link', 'Due (days after session)', 'Active', 'Material ID'],
+  DISCUSSIONS: ['Post ID', 'Code', 'Board ID', 'Email', 'Name', 'Body', 'Reply To', 'Posted On', 'Status'],
   SUBMISSIONS: ['Submission ID', 'Email', 'Code', 'Assignment', 'Response', 'Link', 'Submitted On', 'Status', 'Feedback', 'Reviewed By', 'Reviewed On'],
   ENROLL: ['Email', 'Code', 'Status', 'Enrolled On', 'Enrolled By', 'Dropped On'],
   CONNECTIONS: ['Email', 'Viewer Email', 'Role', 'Name', 'Active'],
@@ -1442,6 +1483,15 @@ function buildAppData_() {
     return { viewer: {email:viewer.email, name:viewer.name || '', isAdmin:false, isVisitor:isVisitor, isBoard:true, isSandbox:!!viewer.sandboxRole, demoRole:viewer.sandboxRole || viewer.demoRole || 'board'},
       settings:publicSettings_(settings), superintendents:[], boardReport:boardRow ? sharedReport_(boardRow,pathwayContext_(),true,true) : null };
   }
+  // Instructors teach courses whether or not anyone is assigned to them; they get a "My classes" view.
+  var teaching = viewer.isVisitor ? [] : teachingCodes_(viewer.email);
+  if (!supts.length && !viewer.isAdmin && teaching.length) {
+    var tctx = pathwayContext_();
+    return { viewer: { email: viewer.email, name: viewer.name || '', isAdmin: false, isVisitor: false, canBrowse: false, isSandbox: !!viewer.sandboxRole, demoRole: viewer.sandboxRole || '' },
+      settings: publicSettings_(settings), tiers: getTiers_(), standards: getStandards_(), courses: publicCourses_(tctx.courses, false), pipeline: SEED.pipeline,
+      options: tctx.options, series: tctx.series, hoursCategories: HOURS_CATEGORIES, certificate: PATHWAY_CERTIFICATE, materials: getMaterials_(),
+      today: tctx.today, evaluationSystems: [], superintendents: [], teaching: teaching };
+  }
   if (!supts.length && !viewer.isAdmin) {
     return { viewer: { email: viewer.email, name: viewer.name || '', isSandbox:!!viewer.sandboxRole,demoRole:viewer.sandboxRole||'' }, settings: publicSettings_(settings), notEnrolled: true };
   }
@@ -1461,7 +1511,8 @@ function buildAppData_() {
     settings: publicSettings_(settings),
     tiers: getTiers_(),
     standards: getStandards_(),
-    courses: ctx.courses,
+    courses: publicCourses_(ctx.courses, viewer.isAdmin),
+    teaching: viewer.isAdmin ? ctx.courses.map(function (c) { return c.code; }) : teaching,
     pipeline: SEED.pipeline,
     options: ctx.options,
     series: ctx.series,
@@ -1491,6 +1542,11 @@ function evaluationFor_(s, align, isAdmin) {
   };
   if (isAdmin && file) out.fileUrl = file;
   return out;
+}
+
+/** Courses for the page: instructor emails go only to admins (everyone else sees the Led by name). */
+function publicCourses_(courses, isAdmin) {
+  return isAdmin ? courses : courses.map(function (c) { var o = Object.assign({}, c); delete o.instructors; return o; });
 }
 
 /** { email: 'last sign-in' } from the Accounts tab (admins see it on the roster). */
@@ -1803,7 +1859,7 @@ function getCourses_() {
         phase: Number(c.Phase) || 0, hours: c.Hours === '' || c.Hours === null || c.Hours === undefined ? null : Number(c.Hours),
         status: String(c.Status || 'Required'), window: String(c.Window || ''), option: String(c.Option || ''), series: String(c.Series || ''),
         kind: String(c.Kind || 'session'), category: String(c.Category || ''), modality: String(c.Modality || ''), provider: String(c.Provider || ''),
-        sessionDate: ymd_(c['Session Date']), sessionTime: String(c['Session Time'] || '')
+        sessionDate: ymd_(c['Session Date']), sessionTime: String(c['Session Time'] || ''), instructors: emailList_(c['Instructor Emails'])
       };
     });
 }
@@ -2692,7 +2748,8 @@ function courseRows_() {
     var row = { 'Code': c.code, 'Link': '', 'Course Title': c.title, 'Phase': c.phase || '', 'Status': c.status, 'Format': c.format,
       'Hours': hours, 'Window': c.window || '', 'Option': c.option || '', 'Series': c.series || '', 'Kind': c.kind, 'Category': c.category || '',
       'Standard #': c.standard, 'DESE Competencies': c.competencies, 'Level': c.phase || 3, 'Indicator': c.indicator, 'Evidence': c.evidence,
-      'Modality': c.modality || '', 'Provider': c.provider || '', 'Minutes': hours !== '' ? Math.round(hours * 60) : '', 'Active': true };
+      'Modality': c.modality || '', 'Provider': c.provider || '', 'Minutes': hours !== '' ? Math.round(hours * 60) : '', 'Active': true,
+      'Instructor Emails': c.instructors || '' };
     return HEADERS.COURSES.map(function (h) { return row[h] === undefined ? '' : row[h]; });
   });
 }
@@ -2752,7 +2809,7 @@ function ensurePathwayModel_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty(PATHWAY_MODEL_PROP) === '2026-10' && props.getProperty('COURSE_FORMATS') === '2026-10' && props.getProperty('OPTION_PHASES') === '2026-11' && props.getProperty('CERT_COLUMN') === '2026-11' &&
     props.getProperty('ACCESS_MODEL') === '2026-11' && props.getProperty(STANDALONE_PROP) === '2026-11' &&
-    props.getProperty(CLASS_PAGES_PROP) === '2026-11' && props.getProperty(ENROLLMENT_PROP) === '2026-11' &&
+    props.getProperty(CLASS_PAGES_PROP) === '2026-11' && props.getProperty(ENROLLMENT_PROP) === '2026-11' && props.getProperty(TEACHING_PROP) === '2026-11' &&
     props.getProperty('SITE_NAME') === '2026-11') return [];
   var done = [];
   withLock_(function () {
@@ -2805,7 +2862,7 @@ function ensurePathwayModel_() {
     props.setProperty(PATHWAY_MODEL_PROP, '2026-10');
   });
   resetRequestMemo_(); // tabs may have been renamed, archived, or added
-  done = done.concat(moveToStandalone_()).concat(moveToClassPages_()).concat(moveToEnrollment_());
+  done = done.concat(moveToStandalone_()).concat(moveToClassPages_()).concat(moveToEnrollment_()).concat(moveToTeaching_());
   renameSite_();
   if (done.length) log_('Pathway update', '', 'Moved to the New/Early Career Superintendent Pathway', done.join('; '));
   if (props.getProperty('COURSE_FORMATS') !== '2026-10') {
@@ -2980,6 +3037,13 @@ function appFunctions_() {
     saveGoals: saveGoals,
     updateSuperintendent: updateSuperintendent,
     updatePersonName: updatePersonName,
+    updateClass: updateClass,
+    saveMaterial: saveMaterial,
+    removeMaterial: removeMaterial,
+    getTeaching: getTeaching,
+    getDiscussion: getDiscussion,
+    postDiscussion: postDiscussion,
+    hidePost: hidePost,
     createHandoff: createHandoff
   };
 }
@@ -3331,6 +3395,7 @@ function programEmails_() {
     add(r['Coach Email'], String(r.Coach || ''), 'Coach');
     add(r['Mentor Email'], String(r.Mentor || ''), 'Mentor');
   });
+  getCourses_().forEach(function (c) { c.instructors.forEach(function (e) { add(e, '', 'Instructor'); }); });
   readTable_(SHEETS.CONNECTIONS).filter(function(r){return isTrue_(r.Active,true);}).forEach(function(r){ add(r['Viewer Email'], r.Name, r.Role === 'board' ? 'Board president' : r.Role); });
   var s = getSettings_();
   emailList_(s.MASA_EMAILS).forEach(function (e) { add(e, '', 'MASA staff'); });
@@ -3565,6 +3630,7 @@ function initialSetup() {
     ensureSheet_(SHEETS.MATERIALS, HEADERS.MATERIALS, materialRows_(), created);
     ensureSheet_(SHEETS.SUBMISSIONS, HEADERS.SUBMISSIONS, [], created);
     ensureSheet_(SHEETS.ENROLL, HEADERS.ENROLL, [], created);
+    // Material IDs, sample class content, and the Discussions tab come from moveToTeaching_ on the first page load.
     PropertiesService.getScriptProperties().setProperty(ENROLLMENT_PROP, '2026-11');
     PropertiesService.getScriptProperties().setProperty('SITE_NAME', '2026-11');
     PropertiesService.getScriptProperties().setProperty(STANDALONE_PROP, '2026-11');
@@ -3934,6 +4000,7 @@ var FLYER_FEATURES = [
     { title: 'Explore by role', text: 'Try a view-only sample as a mentor/coach, board president, superintendent, or site administrator. Direct tabs open phases, badges, hours, evaluation, and standards alignment. The board preview is sample-only; boards have no live login.', requires: ['signInDemo'] },
     { title: 'Help built in', text: 'A how-to guide for every role, with pictures, direct Show me links, and dedicated videos for the pathway tabs and demo role previews. The guide and printable PDF are open to anyone, including on the sign-in page.', requires: [] },
     { title: 'Your information, your choice', text: 'Choose, person by person, what your coach, mentor, MASA staff, and board president can see, and write your evaluation goals by standard. A board president sees only your completed learning and the goals you share.', requires: ['saveSharing', 'saveGoals'] },
+    { title: 'Classes that feel like classes', text: 'Instructors (including coaches and mentors who teach) edit their own classes and add embedded videos, slide shows, and discussion boards, see who is taking each class, and give feedback on its work.', requires: ['updateClass', 'saveMaterial', 'postDiscussion', 'getTeaching'] },
     { title: 'Hours and substitutions', text: 'Log coaching, mentoring, conference, and regional meeting hours, and ask to count equivalent learning in place of an event.', requires: ['logHours', 'requestSubstitution'] },
     { title: 'Ready for the board', text: 'Evaluation choices update alignment labels immediately, with visible save progress. A Standards Alignment Report organized by the DESE standards and tied to the board’s evaluation (MSBA, MARE, or the district’s own).', requires: ['setEvaluationSystem', 'uploadEvaluationFile'] },
     { title: 'A printable certificate', text: 'Completing all four phases awards the MASA/TQC Pathway Certificate, ready to print or save as a PDF.', requires: ['updateSummaryColumns_'] }
@@ -4175,9 +4242,12 @@ function getMaterials_() {
     var code = String(r.Code || '').trim();
     if (!code || !String(r.Title || '').trim() || !isTrue_(r.Active, true)) return;
     var link = String(r.Link || '').trim();
+    var type = MATERIAL_TYPES.filter(function (t) { return t.toLowerCase() === String(r.Type || '').trim().toLowerCase(); })[0] || (/^assign/i.test(String(r.Type)) ? 'Assignment' : 'Resource');
+    link = /^https:\/\/\S+$/i.test(link) ? link : '';
     (out[code] = out[code] || []).push({
-      type: /^assign/i.test(String(r.Type)) ? 'Assignment' : 'Resource', title: String(r.Title).trim(), details: String(r.Details || ''),
-      link: /^https:\/\/\S+$/i.test(link) ? link : '', dueDays: Number(r['Due (days after session)']) || 0
+      id: String(r['Material ID'] || ''), type: type, title: String(r.Title).trim(), details: String(r.Details || ''), link: link,
+      dueDays: Number(r['Due (days after session)']) || 0,
+      embed: type === 'Video' ? videoEmbed_(link) : type === 'Slides' ? slidesEmbed_(link) : null
     });
   });
   return out;
@@ -4281,9 +4351,12 @@ function reviewSubmission(id, feedback) {
     var r = rows.filter(function (x) { return String(x['Submission ID']) === String(id); })[0];
     if (!r) throw new Error('Submission not found.');
     who = norm_(r.Email);
-    var rel = v.isVisitor ? '' : relationTo_(v, who);
-    if (!v.isAdmin && !accessTo_(v,who,rel).notes) throw new Error('Submitted work is not shared with you.');
-    if (!(v.isAdmin || rel === 'coach')) throw new Error('Only the superintendent’s coach or a program administrator can give feedback.');
+    var teaches = !v.isVisitor && !!v.email && (courseByCode_(String(r.Code)).instructors || []).indexOf(v.email) > -1 && isParticipant_(who, String(r.Code));
+    if (!v.isAdmin && !teaches) {
+      var rel = v.isVisitor ? '' : relationTo_(v, who);
+      if (!accessTo_(v,who,rel).notes) throw new Error('Submitted work is not shared with you.');
+      if (rel !== 'coach') throw new Error('Only the superintendent’s coach, the class’s instructor, or a program administrator can give feedback.');
+    }
     r.Status = 'Reviewed'; r.Feedback = feedback; r['Reviewed By'] = v.name || v.email; r['Reviewed On'] = new Date();
     writeTable_(SHEETS.SUBMISSIONS, HEADERS.SUBMISSIONS, rows);
   });
@@ -4670,6 +4743,316 @@ function updatePersonName(email,name) {
 }
 
 </script>
+<script>/* Teaching.js */
+/**
+ * Teaching.js — instructors, class editing, and class content (videos, slide shows, discussion boards).
+ *
+ * Instructors: the Courses tab's "Instructor Emails" column (comma-separated; set by an admin in Edit class). An instructor
+ * may also be a coach or mentor; they keep that view and get a "My classes" tab for the courses they teach. Instructors
+ * and admins can edit a class's details and content from its class page. Instructors see who is taking their class, its
+ * turned-in work (to give feedback), and its discussion board. They see nothing else about those superintendents.
+ *
+ * Content (Course Materials tab, one row per item, each with a Material ID):
+ *   Resource     a handout or reading (optional https link)
+ *   Video        embedded on the class page: YouTube, Vimeo, Loom, Google Drive, or a direct .mp4 link
+ *   Slides       embedded: Google Slides, a Google Drive file (e.g. PowerPoint or PDF), or a PDF link
+ *   Discussion   a discussion board: everyone taking the class, its instructors, and admins can post and reply
+ *   Assignment   work to turn in, with a due date (days after the session)
+ * Removing an item turns it off (Active = FALSE) so earlier turned-in work keeps its assignment name.
+ * Discussions tab: one row per post (Post ID, Code, Board ID, Email, Name, Body, Reply To, Posted On, Status).
+ */
+
+var MATERIAL_TYPES = ['Resource', 'Video', 'Slides', 'Discussion', 'Assignment'];
+
+function instructorsOf_(course) {
+  return emailList_(course && (course.instructors || course['Instructor Emails']));
+}
+
+/** The course codes this email teaches. */
+function teachingCodes_(email) {
+  email = norm_(email);
+  if (!email) return [];
+  return getCourses_().filter(function (c) { return c.instructors.indexOf(email) > -1; }).map(function (c) { return c.code; });
+}
+
+/** Admins, or an instructor of this course (demo visitors never). Returns the course. */
+function assertCanTeach_(code) {
+  var v = viewer_();
+  var c = courseByCode_(code);
+  if (v.isVisitor || !v.email) throw new Error('The demo is view-only.');
+  if (!v.isAdmin && c.instructors.indexOf(v.email) === -1) throw new Error('Only this class’s instructors or a program administrator can do that.');
+  return { viewer: v, course: c };
+}
+
+/** People taking a class: active superintendents whose pathway includes it (required, chosen strand, or enrolled). */
+function participantsOf_(code, ctx) {
+  ctx = ctx || pathwayContext_();
+  var enrolls = enrollmentsAll_();
+  return readTable_(SHEETS.SUPTS).filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
+    var email = norm_(s.Email), P = pathwayStatus_(email, ctx), e = P.events[code], c = ctx.courses.filter(function (x) { return x.code === code; })[0];
+    if (!e || !c) return null;
+    var open = c.status !== 'Required' && !c.option && c.kind !== 'support';
+    if (open && !(enrolls[email] || {})[code] && !e.done) return null; // open offerings: only people who enrolled (or finished)
+    return { email: email, name: String(s.Name || email), district: String(s.District || ''),
+      status: e.done ? 'Completed' : e.reported === 'Pending' ? 'Marked complete' : (enrolls[email] || {})[code] ? 'Enrolled' : 'On pathway' };
+  }).filter(Boolean).sort(function (a, b) { return a.name.localeCompare(b.name); });
+}
+
+function isParticipant_(email, code) {
+  email = norm_(email);
+  return participantsOf_(code).some(function (p) { return p.email === email; });
+}
+
+/* ---------------- Editing a class ---------------- */
+
+/** Instructor or admin: a class's details. Admins also set the instructors (fields.instructors = emails). */
+function updateClass(code, fields) {
+  var t = assertCanTeach_(code);
+  fields = fields || {};
+  var date = String(fields.sessionDate || '').trim();
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Choose a valid session date.');
+  var link = String(fields.link || '').trim();
+  if (link && !/^https:\/\/\S+$/i.test(link)) throw new Error('The join link must start with https://');
+  var title = String(fields.title || '').trim();
+  if (!title) throw new Error('Enter the class title.');
+  var instructors = null;
+  if (fields.instructors !== undefined && fields.instructors !== null) {
+    if (!t.viewer.isAdmin) throw new Error('Only a program administrator can change who teaches a class.');
+    instructors = String(fields.instructors).split(/[,;\s]+/).map(norm_).filter(String);
+    instructors.forEach(function (e) { if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) throw new Error(e + ' is not a valid email address.'); });
+    if (instructors.length > 10) throw new Error('Up to 10 instructors per class.');
+  }
+  withLock_(function () {
+    var rows = readTable_(SHEETS.COURSES);
+    var r = rows.filter(function (x) { return String(x.Code) === t.course.code; })[0];
+    if (!r) throw new Error('Unknown course: ' + code);
+    r['Course Title'] = title.slice(0, 200);
+    r['Session Date'] = date ? toSheetDate_(date) : '';
+    r['Session Time'] = String(fields.sessionTime || '').trim().slice(0, 60);
+    r.Link = link;
+    r.Provider = String(fields.provider || '').trim().slice(0, 120);
+    r.Modality = String(fields.modality || '').trim().slice(0, 120);
+    r.Indicator = String(fields.indicator || '').trim().slice(0, 600);
+    r.Evidence = String(fields.evidence || '').trim().slice(0, 300);
+    if (instructors) r['Instructor Emails'] = instructors.join(', ');
+    writeTable_(SHEETS.COURSES, HEADERS.COURSES, rows);
+  });
+  log_(t.viewer.email, t.course.code, 'Class edited', instructors ? 'details and instructors' : 'details');
+  return buildAppData_();
+}
+
+/** Instructor or admin: add or change one content item. item: { id?, type, title, details, link, dueDays }. */
+function saveMaterial(code, item) {
+  var t = assertCanTeach_(code);
+  item = item || {};
+  var type = MATERIAL_TYPES.filter(function (x) { return x.toLowerCase() === String(item.type || '').toLowerCase(); })[0];
+  if (!type) throw new Error('Choose what to add: a resource, video, slide show, discussion board, or assignment.');
+  var title = String(item.title || '').trim().slice(0, 200);
+  if (!title) throw new Error('Enter a title.');
+  var link = String(item.link || '').trim();
+  if (link && !/^https:\/\/\S+$/i.test(link)) throw new Error('Links must start with https://');
+  if ((type === 'Video' || type === 'Slides') && !link) throw new Error('Paste the ' + (type === 'Video' ? 'video' : 'slide show') + ' link (https://).');
+  if (type === 'Video' && !videoEmbed_(link)) throw new Error('Use a YouTube, Vimeo, Loom, or Google Drive video link, or a direct link to an .mp4 file.');
+  var due = type === 'Assignment' ? Math.max(0, Math.min(365, Math.round(Number(item.dueDays) || 0))) : '';
+  var id = String(item.id || '');
+  withLock_(function () {
+    var rows = readTable_(SHEETS.MATERIALS);
+    var r = id ? rows.filter(function (x) { return String(x['Material ID']) === id && String(x.Code) === t.course.code; })[0] : null;
+    if (id && !r) throw new Error('That item was removed. Refresh the page.');
+    if (!r) { id = Utilities.getUuid().slice(0, 8); r = { 'Material ID': id, 'Code': t.course.code, 'Active': true }; rows.push(r); }
+    r.Type = type; r.Title = title; r.Details = String(item.details || '').trim().slice(0, 2000); r.Link = type === 'Discussion' ? '' : link;
+    r['Due (days after session)'] = due;
+    writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, rows);
+  });
+  log_(t.viewer.email, t.course.code, item.id ? 'Class content changed' : 'Class content added', type + ': ' + title);
+  return buildAppData_();
+}
+
+function removeMaterial(code, id) {
+  var t = assertCanTeach_(code);
+  var title = '';
+  withLock_(function () {
+    var rows = readTable_(SHEETS.MATERIALS);
+    var r = rows.filter(function (x) { return String(x['Material ID']) === String(id) && String(x.Code) === t.course.code; })[0];
+    if (!r) throw new Error('That item was already removed.');
+    r.Active = false; title = String(r.Title);
+    writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, rows);
+  });
+  log_(t.viewer.email, t.course.code, 'Class content removed', title);
+  return buildAppData_();
+}
+
+/** Instructor or admin: who is taking the class and the work turned in for it. */
+function getTeaching(code) {
+  var t = assertCanTeach_(code);
+  var people = participantsOf_(t.course.code);
+  var names = {};
+  people.forEach(function (p) { names[p.email] = p.name; });
+  var subs = [];
+  var all = submissionsAll_();
+  Object.keys(all).forEach(function (email) {
+    if (!names[email]) return;
+    all[email].filter(function (s) { return s.code === t.course.code; }).forEach(function (s) { subs.push(Object.assign({ email: email, name: names[email] }, s)); });
+  });
+  subs.sort(function (a, b) { return (a.status === 'Submitted' ? 0 : 1) - (b.status === 'Submitted' ? 0 : 1) || a.name.localeCompare(b.name); });
+  return { code: t.course.code, participants: people, submissions: subs };
+}
+
+/* ---------------- Discussion boards ---------------- */
+
+/** Who can read a class's board: admins, its instructors, and people taking it. Demo visitors read sample posts only. */
+function discussionAccess_(code) {
+  var v = viewer_();
+  var c = courseByCode_(code);
+  if (v.isVisitor) return { viewer: v, course: c, read: true, post: false, moderate: false, sampleOnly: true };
+  if (!v.email) throw new Error('Please sign in again.');
+  var teach = v.isAdmin || c.instructors.indexOf(v.email) > -1;
+  if (!teach && !isParticipant_(v.email, c.code)) throw new Error('Only people taking this class can see its discussion.');
+  return { viewer: v, course: c, read: true, post: true, moderate: teach, sampleOnly: false };
+}
+
+function boardOf_(code, boardId) {
+  var b = (getMaterials_()[code] || []).filter(function (m) { return m.type === 'Discussion' && m.id === String(boardId); })[0];
+  if (!b) throw new Error('That discussion board was removed.');
+  return b;
+}
+
+function getDiscussion(code, boardId) {
+  var a = discussionAccess_(code);
+  boardOf_(a.course.code, boardId);
+  var posts = readTable_(SHEETS.DISCUSSIONS).filter(function (r) {
+    if (String(r.Code) !== a.course.code || String(r['Board ID']) !== String(boardId)) return false;
+    if (a.sampleOnly && !isSampleEmail_(r.Email)) return false;
+    return String(r.Status) !== 'Hidden' || a.moderate;
+  }).map(function (r) {
+    var mine = !!a.viewer.email && norm_(r.Email) === a.viewer.email;
+    return { id: String(r['Post ID']), name: String(r.Name || ''), body: String(r.Body || ''), replyTo: String(r['Reply To'] || ''),
+      posted: fmtDateTime_(r['Posted On']), hidden: String(r.Status) === 'Hidden', mine: mine, canHide: a.moderate || mine };
+  });
+  return { code: a.course.code, boardId: String(boardId), posts: posts, canPost: a.post, canModerate: a.moderate };
+}
+
+function postDiscussion(code, boardId, body, replyTo) {
+  var a = discussionAccess_(code);
+  if (!a.post) throw new Error('The demo is view-only.');
+  boardOf_(a.course.code, boardId);
+  body = String(body || '').trim();
+  if (body.length < 2) throw new Error('Write a message first.');
+  if (body.length > 3000) throw new Error('Please keep posts under 3,000 characters.');
+  replyTo = String(replyTo || '');
+  var name = a.viewer.name || a.viewer.email;
+  var sup = readTable_(SHEETS.SUPTS).filter(function (s) { return norm_(s.Email) === a.viewer.email; })[0];
+  var acct = findAccount_(a.viewer.email);
+  name = (sup && sup.Name) || (acct && acct.Name) || name;
+  withLock_(function () {
+    var rows = readTable_(SHEETS.DISCUSSIONS);
+    if (replyTo && !rows.some(function (r) { return String(r['Post ID']) === replyTo && String(r.Code) === a.course.code; })) throw new Error('That post was removed.');
+    rows.push({ 'Post ID': Utilities.getUuid().slice(0, 12), 'Code': a.course.code, 'Board ID': String(boardId), 'Email': a.viewer.email, 'Name': String(name).slice(0, 120),
+      'Body': body, 'Reply To': replyTo, 'Posted On': new Date(), 'Status': 'Posted' });
+    writeTable_(SHEETS.DISCUSSIONS, HEADERS.DISCUSSIONS, rows);
+  });
+  log_(a.viewer.email, a.course.code, 'Discussion post', replyTo ? 'reply' : 'new post');
+  return getDiscussion(code, boardId);
+}
+
+/** The author, an instructor of the class, or an admin can remove a post (it is hidden, not deleted). */
+function hidePost(code, boardId, postId) {
+  var a = discussionAccess_(code);
+  if (a.sampleOnly) throw new Error('The demo is view-only.');
+  withLock_(function () {
+    var rows = readTable_(SHEETS.DISCUSSIONS);
+    var r = rows.filter(function (x) { return String(x['Post ID']) === String(postId) && String(x.Code) === a.course.code; })[0];
+    if (!r) throw new Error('That post was already removed.');
+    if (!a.moderate && norm_(r.Email) !== a.viewer.email) throw new Error('You can remove only your own posts.');
+    r.Status = 'Hidden';
+    writeTable_(SHEETS.DISCUSSIONS, HEADERS.DISCUSSIONS, rows);
+  });
+  log_(a.viewer.email, a.course.code, 'Discussion post removed', String(postId));
+  return getDiscussion(code, boardId);
+}
+
+/* ---------------- Embeds ---------------- */
+
+/** An embeddable address for a video link, or '' when the host isn't supported. Kind: 'iframe' or 'video'. */
+function videoEmbed_(url) {
+  url = String(url || '').trim();
+  var m;
+  if ((m = url.match(/^https:\/\/(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{6,})/i)) || (m = url.match(/^https:\/\/youtu\.be\/([\w-]{6,})/i)) ||
+      (m = url.match(/^https:\/\/(?:www\.)?youtube\.com\/(?:embed|shorts|live)\/([\w-]{6,})/i))) return { kind: 'iframe', src: 'https://www.youtube-nocookie.com/embed/' + m[1] };
+  if ((m = url.match(/^https:\/\/(?:www\.)?vimeo\.com\/(\d+)/i)) || (m = url.match(/^https:\/\/player\.vimeo\.com\/video\/(\d+)/i))) return { kind: 'iframe', src: 'https://player.vimeo.com/video/' + m[1] };
+  if ((m = url.match(/^https:\/\/(?:www\.)?loom\.com\/(?:share|embed)\/([\w-]+)/i))) return { kind: 'iframe', src: 'https://www.loom.com/embed/' + m[1] };
+  if ((m = url.match(/^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)/i))) return { kind: 'iframe', src: 'https://drive.google.com/file/d/' + m[1] + '/preview' };
+  if (/^https:\/\/\S+\.(mp4|webm|m4v)(\?\S*)?$/i.test(url)) return { kind: 'video', src: url };
+  return null;
+}
+
+/** An embeddable address for a slide show, or a plain link to open. */
+function slidesEmbed_(url) {
+  url = String(url || '').trim();
+  var m;
+  if ((m = url.match(/^https:\/\/docs\.google\.com\/presentation\/d\/(e\/)?([\w-]+)/i))) return { kind: 'iframe', src: 'https://docs.google.com/presentation/d/' + (m[1] || '') + m[2] + '/embed?start=false&loop=false' };
+  if ((m = url.match(/^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)/i))) return { kind: 'iframe', src: 'https://drive.google.com/file/d/' + m[1] + '/preview' };
+  if (/^https:\/\/\S+\.pdf(\?\S*)?$/i.test(url)) return { kind: 'iframe', src: url };
+  if ((m = url.match(/^https:\/\/(?:onedrive\.live\.com|[\w-]+\.sharepoint\.com)\/\S+/i))) return { kind: 'link', src: url };
+  return /^https:\/\/\S+$/i.test(url) ? { kind: 'link', src: url } : null;
+}
+
+/* ---------------- One-time update ---------------- */
+
+var TEACHING_PROP = 'TEACHING';
+/** Instructor Emails on Courses, Material IDs, the Discussions tab, and sample class content (video, slides, discussion). */
+function moveToTeaching_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(TEACHING_PROP) === '2026-11') return [];
+  var done = [];
+  withLock_(function () {
+    if (props.getProperty(TEACHING_PROP) === '2026-11') return;
+    var ss = ss_();
+    var courses = readTable_(SHEETS.COURSES);
+    if (courses.length) {
+      var seedInstr = {};
+      SEED.courses.forEach(function (c) { if (c.instructors) seedInstr[c.code] = c.instructors; });
+      courses.forEach(function (r) { if (!r['Instructor Emails'] && seedInstr[r.Code]) r['Instructor Emails'] = seedInstr[r.Code]; });
+      writeTable_(SHEETS.COURSES, HEADERS.COURSES, courses);
+    }
+    var mats = readTable_(SHEETS.MATERIALS);
+    mats.forEach(function (r) { if (!r['Material ID']) r['Material ID'] = Utilities.getUuid().slice(0, 8); });
+    var have = {};
+    mats.forEach(function (r) { have[r.Code + '|' + r.Type + '|' + r.Title] = true; });
+    sampleContentRows_().forEach(function (r) { if (!have[r.Code + '|' + r.Type + '|' + r.Title]) mats.push(r); });
+    writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, mats);
+    if (!ss.getSheetByName(SHEETS.DISCUSSIONS)) writeTable_(SHEETS.DISCUSSIONS, HEADERS.DISCUSSIONS, []);
+    seedSampleDiscussionRows_();
+    props.setProperty(TEACHING_PROP, '2026-11');
+    done.push('Class editing, instructors, videos, slide shows, and discussion boards');
+  });
+  resetRequestMemo_();
+  return done;
+}
+
+/** Sample class content for the demo: a video, a slide show, and a discussion board (team edits or removes them in the app). */
+var SAMPLE_HELP_SITE_ = 'https://jwillisdunklin.github.io/tqc-roadmap-help/';
+function sampleContentRows_() {
+  return (SEED.sampleContent || []).map(function (s) {
+    return { 'Material ID': s.id, 'Code': s.code, 'Type': s.type, 'Title': s.title, 'Details': s.details, 'Link': s.link ? s.link.replace('{HELP}', SAMPLE_HELP_SITE_) : '',
+      'Due (days after session)': '', 'Active': true };
+  });
+}
+
+function seedSampleDiscussionRows_() {
+  var rows = readTable_(SHEETS.DISCUSSIONS).filter(function (r) { return !isSampleEmail_(r.Email); });
+  var supts = {};
+  readTable_(SHEETS.SUPTS).forEach(function (s) { supts[norm_(s.Email)] = String(s.Name || ''); });
+  var now = Date.now();
+  (SEED.sampleDiscussion || []).forEach(function (p, i) {
+    if (!supts[p.email] && !/^demo\.coach@/.test(p.email)) return;
+    rows.push({ 'Post ID': p.id, 'Code': p.code, 'Board ID': p.board, 'Email': p.email, 'Name': supts[p.email] || p.name || '', 'Body': p.body,
+      'Reply To': p.replyTo || '', 'Posted On': new Date(now - (p.hoursAgo || 24) * 3600000), 'Status': 'Posted' });
+  });
+  writeTable_(SHEETS.DISCUSSIONS, HEADERS.DISCUSSIONS, rows);
+}
+
+</script>
 <script>/* isolated sample setup */
 /* Local/browser-only sample database. Never uploaded by clasp; all edits vanish when this page reloads. */
 function sandboxSetup_() {
@@ -4857,6 +5240,7 @@ function sandboxSignIn_(role) {
           <button class="tab" data-view="evaluation" type="button"></button>
           <button class="tab" data-view="standards" type="button"></button>
           <button class="tab" data-view="sharing" type="button"></button>
+          <button class="tab" data-view="teaching" type="button" hidden></button>
           <button class="tab" data-view="people" type="button" hidden></button>
           <label class="picker">
             <span class="sr-only">Superintendent</span>
@@ -5084,6 +5468,13 @@ window.HELP_TOPICS = [
       'Your goals appear in Standards Alignment next to the learning you completed, and in the report you can share with your board president.',
       'Don’t enter ratings, confidential board comments, or student information.'] },
 
+  { id: 'discussion', video: 'discussion', roles: ['sup'], title: 'Join a class discussion', requires: ['getDiscussion', 'postDiscussion', 'hidePost'],
+    show: { view: 'roadmap', course: 'upcoming', target: '.disc, .content-head', tip: 'Read, post, and reply here.' },
+    steps: ['Open a class. If it has a discussion board, it’s on the class page under the prompt.',
+      'Type in **Add to the discussion** and click **Post**, or click **Reply** under someone’s post.',
+      'Everyone taking the class, its instructors, and program administrators can read posts. You can **Remove** your own posts.',
+      'Videos and slide shows play right on the class page; **Open in a new tab** shows them full size.'] },
+
   // ---------------- Coaches and mentors ----------------
   { id: 'coach-people', video: 'coach-tools', roles: ['coach'], title: 'See the superintendents you coach or mentor', requires: ['visibleSupts_'],
     show: { view: 'roadmap', target: '#supPicker', tip: 'Pick who to look at.' },
@@ -5092,6 +5483,24 @@ window.HELP_TOPICS = [
   { id: 'coach-feedback', video: 'coach-tools', roles: ['coach'], title: 'Give feedback on an assignment', requires: ['reviewSubmission'],
     steps: ['Open the superintendent’s class page and scroll to **Assignment**.',
       'Under their work, write your feedback and click **Send feedback**. They see it right away.'] },
+
+  { id: 'teach-classes', video: 'teaching', roles: ['coach'], title: 'Teach a class: My classes', requires: ['teachingCodes_', 'getTeaching'],
+    show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a class you teach.' },
+    steps: ['If you’re an instructor, click the **My classes** tab. Coaches and mentors who also teach keep their usual tabs too.',
+      'Open a class to see who is taking it, their status, and the work they turned in.',
+      'Write feedback under each piece of turned-in work and click **Send feedback**. They see it on their class page.'] },
+  { id: 'teach-edit', video: 'teaching', roles: ['coach'], title: 'Edit your class', requires: ['updateClass'],
+    show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open the class, then click Edit class.' },
+    steps: ['Open the class and click **Edit class** (it’s also on the class page itself).',
+      'Change the title, session date and time, join link, who leads it, where it meets, and what participants will be able to do. Click **Save class**.'] },
+  { id: 'teach-content', video: 'teaching', roles: ['coach'], title: 'Add videos, slide shows, and discussion boards', requires: ['saveMaterial', 'removeMaterial', 'videoEmbed_', 'slidesEmbed_'],
+    show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open the class, then click Add content.' },
+    steps: ['Open the class and click **Add content**. Choose the type:',
+      '**Video**: paste a YouTube, Vimeo, Loom, or Google Drive link (shared “Anyone with the link”), or a direct .mp4 link. It plays on the class page.',
+      '**Slide show**: paste a Google Slides link, a Google Drive file (PowerPoint or PDF), or a PDF link. It shows on the class page.',
+      '**Discussion board**: write the prompt. Everyone taking the class can post and reply; you can remove posts.',
+      '**Resource** (a handout or link) and **Assignment** (work to turn in, with a due date) work as before.',
+      'Use **Edit** or **Remove** next to any item to change it.'] },
 
   // ---------------- MASA staff ----------------
   { id: 'board-report', roles: ['admin'], title: 'For board presidents: the shared report', requires: ['sharedReport_'],
@@ -5131,6 +5540,11 @@ window.HELP_TOPICS = [
     steps: ['On the roster, click **Edit** (or **Edit profile and assignments** on their pathway).',
       'Change their name, district, dates, coach, mentor, or board president (name and email), or uncheck **Active** to take them off the roster.',
       'In **People & sign-in**, **Edit name** fixes how anyone’s name appears everywhere.'] },
+  { id: 'admin-instructors', video: 'teaching', roles: ['admin'], title: 'Assign instructors and edit any class', requires: ['updateClass'],
+    show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Every class is here.' },
+    steps: ['Open the **Classes** tab and open a class, then click **Edit class**.',
+      'Type the instructors’ emails (comma-separated) and click **Save class**. They get a sign-in link from “First time here, or forgot your password?”.',
+      'Administrators can edit any class and its content.'] },
   { id: 'admin-preview', video: 'admin-roster', roles: ['admin'], title: 'See exactly what a superintendent sees',
     show: { view: 'roadmap', target: '#previewBtn', tip: 'Superintendent View.' },
     steps: ['Pick a superintendent and click **Superintendent View**. Click **Exit preview** in the yellow bar to return.'] },
@@ -5416,7 +5830,8 @@ window.HELP_TOPICS = [
     if (D.viewer.isBoard) { nav.hidden=true; help.hidden=true; back.hidden=true; bar.hidden=true; return; }
     help.hidden=false;
     var hasSup = !!(D.superintendents || []).length;
-    nav.hidden = !hasSup && !V.canEdit;
+    var teachN = (D.teaching || []).length;
+    nav.hidden = !hasSup && !V.canEdit && !teachN;
     if (!nav.hidden) {
       var allowed = hasSup ? permittedViews(current()) : [];
       nav.querySelector('[data-view="sharing"]').innerHTML = icon('shield') + ' Sharing &amp; goals';
@@ -5437,12 +5852,15 @@ window.HELP_TOPICS = [
       var ppl = nav.querySelector('[data-view="people"]');
       ppl.hidden = !(V.canEdit || V.demoAdmin);
       ppl.innerHTML = icon('users') + ' People &amp; sign-in';
-      Array.prototype.forEach.call(nav.querySelectorAll('.tab'), function(b){ if (['roster','people'].indexOf(b.dataset.view)<0) b.hidden=allowed.indexOf(b.dataset.view)<0; b.classList.toggle('active',b.dataset.view === S.view); });
+      Array.prototype.forEach.call(nav.querySelectorAll('.tab'), function(b){ if (['roster','people','teaching'].indexOf(b.dataset.view)<0) b.hidden=allowed.indexOf(b.dataset.view)<0; b.classList.toggle('active',b.dataset.view === S.view); });
+      var tt = nav.querySelector('[data-view="teaching"]');
+      tt.hidden = !teachN || V.previewing;
+      tt.innerHTML = icon('book') + (V.canEdit ? ' Classes' : ' My classes');
       var picker = document.getElementById('supPicker');
       picker.innerHTML = D.superintendents.map(function (s) {
         return '<option value="' + esc(s.email) + '"' + (s.email === S.email ? ' selected' : '') + '>' + esc(s.name) + ' — ' + esc(s.district) + '</option>';
       }).join('');
-      var perPerson = ['roster', 'people', 'help'].indexOf(S.view) < 0;
+      var perPerson = ['roster', 'people', 'help', 'teaching'].indexOf(S.view) < 0;
       picker.parentNode.hidden = !(V.isAdmin || V.canBrowse) || !perPerson || !hasSup;
       var pv = document.getElementById('previewBtn');
       pv.hidden = !V.isAdmin || !perPerson || !hasSup || !(D.viewer.isAdmin || D.viewer.isVisitor);
@@ -5461,12 +5879,13 @@ window.HELP_TOPICS = [
       return;
     }
     if (S.view === 'people' && viewer().canEdit) { renderPeople(); return; }
+    if (S.view === 'teaching' && (D.teaching || []).length) { renderTeaching(); return; }
     if (!D.superintendents.length) {
       $app.innerHTML = '<div class="card notice"><h2>No superintendents yet</h2><p class="muted">Add people on the roster to begin tracking.</p>' +
         (viewer().canEdit ? '<p><button class="btn btn-primary" data-act="add">' + icon('plus') + ' Add superintendent</button></p>' : '') + '</div>';
       return;
     }
-    if (['help','roster','people'].indexOf(S.view)<0 && permittedViews(current()).indexOf(S.view)<0) {
+    if (['help','roster','people','teaching'].indexOf(S.view)<0 && permittedViews(current()).indexOf(S.view)<0) {
       $app.innerHTML='<section class="card section"><h2>This section is not shared with you</h2><p>Choose one of the available tabs.</p></section>'; return;
     }
     if (S.view === 'sharing') renderSharing();
@@ -6128,7 +6547,7 @@ window.HELP_TOPICS = [
   }
 
   /* ---------------- How-to guide (topics in Help.html) ---------------- */
-  var HELP_GROUPS = [['all', 'Getting started'], ['sup', 'For superintendents'], ['coach', 'For coaches and mentors'], ['masa', 'For MASA staff'], ['admin', 'For program administrators']];
+  var HELP_GROUPS = [['all', 'Getting started'], ['sup', 'For superintendents'], ['coach', 'For coaches, mentors, and instructors'], ['masa', 'For MASA staff'], ['admin', 'For program administrators']];
   /** The guide sections that fit the signed-in person (demo visitors and admins see them all). */
   function helpRoles() {
     var D = S.data;
@@ -6137,7 +6556,7 @@ window.HELP_TOPICS = [
     if (V.isAdmin || V.isVisitor) return ['all', 'sup', 'coach', 'masa', 'admin'];
     var r = ['all'];
     if (sups.some(function (s) { return s.relation === 'self'; })) r.push('sup');
-    if (sups.some(function (s) { return s.relation === 'coach' || s.relation === 'mentor'; })) r.push('coach');
+    if (sups.some(function (s) { return s.relation === 'coach' || s.relation === 'mentor'; }) || (D.teaching || []).length) r.push('coach');
     if (sups.some(function (s) { return s.relation === 'masa'; })) r.push('masa');
     return r;
   }
@@ -6269,7 +6688,7 @@ window.HELP_TOPICS = [
   }
 
   /* ---------------- Screen history (the Back button) ---------------- */
-  function snap() { return { view: S.view, course: S.course, email: S.email, phaseOpen: S.phaseOpen, preview: S.preview, calMonth: S.calMonth }; }
+  function snap() { return { view: S.view, course: S.course, email: S.email, phaseOpen: S.phaseOpen, preview: S.preview, calMonth: S.calMonth, teach: S.teach }; }
   /** Move to another screen, remembering this one for Back. */
   function go(changes) {
     S.stack.push(snap());
@@ -6428,6 +6847,221 @@ window.HELP_TOPICS = [
       '<div class="cat-mine"><b>My enrollments:</b> ' + (mine.length ? mine.map(function (c) { return '<button class="chip linkchip" data-act="course" data-code="' + esc(c.code) + '">' + esc(c.title) + '</button>'; }).join(' ') : '<span class="muted">none yet</span>') + '</div></section>' + phases;
   }
 
+  /* ---------------- Teaching: class content, editing, discussion boards, My classes ---------------- */
+  /** Admins and this class's instructors can edit it (never in Superintendent View or the view-only demo). */
+  function canTeach(code) {
+    var V = viewer();
+    if (V.previewing || V.visitor || !S.data) return false;
+    return V.canEdit || (S.data.teaching || []).indexOf(code) > -1;
+  }
+  var TYPE_LABEL = { Resource: 'Resource', Video: 'Video', Slides: 'Slide show', Discussion: 'Discussion board', Assignment: 'Assignment' };
+  function itemTools(code, m) {
+    return canTeach(code) ? '<span class="item-tools"><button class="linkish" type="button" data-act="mat-edit" data-code="' + esc(code) + '" data-id="' + esc(m.id) + '">Edit</button>' +
+      '<button class="linkish" type="button" data-act="mat-remove" data-code="' + esc(code) + '" data-id="' + esc(m.id) + '">Remove</button></span>' : '';
+  }
+  function embedHtml(m) {
+    var e = m.embed;
+    if (!e) return m.link ? '<a class="btn btn-ghost btn-sm" href="' + esc(m.link) + '" target="_blank" rel="noopener">' + icon('external') + ' Open</a>' : '';
+    if (e.kind === 'video') return '<div class="embed"><video controls preload="metadata" src="' + esc(e.src) + '"></video></div>';
+    if (e.kind === 'iframe') return '<div class="embed' + (m.type === 'Slides' ? ' slides' : '') + '"><iframe src="' + esc(e.src) + '" title="' + esc(m.title) + '" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>' +
+      '<p class="small"><a href="' + esc(m.link) + '" target="_blank" rel="noopener">' + icon('external') + ' Open in a new tab</a></p>';
+    return '<a class="btn btn-ghost btn-sm" href="' + esc(e.src) + '" target="_blank" rel="noopener">' + icon('external') + ' Open the slide show</a>';
+  }
+  /** Videos, slide shows, and discussion boards for a class (shared by the class page and the instructor page). */
+  function richContentHtml(code) {
+    var mats = (S.data.materials || {})[code] || [];
+    var media = mats.filter(function (m) { return m.type === 'Video' || m.type === 'Slides'; });
+    var boards = mats.filter(function (m) { return m.type === 'Discussion'; });
+    return (media.length ? '<section class="card section"><div class="section-head"><h2>Videos and slides</h2></div>' + media.map(function (m) {
+        return '<div class="content-item"><div class="content-head"><span class="chip">' + esc(TYPE_LABEL[m.type]) + '</span><b>' + esc(m.title) + '</b>' + itemTools(code, m) + '</div>' +
+          (m.details ? '<p class="muted small">' + esc(m.details) + '</p>' : '') + embedHtml(m) + '</div>';
+      }).join('') + '</section>' : '') +
+      boards.map(function (m) {
+        return '<section class="card section"><div class="section-head"><div class="content-head"><span class="chip">' + icon('users') + ' Discussion</span><h2>' + esc(m.title) + '</h2>' + itemTools(code, m) + '</div>' +
+          (m.details ? '<p>' + esc(m.details) + '</p>' : '') + '</div><div class="disc" data-code="' + esc(code) + '" data-board="' + esc(m.id) + '"><p class="muted small">Loading the discussion…</p></div></section>';
+      }).join('');
+  }
+  function teachBar(code) {
+    return canTeach(code) ? '<div class="teach-bar">' + icon('book') + ' <span>You teach this class.</span><button class="btn btn-primary btn-sm" type="button" data-act="class-edit" data-code="' + esc(code) + '">Edit class</button>' +
+      '<button class="btn btn-ghost btn-sm" type="button" data-act="mat-add" data-code="' + esc(code) + '">' + icon('plus') + ' Add content</button>' +
+      (S.view !== 'teaching' ? '<button class="btn btn-ghost btn-sm" type="button" data-act="teach-open" data-code="' + esc(code) + '">Class roster and work</button>' : '') + '</div>' : '';
+  }
+
+  /* Discussion boards */
+  function loadDiscussions() {
+    Array.prototype.forEach.call($app.querySelectorAll('.disc'), function (box) {
+      api('getDiscussion', box.dataset.code, box.dataset.board).then(function (d) { renderDiscussion(box, d); }, function (x) {
+        box.innerHTML = '<p class="muted small">' + esc((x && x.message) || 'The discussion could not be loaded.') + '</p>';
+      });
+    });
+  }
+  function renderDiscussion(box, d) {
+    var top = d.posts.filter(function (p) { return !p.replyTo; });
+    var replies = function (id) { return d.posts.filter(function (p) { return p.replyTo === id; }); };
+    var post = function (p, isReply) {
+      return '<div class="post' + (isReply ? ' reply' : '') + (p.hidden ? ' hidden-post' : '') + '"><div class="post-head"><span class="avatar sm">' + esc(initials(p.name)) + '</span><b>' + esc(p.name) + '</b><span class="muted small">' + esc(p.posted) + (p.hidden ? ' · removed (only instructors see this)' : '') + '</span></div>' +
+        '<p>' + esc(p.body).replace(/\n/g, '<br>') + '</p><div class="post-actions">' +
+        (d.canPost && !isReply && !p.hidden ? '<button class="linkish" type="button" data-act="post-reply" data-id="' + esc(p.id) + '">Reply</button>' : '') +
+        (p.canHide && !p.hidden ? '<button class="linkish" type="button" data-act="post-hide" data-id="' + esc(p.id) + '">Remove</button>' : '') + '</div>' +
+        (!isReply ? replies(p.id).map(function (r) { return post(r, true); }).join('') + '<div class="reply-slot" data-for="' + esc(p.id) + '"></div>' : '') + '</div>';
+    };
+    var preview = viewer().previewing;
+    box.innerHTML = (top.length ? top.map(function (p) { return post(p, false); }).join('') : '<p class="muted small">No posts yet. Start the conversation.</p>') +
+      (d.canPost && !preview ? '<form class="post-form"><label>Add to the discussion<textarea name="body" rows="3" maxlength="3000" required></textarea></label>' +
+        '<p class="muted small">Everyone taking this class, its instructors, and program administrators can read posts. Don\'t include student names or other information that identifies a student.</p>' +
+        '<button class="btn btn-primary btn-sm" type="submit">Post</button></form>'
+        : '<p class="muted small">' + (preview ? 'Superintendent View: posting is turned off.' : 'The demo is view-only.') + '</p>');
+    var send = function (form, replyTo) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = form.querySelector('[type=submit]');
+        btn.disabled = true;
+        api('postDiscussion', d.code, d.boardId, form.elements.body.value, replyTo || '').then(function (nd) { renderDiscussion(box, nd); toast('Posted.'); },
+          function (x) { btn.disabled = false; fail(x); });
+      });
+    };
+    var f = box.querySelector('form.post-form');
+    if (f) send(f, '');
+    Array.prototype.forEach.call(box.querySelectorAll('[data-act="post-reply"]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var slot = box.querySelector('.reply-slot[data-for="' + b.dataset.id + '"]');
+        if (slot.firstChild) { slot.innerHTML = ''; return; }
+        slot.innerHTML = '<form class="post-form reply-form"><textarea name="body" rows="2" maxlength="3000" required placeholder="Write a reply"></textarea><button class="btn btn-primary btn-sm" type="submit">Reply</button></form>';
+        send(slot.querySelector('form'), b.dataset.id);
+        slot.querySelector('textarea').focus();
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-act="post-hide"]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!confirm('Remove this post? Instructors can still see that it was removed.')) return;
+        api('hidePost', d.code, d.boardId, b.dataset.id).then(function (nd) { renderDiscussion(box, nd); toast('Post removed.'); }, fail);
+      });
+    });
+  }
+
+  /* Editing a class and its content */
+  function openClassEditor(code) {
+    var c = courseByCode(code), admin = viewer().canEdit;
+    var f = function (name, label, value, type, extra) { return '<label>' + label + '<input name="' + name + '" type="' + (type || 'text') + '" value="' + esc(value || '') + '"' + (extra || '') + '></label>'; };
+    openDlg('<form id="classForm"><h3>Edit class</h3><p class="muted small">' + esc(c.code) + '. Changes show on the class page for everyone taking it.</p>' +
+      f('title', 'Title', c.title, 'text', ' required maxlength="200"') +
+      '<div class="two">' + f('sessionDate', 'Session date', c.sessionDate, 'date') + f('sessionTime', 'Session time', c.sessionTime, 'text', ' placeholder="3:30–4:00 PM" maxlength="60"') + '</div>' +
+      f('link', 'Join link (Zoom, Meet, Teams…)', c.link, 'url', ' placeholder="https://"') +
+      '<div class="two">' + f('provider', 'Led by', c.provider, 'text', ' maxlength="120"') + f('modality', 'Where', c.modality, 'text', ' maxlength="120"') + '</div>' +
+      '<label>What participants will be able to do<textarea name="indicator" rows="2" maxlength="600">' + esc(c.indicator || '') + '</textarea></label>' +
+      f('evidence', 'Evidence of growth', c.evidence, 'text', ' maxlength="300"') +
+      (admin ? f('instructors', 'Instructors (emails, comma-separated)', (c.instructors || []).join(', '), 'text', ' placeholder="coach@district.org"') +
+        '<p class="muted small">Instructors can edit this class, add content, see who is taking it, and give feedback on its work. They get a sign-in link from “First time here, or forgot your password?”.</p>' : '') +
+      '<p class="form-error" id="classError"></p><div class="dialog-actions"><button class="btn btn-ghost" type="button" data-act="dlg-close">Cancel</button><button class="btn btn-primary" type="submit">Save class</button></div></form>');
+    var form = document.getElementById('classForm');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var fields = {};
+      ['title', 'sessionDate', 'sessionTime', 'link', 'provider', 'modality', 'indicator', 'evidence'].forEach(function (k) { fields[k] = form.elements[k].value; });
+      if (admin) fields.instructors = form.elements.instructors.value;
+      var btn = form.querySelector('[type=submit]'); btn.disabled = true;
+      api('updateClass', code, fields).then(function (data) { closeDlg(); load(data); toast('Class saved.'); },
+        function (x) { btn.disabled = false; document.getElementById('classError').textContent = x.message || String(x); });
+    });
+  }
+  var TYPE_HELP = {
+    Resource: 'A handout, reading, or link. The link is optional.',
+    Video: 'Paste a YouTube, Vimeo, Loom, or Google Drive video link (set Drive sharing to “Anyone with the link”), or a direct .mp4 link. It plays on the class page.',
+    Slides: 'Paste a Google Slides link, a Google Drive file link (PowerPoint or PDF, shared “Anyone with the link”), or a PDF link. It shows on the class page.',
+    Discussion: 'A discussion board. Write the prompt below. Everyone taking the class can post and reply.',
+    Assignment: 'Work to turn in. Superintendents write a response and can attach a link; you and their coach can give feedback.'
+  };
+  function openMaterialEditor(code, id) {
+    var m = id ? ((S.data.materials || {})[code] || []).filter(function (x) { return x.id === id; })[0] : null;
+    var type = m ? m.type : 'Video';
+    openDlg('<form id="matForm"><h3>' + (m ? 'Edit ' + esc(TYPE_LABEL[type].toLowerCase()) : 'Add to this class') + '</h3>' +
+      '<label>Type<select name="type"' + (m ? ' disabled' : '') + '>' + Object.keys(TYPE_LABEL).map(function (t) { return '<option value="' + t + '"' + (t === type ? ' selected' : '') + '>' + TYPE_LABEL[t] + '</option>'; }).join('') + '</select></label>' +
+      '<p class="muted small" id="matHelp"></p>' +
+      '<label>Title<input name="title" required maxlength="200" value="' + esc(m ? m.title : '') + '"></label>' +
+      '<label id="matDetailsLabel">Description<textarea name="details" rows="3" maxlength="2000">' + esc(m ? m.details : '') + '</textarea></label>' +
+      '<label id="matLinkLabel">Link<input name="link" type="url" placeholder="https://" value="' + esc(m ? m.link : '') + '"></label>' +
+      '<label id="matDueLabel">Due (days after the session)<input name="dueDays" type="number" min="0" max="365" value="' + esc(m ? m.dueDays : 14) + '"></label>' +
+      '<p class="form-error" id="matError"></p><div class="dialog-actions"><button class="btn btn-ghost" type="button" data-act="dlg-close">Cancel</button><button class="btn btn-primary" type="submit">' + (m ? 'Save' : 'Add') + '</button></div></form>');
+    var form = document.getElementById('matForm');
+    var sync = function () {
+      var t = form.elements.type.value;
+      document.getElementById('matHelp').textContent = TYPE_HELP[t];
+      document.getElementById('matLinkLabel').hidden = t === 'Discussion';
+      document.getElementById('matDueLabel').hidden = t !== 'Assignment';
+      document.getElementById('matDetailsLabel').firstChild.textContent = t === 'Discussion' ? 'Discussion prompt' : t === 'Assignment' ? 'Instructions' : 'Description';
+    };
+    form.elements.type.addEventListener('change', sync);
+    sync();
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('[type=submit]'); btn.disabled = true;
+      api('saveMaterial', code, { id: id || '', type: form.elements.type.value, title: form.elements.title.value, details: form.elements.details.value,
+        link: form.elements.link.value, dueDays: form.elements.dueDays.value }).then(function (data) { closeDlg(); load(data); toast(id ? 'Saved.' : 'Added to the class.'); },
+        function (x) { btn.disabled = false; document.getElementById('matError').textContent = x.message || String(x); });
+    });
+  }
+  function removeMaterial(code, id) {
+    var m = ((S.data.materials || {})[code] || []).filter(function (x) { return x.id === id; })[0];
+    if (!m || !confirm('Remove “' + m.title + '” from this class?' + (m.type === 'Discussion' ? ' Its posts are kept but no longer shown.' : ''))) return;
+    api('removeMaterial', code, id).then(function (data) { load(data); toast('Removed.'); }, fail);
+  }
+
+  /* My classes (instructors) and one class's teaching page */
+  function teachingListHtml() {
+    var D = S.data, codes = D.teaching || [];
+    var mine = D.courses.filter(function (c) { return codes.indexOf(c.code) > -1; });
+    return '<section class="card section"><div class="section-head"><h2>' + (viewer().canEdit ? 'Classes' : 'My classes') + '</h2>' +
+      '<p>' + (viewer().canEdit ? 'Every class in the program. Open one to edit it, add videos, slide shows, or discussion boards, and see who is taking it.' :
+        'The classes you teach. Open one to edit it, add videos, slide shows, or discussion boards, see who is taking it, and give feedback on their work.') + '</p></div>' +
+      '<div class="cat-grid">' + mine.map(function (c) {
+        var n = ((D.materials || {})[c.code] || []).length;
+        return '<div class="cat-card"><div class="ev-tags"><span class="chip chip-mono">' + esc(c.code) + '</span>' + fmtTag(c) + '</div>' +
+          '<h4><button type="button" class="title-link" data-act="teach-open" data-code="' + esc(c.code) + '">' + esc(c.title) + '</button></h4>' +
+          '<p class="small">' + icon('calendar') + ' ' + esc(c.sessionDate ? fmtDay(c.sessionDate) + (c.sessionTime ? ' · ' + c.sessionTime : '') : (c.window || 'Date not set')) + '</p>' +
+          '<p class="muted small">' + n + ' content item' + (n === 1 ? '' : 's') + '</p>' +
+          '<div class="cat-actions"><button class="btn btn-primary btn-sm" data-act="teach-open" data-code="' + esc(c.code) + '">Open</button></div></div>';
+      }).join('') + '</div></section>';
+  }
+  function renderTeaching() {
+    if (!S.teach) { $app.innerHTML = teachingListHtml(); return; }
+    var code = S.teach, c = courseByCode(code), mats = (S.data.materials || {})[code] || [];
+    var basics = mats.filter(function (m) { return m.type === 'Resource' || m.type === 'Assignment'; });
+    $app.innerHTML = '<section class="card section class-head"><button class="linkish back" data-act="go-back">' + icon('chevron') + ' Back</button>' +
+      '<div class="ev-tags"><span class="chip chip-mono">' + esc(c.code) + '</span>' + fmtTag(c) + '</div><h2 class="class-title">' + esc(c.title) + '</h2>' +
+      '<div class="class-meta"><div><small>When</small><b>' + esc(c.sessionDate ? fmtDay(c.sessionDate) + (c.sessionTime ? ' · ' + c.sessionTime : '') : (c.window || 'Not set')) + '</b></div>' +
+        '<div><small>Where</small><b>' + esc(c.modality || 'Not set') + '</b></div><div><small>Led by</small><b>' + esc(c.provider || 'Not set') + '</b></div>' +
+        '<div><small>Join link</small><b>' + (c.link ? '<a href="' + esc(c.link) + '" target="_blank" rel="noopener">Open</a>' : 'Not posted') + '</b></div></div>' + teachBar(code) + '</section>' +
+      richContentHtml(code) +
+      '<section class="card section"><div class="section-head"><h2>Resources and assignments</h2></div>' +
+        (basics.length ? basics.map(function (m) { return '<div class="content-item"><div class="content-head"><span class="chip">' + esc(TYPE_LABEL[m.type]) + '</span><b>' + esc(m.title) + '</b>' + itemTools(code, m) + '</div>' +
+          '<p class="muted small">' + esc(m.details) + (m.type === 'Assignment' ? ' · Due ' + m.dueDays + ' days after the session' : '') + '</p>' + (m.link ? '<a href="' + esc(m.link) + '" target="_blank" rel="noopener">' + icon('link') + ' Link</a>' : '') + '</div>'; }).join('') : '<p class="muted">None yet.</p>') + '</section>' +
+      '<div id="teachPanel"><section class="card section"><p class="muted">Loading who is taking this class…</p></section></div>';
+    loadDiscussions();
+    api('getTeaching', code).then(function (t) {
+      var panel = document.getElementById('teachPanel');
+      if (!panel || S.teach !== code) return;
+      panel.innerHTML = '<section class="card section"><div class="section-head"><h2>Who is taking this class</h2><p>' + t.participants.length + ' superintendent' + (t.participants.length === 1 ? '' : 's') + '.</p></div>' +
+        (t.participants.length ? '<div class="table-wrap"><table><thead><tr><th>Superintendent</th><th>District</th><th>Status</th></tr></thead><tbody>' + t.participants.map(function (p) {
+          return '<tr><td>' + esc(p.name) + '</td><td class="sub">' + esc(p.district) + '</td><td><span class="chip' + (p.status === 'Completed' ? ' st ok' : '') + '">' + esc(p.status) + '</span></td></tr>'; }).join('') + '</tbody></table></div>' : '') + '</section>' +
+        '<section class="card section"><div class="section-head"><h2>Turned-in work</h2><p>Give feedback here; the superintendent sees it on their class page.</p></div>' +
+        (t.submissions.length ? t.submissions.map(function (s) {
+          return '<div class="asg"><div class="asg-head"><b>' + esc(s.name) + '</b><span class="muted small">' + esc(s.assignment) + ' · turned in ' + esc(s.submitted) + '</span><span class="chip st ' + (s.status === 'Reviewed' ? 'ok' : 'info') + '">' + esc(s.status) + '</span></div>' +
+            '<div class="sub-box"><p>' + esc(s.response) + '</p>' + (s.link ? '<a href="' + esc(s.link) + '" target="_blank" rel="noopener">' + icon('link') + ' Attached link</a>' : '') + '</div>' +
+            (s.status === 'Reviewed' ? '<div class="fb-box"><small>Feedback from ' + esc(s.reviewedBy) + '</small><p>' + esc(s.feedback) + '</p></div>'
+              : '<form class="fb-form" data-id="' + esc(s.id) + '"><label>Feedback for ' + esc(s.name) + '<textarea name="fb" rows="3" maxlength="2000" required></textarea></label><button class="btn btn-primary btn-sm" type="submit">Send feedback</button></form>') + '</div>';
+        }).join('') : '<p class="muted">Nothing turned in yet.</p>') + '</section>';
+      Array.prototype.forEach.call(panel.querySelectorAll('form.fb-form'), function (f) {
+        f.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var btn = f.querySelector('[type=submit]'); btn.disabled = true;
+          api('reviewSubmission', f.dataset.id, f.elements.fb.value).then(function (data) { load(data); toast('Feedback sent.'); }, function (x) { btn.disabled = false; fail(x); });
+        });
+      });
+    }, function (x) { var panel = document.getElementById('teachPanel'); if (panel) panel.innerHTML = '<section class="card section"><p class="muted">' + esc(x.message || String(x)) + '</p></section>'; });
+  }
+
   /* ---------------- Class pages and "Coming up" ---------------- */
   function upcomingItems(sup) {
     var P = sup.pathway, D = S.data, today = D.today, items = [];
@@ -6480,7 +7114,7 @@ window.HELP_TOPICS = [
     var sched = (P.schedule || {})[code], mats = (D.materials || {})[code] || [];
     var std = D.standards.filter(function (s) { return s.num === c.standard; })[0];
     var series = c.series ? seriesById(c.series) : null, opt = c.option ? optionById(c.option) : null;
-    var self = canActFor(sup), V = viewer(), coachy = V.canEdit || sup.relation === 'coach';
+    var self = canActFor(sup), V = viewer(), coachy = V.canEdit || sup.relation === 'coach' || canTeach(code);
     var subs = sup.submissions || [];
     var state = e.done ? ['done', 'Completed' + (e.completedOn ? ' ' + e.completedOn : '')] : e.reported === 'Pending' ? ['info', 'Waiting for approval']
       : sched && sched.date >= D.today ? ['info', 'Coming up'] : c.kind === 'support' ? ['info', 'In progress'] : ['', 'Not started'];
@@ -6499,7 +7133,7 @@ window.HELP_TOPICS = [
       '<div class="class-meta"><div><small>When</small><b>' + esc(when) + '</b></div><div><small>Where</small><b>' + esc(c.modality || 'To be announced') + '</b></div>' +
         '<div><small>Led by</small><b>' + esc(c.provider || (c.kind === 'support' ? sup.coach || 'Your coach' : 'The Quality Coach')) + '</b></div>' +
         '<div><small>Status</small><span class="chip st ' + state[0] + '">' + esc(state[1]) + '</span></div></div>' +
-      ((join || enrollButton(c, sup)) ? '<div class="class-join">' + (enrollState(c, sup) === 'open' ? '' : join) + ' ' + enrollButton(c, sup) + '</div>' : '') + '</section>';
+      ((join || enrollButton(c, sup)) ? '<div class="class-join">' + (enrollState(c, sup) === 'open' ? '' : join) + ' ' + enrollButton(c, sup) + '</div>' : '') + teachBar(code) + '</section>';
 
     var about = '<section class="card section"><div class="section-head"><h2>About this ' + (c.kind === 'session' ? 'session' : c.kind === 'support' ? 'requirement' : 'event') + '</h2></div>' +
       (c.indicator ? '<p><b>What you’ll be able to do:</b> ' + esc(c.indicator) + '.</p>' : '') +
@@ -6510,7 +7144,7 @@ window.HELP_TOPICS = [
     var resources = mats.filter(function (m) { return m.type === 'Resource'; });
     var matHtml = resources.length ? '<section class="card section"><div class="section-head"><h2>Materials</h2></div><div class="mat-list">' + resources.map(function (m, i) {
       var ready = m.link || e.done || /^Before/i.test(m.title) || c.kind !== 'session';
-      return '<div class="mat"><span class="mat-ic">' + icon('file') + '</span><div><b>' + esc(m.title) + '</b><p class="muted small">' + esc(m.details) + '</p></div>' +
+      return '<div class="mat"><span class="mat-ic">' + icon('file') + '</span><div><b>' + esc(m.title) + '</b>' + itemTools(code, m) + '<p class="muted small">' + esc(m.details) + '</p></div>' +
         (m.link ? '<a class="btn btn-ghost btn-sm" href="' + esc(m.link) + '" target="_blank" rel="noopener">' + icon('external') + ' Open</a>'
           : ready ? '<button class="btn btn-ghost btn-sm" type="button" data-act="mat-view" data-code="' + esc(code) + '" data-i="' + i + '">View</button>'
           : '<span class="muted small">After the session</span>') + '</div>';
@@ -6536,18 +7170,19 @@ window.HELP_TOPICS = [
           '<p class="muted small">Seen by you, your coach, and program administrators. Don\'t include student names or other information that identifies a student.</p>' +
           '<p class="form-error"></p><button class="btn btn-primary" type="submit">' + icon('upload') + ' Turn in</button></form>';
       } else body = '<p class="muted small">Not turned in yet.</p>';
-      return '<div class="asg"><div class="asg-head"><b>' + esc(m.title) + '</b>' + (due ? '<span class="chip' + (!mine && due < S.data.today ? ' st warn' : '') + '">Due ' + esc(fmtDay(due)) + '</span>' : '') +
+      return '<div class="asg"><div class="asg-head"><b>' + esc(m.title) + '</b>' + itemTools(code, m) + (due ? '<span class="chip' + (!mine && due < S.data.today ? ' st warn' : '') + '">Due ' + esc(fmtDay(due)) + '</span>' : '') +
         (mine ? '<span class="chip st ' + (mine.status === 'Reviewed' ? 'ok' : 'info') + '">' + esc(mine.status) + '</span>' : '') + '</div>' +
         '<p class="muted small">' + esc(m.details) + '</p>' + body + '</div>';
     }).join('');
     var asgHtml = assignments ? '<section class="card section"><div class="section-head"><h2>Assignment</h2></div>' + assignments + '</section>' : '';
-    return head + about + matHtml + asgHtml + (c.kind === 'support' ? hoursHtml(sup, summarize(sup)) : '');
+    return head + about + richContentHtml(code) + matHtml + asgHtml + (c.kind === 'support' ? hoursHtml(sup, summarize(sup)) : '');
   }
 
   function renderClass() {
     var sup = current();
     $app.innerHTML = classHtml(sup, S.course);
     if (courseByCode(S.course).kind === 'support') loadHoursLog();
+    loadDiscussions();
     Array.prototype.forEach.call($app.querySelectorAll('form.asg-form'), function (f) {
       f.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -6704,7 +7339,7 @@ window.HELP_TOPICS = [
     if (!S.email) {
       var me = (data.superintendents || []).filter(function (s) { return s.email === data.viewer.email; })[0];
       S.email = me ? me.email : (data.superintendents && data.superintendents[0] ? data.superintendents[0].email : null);
-      S.view = data.viewer.isBoard ? 'board' : (data.viewer.isAdmin || (data.viewer.canBrowse && !me)) ? 'roster' : (permittedViews(current())[0] || 'roadmap');
+      S.view = data.viewer.isBoard ? 'board' : (data.viewer.isAdmin || (data.viewer.canBrowse && !me)) ? 'roster' : !(data.superintendents || []).length && (data.teaching || []).length ? 'teaching' : (permittedViews(current())[0] || 'roadmap');
     }
     render();
   }
@@ -6724,6 +7359,11 @@ window.HELP_TOPICS = [
     var code = el.dataset.code;
 
     if (act === 'catalog') { go({ view: 'catalog', course: null }); return; }
+    if (act === 'class-edit') { openClassEditor(code); return; }
+    if (act === 'mat-add') { openMaterialEditor(code, ''); return; }
+    if (act === 'mat-edit') { openMaterialEditor(code, el.dataset.id); return; }
+    if (act === 'mat-remove') { removeMaterial(code, el.dataset.id); return; }
+    if (act === 'teach-open') { go({ view: 'teaching', teach: code, course: null }); return; }
     if (act === 'help-open') { if (S.data) go({ view: 'help', course: null }); else openHelpDialog(); return; }
     if (act === 'help-hide') { store.set(el.dataset.key, '1'); var w = el.closest('.welcome-help'); if (w) w.remove(); toast('Hidden. The Help button at the top opens the guide any time.'); return; }
     if (act === 'help-jump') { helpJump(el.dataset.id); return; }
