@@ -141,7 +141,7 @@
       "all"
     ],
     "video": "videos/demo-roles.mp4",
-    "seconds": 43,
+    "seconds": 33,
     "shots": [
       {
         "file": "shots/demo-roles-01.png",
@@ -151,7 +151,7 @@
       {
         "file": "shots/demo-roles-02.png",
         "title": "Mentor/coach: coach view",
-        "text": "The coach preview shows a sample roster, pathways, and evaluation alignment."
+        "text": "The coach preview shows a sample roster of their own people. Notes and goals follow each superintendent’s sharing choices."
       },
       {
         "file": "shots/demo-roles-03.png",
@@ -160,28 +160,18 @@
       },
       {
         "file": "shots/demo-roles-04.png",
-        "title": "Board president preview",
-        "text": "A sample-only presentation of learning progress and evaluation alignment. It is not a live board login."
+        "title": "Board president view",
+        "text": "One page: the superintendent’s completed learning by standard and the goals they chose to share. Nothing else."
       },
       {
         "file": "shots/demo-roles-05.png",
-        "title": "Evaluation preview",
-        "text": "Explore how badges support an evaluation. Public demo choices are not saved."
+        "title": "Superintendent preview",
+        "text": "One sample pathway, with Calendar, Course Catalog, Phases, Badges, Hours, Evaluation, Standards Alignment, and Sharing & goals."
       },
       {
         "file": "shots/demo-roles-06.png",
-        "title": "Superintendent preview",
-        "text": "One sample My Pathway, with Calendar, Course Catalog, Phases, Badges, Hours, Evaluation, and Standards Alignment."
-      },
-      {
-        "file": "shots/demo-roles-07.png",
         "title": "Site administrator preview",
-        "text": "Explore the sample roster and all pathway tabs. Approvals remain disabled."
-      },
-      {
-        "file": "shots/demo-roles-08.png",
-        "title": "Sample People page",
-        "text": "This view explains accounts without showing real accounts or allowing invitations or role changes."
+        "text": "The sample roster and every pathway tab. In this public preview, approvals and changes are turned off."
       }
     ]
   },
@@ -594,7 +584,7 @@
       {
         "file": "shots/coach-tools-01.png",
         "title": "Your roster",
-        "text": "You see only the superintendents assigned to you."
+        "text": "You see only the superintendents assigned to you, and only what each one shares with you."
       },
       {
         "file": "shots/coach-tools-02.png",
@@ -603,13 +593,13 @@
       },
       {
         "file": "shots/coach-tools-03.png",
-        "title": "Log hours for them",
-        "text": "Mentors log Mentoring hours only. Hours wait for an administrator’s approval."
+        "title": "Their classes",
+        "text": "Open a class to see their work and give feedback (coaches, when the superintendent shares notes and work)."
       },
       {
         "file": "shots/coach-tools-04.png",
-        "title": "Give feedback",
-        "text": "Open a class and write feedback under the work they turned in."
+        "title": "Log hours for them",
+        "text": "Mentors log Mentoring hours only. Hours wait for an administrator’s approval."
       }
     ]
   },
