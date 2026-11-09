@@ -418,77 +418,93 @@
     ]
   },
   {
-    "id": "class-page",
-    "title": "Inside a class",
-    "summary": "When it meets, how to join, materials, and the assignment.",
+    "id": "course-learner",
+    "title": "Taking a course",
+    "summary": "Home, Modules, requirements, assignments, quizzes, and pathway credit.",
     "roles": [
       "sup",
       "coach"
     ],
-    "video": "videos/class-page.mp4",
-    "seconds": 33,
+    "video": "videos/course-learner.mp4",
+    "seconds": 48,
     "shots": [
       {
-        "file": "shots/class-page-01.png",
-        "title": "When and where",
-        "text": "The date and time, how it meets, who leads it, and your status."
+        "file": "shots/course-learner-01.png",
+        "title": "Course navigation",
+        "text": "Home, Modules, Assignments, Discussions, Resources, and People."
       },
       {
-        "file": "shots/class-page-02.png",
-        "title": "Join the session",
-        "text": "The join link appears here once your coach posts it."
-      },
-      {
-        "file": "shots/class-page-03.png",
+        "file": "shots/course-learner-02.png",
         "title": "Your progress",
-        "text": "Mark the session complete here after it meets, or ask for a substitution."
+        "text": "Requirements you have finished in this course."
       },
       {
-        "file": "shots/class-page-04.png",
-        "title": "Materials",
-        "text": "Handouts and pre-reading. Click View or Open."
+        "file": "shots/course-learner-03.png",
+        "title": "Announcements",
+        "text": "News from your instructor, newest first."
       },
       {
-        "file": "shots/class-page-05.png",
-        "title": "Assignment",
-        "text": "What to turn in, and when it is due."
+        "file": "shots/course-learner-04.png",
+        "title": "Modules",
+        "text": "The course by week or topic. Each item shows what it takes to finish."
       },
       {
-        "file": "shots/class-page-06.png",
-        "title": "Back",
-        "text": "Returns to where you were."
+        "file": "shots/course-learner-05.png",
+        "title": "Locked module",
+        "text": "Opens when you finish the module before it, or on its date."
+      },
+      {
+        "file": "shots/course-learner-06.png",
+        "title": "Videos and pages",
+        "text": "Videos play in the course. Watching alone never finishes a course."
+      },
+      {
+        "file": "shots/course-learner-07.png",
+        "title": "Assignments and quizzes",
+        "text": "Everything to turn in, with due dates and your status."
+      },
+      {
+        "file": "shots/course-learner-08.png",
+        "title": "Quizzes",
+        "text": "Start the quiz, answer, and submit. Essays wait for your instructor."
+      },
+      {
+        "file": "shots/course-learner-09.png",
+        "title": "Pathway credit",
+        "text": "Finish every requirement and the course goes to an administrator to approve for your hours. It counts once."
       }
     ]
   },
   {
-    "id": "complete-and-turn-in",
-    "title": "Mark complete and turn in work",
-    "summary": "Finish a session, turn in the assignment, and read your coach’s feedback.",
+    "id": "course-discussions",
+    "title": "Course discussions",
+    "summary": "Create, read, post, reply, moderate, and see unread posts.",
     "roles": [
-      "sup"
+      "sup",
+      "coach"
     ],
-    "video": "videos/complete-and-turn-in.mp4",
+    "video": "videos/course-discussions.mp4",
     "seconds": 23,
     "shots": [
       {
-        "file": "shots/complete-and-turn-in-01.png",
-        "title": "Mark complete",
-        "text": "After the session, click Mark complete."
+        "file": "shots/course-discussions-01.png",
+        "title": "Discussions",
+        "text": "A red number shows posts you have not read."
       },
       {
-        "file": "shots/complete-and-turn-in-02.png",
-        "title": "Date and reflection",
-        "text": "Choose the date and write a short reflection. A program administrator confirms it, then it counts."
+        "file": "shots/course-discussions-02.png",
+        "title": "Topics",
+        "text": "Each discussion in the course. Instructors click New discussion and choose whether it is graded."
       },
       {
-        "file": "shots/complete-and-turn-in-03.png",
-        "title": "Turn in your work",
-        "text": "Write about your work, add a link if you have one, and click Turn in."
+        "file": "shots/course-discussions-03.png",
+        "title": "Read and reply",
+        "text": "Click Reply under a post, or write your own and click Post. Instructors can remove any post; others remove their own."
       },
       {
-        "file": "shots/complete-and-turn-in-04.png",
-        "title": "Coach feedback",
-        "text": "Your coach’s feedback appears under your work."
+        "file": "shots/course-discussions-04.png",
+        "title": "Who can see it",
+        "text": "Only people taking the course, its instructors, and program administrators."
       }
     ]
   },
@@ -594,7 +610,7 @@
       {
         "file": "shots/coach-tools-03.png",
         "title": "Their classes",
-        "text": "Open a class to see their work and give feedback (coaches, when the superintendent shares notes and work)."
+        "text": "Open a class to see their progress, and their submitted work when they share notes and work with you. Grading belongs to the course instructor."
       },
       {
         "file": "shots/coach-tools-04.png",
@@ -604,92 +620,140 @@
     ]
   },
   {
-    "id": "teaching",
-    "title": "Teaching a class",
-    "summary": "Edit your class, add videos, slide shows, and discussions, and give feedback.",
+    "id": "course-building",
+    "title": "Building a course",
+    "summary": "Modules, pages, videos, documents, drafts, dates, requirements, and learner preview.",
     "roles": [
       "coach",
       "admin"
     ],
-    "video": "videos/teaching.mp4",
-    "seconds": 43,
+    "video": "videos/course-building.mp4",
+    "seconds": 48,
     "shots": [
       {
-        "file": "shots/teaching-01.png",
+        "file": "shots/course-building-01.png",
         "title": "My classes",
-        "text": "Instructors get this tab. Coaches and mentors who teach keep their usual tabs too."
+        "text": "Every course you are assigned to teach. Coaches and mentors who teach keep their usual tabs too."
       },
       {
-        "file": "shots/teaching-02.png",
-        "title": "Your classes",
-        "text": "Every class you teach. Admins see every class here."
-      },
-      {
-        "file": "shots/teaching-03.png",
+        "file": "shots/course-building-02.png",
         "title": "Instructor tools",
-        "text": "Edit the class, add content, and see who is taking it."
+        "text": "Learner preview and Publish. Review submissions is on Assignments."
       },
       {
-        "file": "shots/teaching-04.png",
-        "title": "Videos and slide shows",
-        "text": "Videos and slides play right on the class page for everyone taking it."
+        "file": "shots/course-building-03.png",
+        "title": "Announcements",
+        "text": "Post news to everyone taking the course, now or on a date."
       },
       {
-        "file": "shots/teaching-05.png",
-        "title": "Add content",
-        "text": "Choose Video, Slide show, Discussion board, Resource, or Assignment, then paste a link or write the prompt."
+        "file": "shots/course-building-04.png",
+        "title": "Add a module",
+        "text": "One per week, unit, or topic. Set prerequisites and an unlock date."
       },
       {
-        "file": "shots/teaching-06.png",
-        "title": "Edit class",
-        "text": "Change the date and time, join link, who leads it, and what it covers."
+        "file": "shots/course-building-05.png",
+        "title": "Add to a module",
+        "text": "Page, video, slide show, resource, assignment, quiz, or discussion."
       },
       {
-        "file": "shots/teaching-07.png",
-        "title": "Discussion board",
-        "text": "Read and reply to posts. Instructors can remove posts."
+        "file": "shots/course-building-06.png",
+        "title": "The editor",
+        "text": "Format text, add images, links, YouTube or Vimeo videos, and documents. Set dates and the completion requirement."
       },
       {
-        "file": "shots/teaching-08.png",
-        "title": "Roster and turned-in work",
-        "text": "Who is taking the class, their status, and their work, with a place for your feedback."
+        "file": "shots/course-building-07.png",
+        "title": "Reorder",
+        "text": "Move items and modules up and down."
+      },
+      {
+        "file": "shots/course-building-08.png",
+        "title": "Learner preview",
+        "text": "See exactly what learners see. Drafts and future items are hidden."
+      },
+      {
+        "file": "shots/course-building-09.png",
+        "title": "Publish",
+        "text": "Drafts are visible only to instructors and administrators until you publish."
       }
     ]
   },
   {
-    "id": "discussion",
-    "title": "Class discussions, videos, and slides",
-    "summary": "Watch, read the slides, and join the conversation on a class page.",
+    "id": "course-grading",
+    "title": "Reviewing and grading work",
+    "summary": "Review submissions, rubrics, quizzes, question banks, and revisions.",
     "roles": [
-      "sup"
+      "coach",
+      "admin"
     ],
-    "video": "videos/discussion.mp4",
-    "seconds": 28,
+    "video": "videos/course-grading.mp4",
+    "seconds": 38,
     "shots": [
       {
-        "file": "shots/discussion-01.png",
-        "title": "Watch the video",
-        "text": "Videos your instructor posts play right on the class page."
+        "file": "shots/course-grading-01.png",
+        "title": "Open your course",
+        "text": "Open a course you teach from My classes."
       },
       {
-        "file": "shots/discussion-02.png",
-        "title": "Slide show",
-        "text": "Slides show here too. Open in a new tab to see them full size."
+        "file": "shots/course-grading-02.png",
+        "title": "Review submissions",
+        "text": "Every assignment, quiz, and graded discussion in one place."
       },
       {
-        "file": "shots/discussion-03.png",
-        "title": "The discussion",
-        "text": "Read what others taking the class have posted. Replies appear under each post."
+        "file": "shots/course-grading-03.png",
+        "title": "Status for each person",
+        "text": "Not turned in, Submitted, Late, Missing, Needs revision, Reviewed, or Needs grading."
       },
       {
-        "file": "shots/discussion-04.png",
-        "title": "Reply",
-        "text": "Click Reply to answer someone."
+        "file": "shots/course-grading-04.png",
+        "title": "Grade and feedback",
+        "text": "Read their work, score the rubric or points, and write feedback. Request revision opens a new attempt."
       },
       {
-        "file": "shots/discussion-05.png",
-        "title": "Post",
-        "text": "Write your own post and click Post. You can remove your own posts later."
+        "file": "shots/course-grading-05.png",
+        "title": "Question bank",
+        "text": "Reusable multiple choice, true/false, short answer, and essay questions."
+      },
+      {
+        "file": "shots/course-grading-06.png",
+        "title": "Rubrics",
+        "text": "One row per line: what you look for, points, and ratings."
+      },
+      {
+        "file": "shots/course-grading-07.png",
+        "title": "Grading and notifications",
+        "text": "Default grading and which emails go to people taking the course."
+      }
+    ]
+  },
+  {
+    "id": "course-admin",
+    "title": "Administrators: courses and instructors",
+    "summary": "Create courses, assign instructors, and use templates.",
+    "roles": [
+      "admin"
+    ],
+    "video": "videos/course-admin.mp4",
+    "seconds": 23,
+    "shots": [
+      {
+        "file": "shots/course-admin-01.png",
+        "title": "Create a course",
+        "text": "Code, title, phase, standard, hours, and instructors. It starts as a draft."
+      },
+      {
+        "file": "shots/course-admin-02.png",
+        "title": "Course details",
+        "text": "Instructors are separate from coach and mentor roster assignments. You can start from a template."
+      },
+      {
+        "file": "shots/course-admin-03.png",
+        "title": "Every course",
+        "text": "Administrators can open, edit, and grade every course."
+      },
+      {
+        "file": "shots/course-admin-04.png",
+        "title": "Templates and copying",
+        "text": "Save as a template, apply one, or copy another course. Learner work is never copied."
       }
     ]
   },
