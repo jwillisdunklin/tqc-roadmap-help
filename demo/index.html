@@ -380,6 +380,8 @@
   /* ---------- MASA alignment & evaluation goal links ---------- */
   .badge .aligned { font-size: 11.5px; color: var(--brand); font-weight: 500; margin: -6px 0 10px; }
   .chip-dese { background: var(--dev-tint); color: var(--dev); border-color: transparent; font-family: var(--mono); font-size: 11.5px; }
+  .chip-eval { background: transparent; color: var(--dev); border: 1px dashed var(--dev); font-family: var(--mono); font-size: 11.5px; }
+  .eval-pis ul { margin: 4px 0 8px 18px; padding: 0; } .eval-pis li { margin: 2px 0; }
   .dese-level { font-size: 12.5px; color: var(--muted); margin: 4px 0 8px; }
   .dese-level b { color: var(--c); font-weight: 600; }
   .std-role { margin: 14px 22px 0; font-size: 14px; color: var(--muted); font-style: italic; }
@@ -726,6 +728,12 @@
   .ann-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; } .ann-head .item-tools { margin-left: auto; }
   .item-view h2 { margin: 0; } .crumbs { margin: 0 0 6px; color: var(--muted); } .crumbs .linkish { padding: 0; }
   .item-nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .bdg-path { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 18px; padding: 0; counter-reset: lvl; }
+  .bdg-path li { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 10px 40px; background: var(--surface); }
+  .bdg-path li::before { counter-increment: lvl; content: counter(lvl); position: absolute; left: 10px; top: 10px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .bdg-path li.on { border-color: var(--acc); } .bdg-path li.on::before { background: var(--acc); color: #fff; border-color: transparent; }
+  .bdg-path b { display: block; font-size: 14px; } .bdg-path small { color: var(--muted); font-size: 12.5px; }
+  @media (max-width: 700px) { .bdg-path { grid-template-columns: 1fr; } }
   .rubric, .rich table { width: 100%; min-width: 0; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
   .rubric th, .rubric td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
   .rubric label.check { margin-top: 2px; }
@@ -1042,21 +1050,27 @@ var UrlFetchApp = { fetch: function () { throw new Error("No network in the prev
 /**
  * Seed.js — the program framework written to the spreadsheet by initialSetup().
  *
- * Structure (from the MASA Pathway Planning Session, Oct 27, 2026; values marked "proposed" in that session are drafts
- * the team can change on the sheets after setup):
+ * Sample program rebuilt from the MASA Pathway Planning Session, November 11, 2026 (current drafts; the team changes
+ * them on the sheets). moveToCatalog1111_ (Pathway.js) applies the same catalog to an existing spreadsheet.
  *   Leadership pipeline   Pathway 1 Aspiring Superintendent → Pathway 2 New/Early Career Superintendent → Pathway 3
  *                         Experienced/Transformation. This app runs Pathway 2.
- *   Phases (Pathway 2)    Onboarding (point of hire, spring, through the first month), Year 1, Year 2, Year 3. Dates are
- *                         for the 2027 cohort (Year 1 starts Sept 1, 2027); other cohorts shift by whole years.
- *   Learning events       Each has hours and a status: Required (everyone), Elected (choose from a menu toward a minimum),
- *                         Choice (part of a strand or academy picked for Year 2 or 3), Recommended, or Open. An approved
- *                         Substitution can replace any event. SuperSprint = 0.5 hours, Leadership 90 = 1.5 hours.
- *   Badges                Session completion badges (by DESE standard), Competency Series badges (e.g. the Board
- *                         Relations series), a badge for each phase, and the MASA/TQC Pathway Certificate (professional
- *                         learning recognition; not Missouri educator certification and not issued or endorsed by DESE).
+ *   Phases (Pathway 2)    Onboarding (point of hire, April/May, through August 1), Year 1 (Sept 1 to July 30, anchored by
+ *                         the New Superintendent Finance Academy), Years 2 and 3 (choose your path: a strand or an
+ *                         academy each year). Dates are for the 2027 cohort; other cohorts shift by whole years.
+ *   Contracted learning   19 facilitated SuperSprints (0.5 h) and Leadership 90s (1.5 h) across the five Missouri
+ *                         Leadership Standards: the 9 onboarding sessions plus the two 5-session strands.
+ *   Hours (equivalencies) Onboarding Series 14.5, New Finance Academy 27.5, Superintendent Leadership Academy 33,
+ *                         Women in Leadership Academy 29, Communications Academy (not yet set). Mentoring 10 (Year 1);
+ *                         coaching 10 in Year 1 and 15 (15 to 20) in Years 2 and 3.
+ *   Badges (progression)  Course/Session Completion → Competency Series Badges (Board Relations Series, Instructional
+ *                         Leadership Strand, Management Strand) and a badge for each phase → the MASA/TQC Pathway
+ *                         Certificate (professional learning recognition; not Missouri educator certification and not
+ *                         issued or endorsed by DESE).
+ *   Statuses              Required (everyone), Elected (from a menu, toward the phase hours), Choice (part of the
+ *                         strand or academy picked for Year 2 or 3), Recommended, or Open. An approved Substitution can
+ *                         replace any event.
  *   Standards             The 5 Missouri DESE Superintendent Standards and 32 Leadership Competencies, cross-walked to
  *                         AASA, for the standards report a superintendent can use with their board.
- * The 19 contracted live sessions are the 9 required onboarding sessions plus the two 5-session strands.
  */
 var SEED = {
   // Hours by format. Other formats (academies, events, conferences, coaching) carry their own hours.
@@ -1071,87 +1085,96 @@ var SEED = {
   // Pathway 2 phases. hours = minimum hours for the phase badge (blank = required hours plus the chosen strand/academy).
   // choice: 'one' = pick one strand or academy; 'one-new' = pick one not chosen in an earlier phase.
   phases: [
-    { level: 1, name: 'Onboarding', starts: '2027-03-01', ends: '2027-08-31', hours: 10.5, electedMin: 0, choice: '',
-      window: 'Point of hire (spring) through the first month on the job', badge: 'Onboarding Badge',
-      description: 'Board relations, vision and strategic planning, compliance, and leading your team, plus an optional DISC/EQ assessment as the baseline for a growth plan.' },
+    { level: 1, name: 'Onboarding', starts: '2027-03-01', ends: '2027-08-31', hours: 14.5, electedMin: 0, choice: '',
+      window: 'Point of hire (April/May) through August 1', badge: 'Onboarding Series Badge',
+      description: 'The Onboarding Series for newly hired superintendents (14.5 hours): board relations in April and May, then vision, CSIP, and DESE compliance at MASA in June, with the DISC/EQ assessment and debrief as the baseline for a growth plan.' },
     { level: 2, name: 'Year 1', starts: '2027-09-01', ends: '2028-07-30', hours: 37.5, electedMin: 0, choice: '',
       window: 'September 1 to July 30', badge: 'Year 1 Badge',
-      description: 'The New Finance Academy (with setting the tax rate built in), an assigned peer mentor, and 10 hours with a retired-superintendent coach.' },
+      description: 'Anchored by the New Superintendent Finance Academy (27.5 hours, setting the tax rate built in), with an active peer superintendent mentor (10 hours) and a retired-superintendent coach (10 hours). Weekly Legislative Updates and Tight Times Tuesdays are encouraged.' },
     { level: 3, name: 'Year 2', starts: '2028-09-01', ends: '2029-07-30', hours: '', electedMin: 0, choice: 'one',
       window: 'September 1 to July 30', badge: 'Year 2 Badge',
-      description: 'Choose a strand (Instructional, Standard 2; or Management and Operations, Standard 3) or an academy. Coaching continues.' },
+      description: 'Choose your path: the Instructional Leadership Strand (Standard 2), the Management Strand (Standard 3), or apply for a leadership academy. Strand sessions are hold-ins from the earlier draft until the core table is set. Coaching continues at 15 hours.' },
     { level: 4, name: 'Year 3', starts: '2029-09-01', ends: '2030-07-30', hours: '', electedMin: 0, choice: 'one-new',
       window: 'September 1 to July 30', badge: 'Year 3 Badge',
-      description: 'Choose the strand not taken in Year 2 or an academy not taken before, so every graduate covers Standards 2 and 3. Coaching continues.' }
+      description: 'Choose the strand or academy you did not take in Year 2. Coaching continues at 15 hours. Finishing Year 3 earns the MASA/TQC Pathway Certificate.' }
   ],
 
-  // Year 2/3 choices. A strand's hours come from its sessions; an academy is one event.
+  // Year 2/3 choices ("Choose your path"). A strand's hours come from its sessions; an academy is one event.
   options: [
-    { id: 'INSTR', name: 'Instructional Strand', kind: 'Strand', standard: 2, phases: '3,4', forPay: false, provider: 'The Quality Coach',
-      description: 'Academic Council, Curriculum Development Cycles, Instructional Alignment, Leading Your Team, and APR/DESE Accountability.' },
-    { id: 'MGTOPS', name: 'Management and Operations Strand', kind: 'Strand', standard: 3, phases: '3,4', forPay: false, provider: 'The Quality Coach',
-      description: 'Onboarding, Orientation and Retaining Staff; Maintaining Facilities; Short- and Long-Range Planning; Facilitating Focus Groups; and Referendums.' },
-    { id: 'SLU', name: 'Superintendent Academy (SLU)', kind: 'Academy', standard: '', phases: '3,4', forPay: true, provider: 'Saint Louis University', description: 'A cohort academy, 33 hours.' },
-    { id: 'WIL', name: 'WIL Academy/Cohort', kind: 'Academy', standard: '', phases: '3,4', forPay: true, provider: 'WIL', description: 'A cohort academy, 29 hours.' },
-    { id: 'COMM', name: 'Communications Academy', kind: 'Academy', standard: 4, phases: '3,4', forPay: true, provider: 'Donovan Group', description: 'Hours not yet set.' },
-    { id: 'WILREG', name: 'WIL Regional Cohorts', kind: 'Cohort', standard: '', phases: '3,4', forPay: false, provider: 'WIL', description: 'Hours not yet set.' },
-    { id: 'COLLAB', name: 'Collaborative Cohort (PLC)', kind: 'Cohort', standard: 5, phases: '4', forPay: false, provider: 'MASA', description: 'Hours not yet set. A possible bridge into Pathway 3.' }
+    { id: 'INSTR', name: 'Instructional Leadership Strand', kind: 'Strand', standard: 2, phases: '3,4', forPay: false, provider: 'The Quality Coach',
+      description: 'Hold-in sessions until the Year 2 and 3 core table is set: Academic Council, Instructional Alignment, Curriculum Development Cycles, Leading Your Team, and APR/DESE Accountability. Planned topics: student learning and achievement, professional learning, curriculum and assessment, equity and access, and high-performing learning environments.' },
+    { id: 'MGTOPS', name: 'Management Strand', kind: 'Strand', standard: 3, phases: '3,4', forPay: false, provider: 'The Quality Coach',
+      description: 'Hold-in sessions until the Year 2 and 3 core table is set: Onboarding, Orientation, and Retaining Staff; Maintaining Facilities; Short- and Long-Range Planning; Facilitating Focus Groups; and Referendums. Planned topics: operations and strategic implementation, HR and staffing, finance, facilities and safety, and policy and compliance.' },
+    { id: 'SLU', name: 'Superintendent Leadership Academy (Saint Louis University)', kind: 'Academy', standard: 5, phases: '3,4', forPay: true, provider: 'Saint Louis University',
+      description: 'Apply in Year 2 or 3. A cohort academy in partnership with Saint Louis University, 33 hours. Deepen leadership, expand perspective, make a lasting impact.' },
+    { id: 'WIL', name: 'Women in Leadership Academy', kind: 'Academy', standard: 5, phases: '3,4', forPay: true, provider: 'WIL',
+      description: 'Apply in Year 2 or 3. A cohort academy for female district-level leaders across Missouri, 29 hours. Connect, grow, lead together.' },
+    { id: 'COMM', name: 'Communications Academy', kind: 'Academy', standard: 4, phases: '3,4', forPay: true, provider: 'Donovan Group',
+      description: 'For Missouri superintendents: strengthen messages, build trust, advance your vision. Hours not yet set.' }
   ],
+  // Options in earlier versions that this program no longer offers (moveToCatalog1111_ turns them off; nothing is deleted).
+  retiredOptions: ['WILREG', 'COLLAB'],
+  retiredCourses: ['ACA 204', 'ACA 301'],
 
   // Competency Series badges: earned when every event in the series is complete.
   series: [
-    { id: 'BOARD', name: 'Board Relations Series', standard: 4, competencies: 'LC 24, 25', badge: 'Board Relations Series Badge',
-      description: 'The five onboarding sessions on working with the school board.' },
-    { id: 'INSTR', name: 'Instructional Leadership Strand', standard: 2, competencies: 'LC 4-9', badge: 'Instructional Strand Badge', description: 'All five Instructional Strand sessions.' },
-    { id: 'MGTOPS', name: 'Management and Operations Strand', standard: 3, competencies: 'LC 10-17', badge: 'Management and Operations Badge', description: 'All five Management and Operations Strand sessions.' }
+    { id: 'BOARD', name: 'Board Relations Series', standard: 4, competencies: 'LC 22, 24, 25', badge: 'Board Relations Series Badge',
+      description: 'School Board Relations 101, your first BOE meeting, a board workshop, difficult board members and conflict, and onboarding new board members.' },
+    { id: 'INSTR', name: 'Instructional Leadership Strand', standard: 2, competencies: 'LC 4-9', badge: 'Instructional Leadership Strand Badge', description: 'All five Instructional Leadership Strand sessions.' },
+    { id: 'MGTOPS', name: 'Management Strand', standard: 3, competencies: 'LC 10-17', badge: 'Management Strand Badge', description: 'All five Management Strand sessions.' }
   ],
 
   // Learning events. phase = 1-4 (Onboarding, Year 1-3); option = a Year 2/3 choice (phase shown as 3). hours '' = not yet set.
   // kind: session (an Academy course with lessons) | external (an event, academy, conference, or assessment, credited by a coach)
   //       | support (coaching or mentoring: done when logged hours reach the hours, or any hours if blank).
   courses: [
+    // Onboarding Series (14.5 hours): point of hire, April/May, then June at MASA.
     { code: 'ASM 101', phase: 1, standard: 5, competencies: 'LC 28', title: 'DISC/EQ Assessment', format: 'Assessment', hours: 1.25, status: 'Elected', window: 'At hire', kind: 'external', modality: 'Online',
       indicator: 'Takes the TTI, DISC, and EQ assessments as the baseline for a growth plan', evidence: 'Completed assessment report' },
-    { code: 'ASM 102', phase: 1, standard: 5, competencies: 'LC 28, 29', title: 'Understanding Your Assessment Results: Leverage Strengths, Adapt, & Grow Your EQ', format: 'Group Debrief', hours: 2, status: 'Elected', window: 'At hire', kind: 'external', modality: 'Group coaching',
+    { code: 'ASM 102', phase: 1, standard: 5, competencies: 'LC 28, 29', title: 'Understanding Your Assessment Results: Leverage Strengths, Adapt, & Grow Your EQ', format: 'Debrief', hours: 2, status: 'Elected', window: 'At hire', kind: 'external', modality: 'Group coaching',
       indicator: 'Uses assessment results to leverage strengths and grow emotional intelligence', evidence: 'Growth-plan notes from the group debrief' },
-    { code: 'CNF 101', phase: 1, standard: 4, competencies: 'LC 25', title: 'Onboarding Strategy for Your Newly Elected Board Members (Spring Conference)', format: 'Conference', hours: 0.75, status: 'Open', window: 'March', series: 'BOARD', kind: 'external', modality: 'In person',
-      indicator: 'Plans how to onboard newly elected board members', evidence: 'Board member onboarding plan' },
-    { code: 'BRD 101', phase: 1, standard: 4, competencies: 'LC 24, 25', title: 'School Board Relations', format: 'SuperSprint', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
+    { code: 'BRD 101', phase: 1, standard: 4, competencies: 'LC 24, 25', title: 'School Board Relations 101', format: 'SuperSprint', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
       indicator: 'Builds a positive, professional relationship with the school board', evidence: 'Plan for formal and informal board communication' },
-    { code: 'BRD 102', phase: 1, standard: 4, competencies: 'LC 25', title: 'Ensuring a Successful First BOE Meeting', format: 'SuperSprint', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
+    { code: 'BRD 102', phase: 1, standard: 4, competencies: 'LC 24, 25', title: 'Ensuring a Successful First BOE Meeting', format: 'SuperSprint', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
       indicator: 'Prepares and leads a successful first board of education meeting', evidence: 'First-meeting agenda and preparation checklist' },
-    { code: 'BRD 103', phase: 1, standard: 4, competencies: 'LC 22, 25', title: 'Navigating Difficult Conversations and Conflict with the School Board', format: 'Leadership 90', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
-      indicator: 'Navigates difficult conversations and conflict with board members professionally', evidence: 'A conflict-navigation plan for one real scenario' },
-    { code: 'BRD 104', phase: 1, standard: 4, competencies: 'LC 25', title: 'Planning a Board Workshop', format: 'Leadership 90', status: 'Required', window: 'May/June', series: 'BOARD', kind: 'session', modality: 'Virtual',
+    { code: 'BRD 104', phase: 1, standard: 4, competencies: 'LC 24, 25', title: 'Planning a Board Workshop', format: 'Leadership 90', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
       indicator: 'Plans a board workshop that builds a high-functioning governance team', evidence: 'Board workshop plan and norms' },
-    { code: 'REL 101', phase: 1, standard: 4, competencies: 'LC 20, 21, 24, 25', title: 'Active Listening Superintendent: Listening Tours', format: 'SuperSprint', status: 'Required', window: 'May/June', kind: 'session', modality: 'Virtual',
+    { code: 'BRD 103', phase: 1, standard: 4, competencies: 'LC 22, 25', title: 'Navigating Difficult BOE Members/Conflict', format: 'Leadership 90', status: 'Required', window: 'April/May', series: 'BOARD', kind: 'session', modality: 'Virtual',
+      indicator: 'Navigates difficult board members and conflict professionally', evidence: 'A conflict-navigation plan for one real scenario' },
+    { code: 'REL 101', phase: 1, standard: 4, competencies: 'LC 20, 21, 24, 25', title: 'Active Listening Superintendent: Listening Tours', format: 'SuperSprint', status: 'Required', window: 'April/May', kind: 'session', modality: 'Virtual',
       indicator: 'Plans listening tours with staff, students, families, and the community', evidence: 'Listening-tour plan and summary of themes' },
-    { code: 'MGT 101', phase: 1, standard: 3, competencies: 'LC 13, 15', title: 'DESE Submissions, Deadlines, and Portal: Oh My!', format: 'Leadership 90', status: 'Required', window: 'June', kind: 'session', modality: 'In person at MASA',
+    { code: 'CNF 101', phase: 1, standard: 4, competencies: 'LC 24, 25', title: 'Onboarding New Board Members (Spring Conference)', format: 'Conference', hours: 0.75, status: 'Elected', window: 'Spring', series: 'BOARD', kind: 'external', modality: 'In person',
+      indicator: 'Plans how to onboard newly elected board members', evidence: 'Board member onboarding plan' },
+    { code: 'MGT 101', phase: 1, standard: 3, competencies: 'LC 13, 15', title: 'DESE Submissions, Deadlines, and Portal: Oh My!', format: 'Leadership 90', status: 'Required', window: 'June at MASA', kind: 'session', modality: 'In person at MASA',
       indicator: 'Meets DESE submission requirements and deadlines through the portal', evidence: 'A first-year DESE submission calendar' },
-    { code: 'VIS 101', phase: 1, standard: 1, competencies: 'LC 1, 2', title: 'Communication for Success: Driving the Vision', format: 'Leadership 90', status: 'Required', window: 'June', kind: 'session', modality: 'In person at MASA',
-      indicator: 'Develops and communicates a clear, shared vision for the district', evidence: 'A communication plan for the district vision' },
-    { code: 'VIS 102', phase: 1, standard: 1, competencies: 'LC 1, 3', title: 'CSIP Development and Monitoring/Continuous Improvement (Strategic Planning)', format: 'Leadership 90', status: 'Required', window: 'June', kind: 'session', modality: 'In person at MASA',
+    { code: 'VIS 101', phase: 1, standard: 1, competencies: 'LC 1, 2', title: 'Quality Communication From the Start: Driving the Vision, Setting the Tone', format: 'Leadership 90', status: 'Required', window: 'June at MASA', kind: 'session', modality: 'In person at MASA',
+      indicator: 'Develops and communicates a clear, shared vision and sets the tone from day one', evidence: 'A communication plan for the district vision' },
+    { code: 'VIS 102', phase: 1, standard: 1, competencies: 'LC 1, 3', title: 'CSIP Development and Monitoring/CI (Strategic Planning)', format: 'Leadership 90', status: 'Required', window: 'June at MASA', kind: 'session', modality: 'In person at MASA',
       indicator: 'Develops and monitors the CSIP using data for continuous improvement', evidence: 'CSIP monitoring plan with leading and lagging indicators' },
-    { code: 'LDR 101', phase: 1, standard: 2, competencies: 'LC 9, 21', title: 'Leading Your Team (Cabinet and Principals)', format: 'Leadership 90', status: 'Required', window: 'June', kind: 'session', modality: 'In person at MASA',
-      indicator: 'Builds a strong leadership team with cabinet members and principals', evidence: 'Leadership team norms and meeting structure' },
+    { code: 'LDR 101', phase: 1, standard: 5, competencies: 'LC 21, 30, 32', title: 'Leading Your Team (Cabinet and Principals)', format: 'Leadership 90', status: 'Elected', window: 'June at MASA (placement open)', kind: 'session', modality: 'In person at MASA',
+      indicator: 'Leads a new cabinet and principal team through change while keeping the focus on high priorities', evidence: 'Leadership team norms and meeting structure' },
 
-    { code: 'EVT 101', phase: 2, standard: 5, competencies: 'LC 27', title: 'Welcome Event: Reception and Networking', format: 'Event', hours: '', status: 'Required', window: 'July', kind: 'external', modality: 'In person',
+    // Year 1: the New Superintendent Finance Academy, mentor, and coach (37.5 hours plus mentoring).
+    { code: 'EVT 101', phase: 2, standard: 5, competencies: 'LC 27', title: 'Welcome Event: Reception and Networking', format: 'Event', hours: '', status: 'Required', window: 'Fall', kind: 'external', modality: 'In person',
       indicator: 'Builds a professional network with colleagues and MASA leadership', evidence: 'Attendance' },
-    { code: 'FIN 101', phase: 2, standard: 3, competencies: 'LC 16, 17', title: 'New Finance Academy (setting the tax rate built in)', format: 'Academy', hours: 27.5, status: 'Required', window: 'August to June', kind: 'external', modality: 'In person at MASA', provider: 'MASA',
-      indicator: 'Manages fiscal resources, including setting the tax rate, to support district goals', evidence: 'Academy completion' },
-    { code: 'MEN 101', phase: 2, standard: 5, competencies: 'LC 27, 29', title: 'Mentoring: Active Peer Superintendent', format: 'Mentoring', hours: '', status: 'Required', window: 'All year', kind: 'support', category: 'Mentoring', modality: 'One-on-one',
-      indicator: 'Meets regularly with an assigned peer mentor', evidence: 'Logged mentoring hours' },
+    { code: 'FIN 101', phase: 2, standard: 3, competencies: 'LC 16, 17', title: 'New Superintendent Finance Academy (setting the tax rate built in)', format: 'Academy', hours: 27.5, status: 'Required', window: 'August to June', kind: 'external', modality: 'In person at MASA', provider: 'MASA',
+      indicator: 'Manages fiscal resources, including setting the tax rate, to support district goals', evidence: 'Academy completion (attendance rate)' },
+    { code: 'MEN 101', phase: 2, standard: 5, competencies: 'LC 27, 29', title: 'Mentoring: Active Peer Superintendent', format: 'Mentoring', hours: 10, status: 'Required', window: 'All year', kind: 'support', category: 'Mentoring', modality: 'One-on-one',
+      indicator: 'Meets regularly with an assigned peer superintendent mentor (10 hours)', evidence: 'Logged mentoring hours' },
     { code: 'COA 101', phase: 2, standard: 5, competencies: 'LC 28, 29', title: 'Coaching: Retired Superintendent (Year 1)', format: 'Coaching', hours: 10, status: 'Required', window: 'All year', kind: 'support', category: 'Coaching', modality: 'One-on-one',
-      indicator: 'Works with an assigned coach on the growth plan', evidence: 'Logged coaching hours' },
+      indicator: 'Works with an assigned coach on the growth plan (10 hours; 15 proposed)', evidence: 'Logged coaching hours' },
     { code: 'LEG 101', phase: 2, standard: 4, competencies: 'LC 19', title: 'Legislative Updates', format: 'Weekly, virtual', hours: '', status: 'Recommended', window: 'Weekly during session', kind: 'support', category: 'Legislative Updates', modality: 'Virtual',
       indicator: 'Follows legislation that affects the district', evidence: 'Logged hours' },
-    { code: 'TTT 101', phase: 2, standard: 3, competencies: 'LC 16', title: 'Tight Times Tuesdays: Finance and Advocacy', format: 'Virtual', hours: '', status: 'Recommended', window: 'Weekly', kind: 'support', category: 'Tight Times', modality: 'Virtual',
+    { code: 'TTT 101', phase: 2, standard: 3, competencies: 'LC 16', title: 'Tight Times Tuesdays: Finance/Advocacy', format: 'Weekly, virtual', hours: '', status: 'Recommended', window: 'Weekly', kind: 'support', category: 'Tight Times', modality: 'Virtual',
       indicator: 'Builds finance and advocacy knowledge with peers', evidence: 'Logged hours' },
-    { code: 'REG 101', phase: 2, standard: 5, competencies: 'LC 27', title: 'Regional Meetings', format: 'Meeting', hours: '', status: 'Elected', window: 'All year', kind: 'support', category: 'Regional Meetings', modality: 'In person',
+    { code: 'REG 101', phase: 2, standard: 5, competencies: 'LC 27', title: 'Regional Meetings', format: 'Meeting', hours: '', status: 'Elected', window: 'Monthly', kind: 'support', category: 'Regional Meetings', modality: 'In person',
       indicator: 'Engages with regional colleagues (proposed Elected hours)', evidence: 'Logged hours' },
-    { code: 'CNF 102', phase: 2, standard: 5, competencies: 'LC 26, 27', title: 'State Conference', format: 'Conference', hours: '', status: 'Elected', window: 'Fall', kind: 'support', category: 'Conferences', modality: 'In person',
+    { code: 'CNF 102', phase: 2, standard: 5, competencies: 'LC 26, 27', title: 'State Conference', format: 'Conference', hours: '', status: 'Elected', window: 'Annual (fall)', kind: 'support', category: 'Conferences', modality: 'In person',
       indicator: 'Collects best practices at the state conference (proposed Elected hours)', evidence: 'Logged hours' },
 
+    // Years 2 and 3: choose your path. Instructional Leadership Strand (Standard 2).
+    // Hold-in courses: the earlier Year 2-3 sessions and alignment, kept until the plan's Year 2-3 core table is set.
+    // Instructional Leadership Strand (Standard 2).
     { code: 'INS 201', option: 'INSTR', standard: 2, competencies: 'LC 4, 8', title: 'Academic Council', format: 'SuperSprint', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
       indicator: 'Leads an academic council that guides curriculum and instruction', evidence: 'Academic council charter and agenda' },
     { code: 'INS 202', option: 'INSTR', standard: 2, competencies: 'LC 4, 5, 6, 9', title: 'Instructional Alignment', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual',
@@ -1162,6 +1185,7 @@ var SEED = {
       indicator: 'Builds principals’ capacity as instructional leaders', evidence: 'Principal development plan' },
     { code: 'INS 205', option: 'INSTR', standard: 2, competencies: 'LC 3, 8', title: 'APR/DESE Accountability', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'INSTR', modality: 'Virtual or in person at MASA',
       indicator: 'Uses the APR and DESE accountability data to set priorities', evidence: 'APR review and improvement targets' },
+    // Management Strand (Standard 3).
     { code: 'MGT 201', option: 'MGTOPS', standard: 3, competencies: 'LC 12, 14', title: 'Onboarding, Orientation, and Retaining Staff', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'MGTOPS', modality: 'Virtual',
       indicator: 'Builds systems to onboard, support, and retain staff', evidence: 'Staff onboarding and retention plan' },
     { code: 'MGT 202', option: 'MGTOPS', standard: 3, competencies: 'LC 10, 11', title: 'Maintaining Facilities', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'MGTOPS', modality: 'Virtual',
@@ -1172,39 +1196,36 @@ var SEED = {
       indicator: 'Facilitates focus groups to gather stakeholder input', evidence: 'Focus group protocol and summary' },
     { code: 'MGT 205', option: 'MGTOPS', standard: 3, competencies: 'LC 16, 25', title: 'Referendums', format: 'Leadership 90', status: 'Choice', kind: 'session', series: 'MGTOPS', modality: 'Virtual',
       indicator: 'Plans and communicates a bond or levy referendum', evidence: 'Referendum planning timeline' },
-    { code: 'ACA 201', option: 'SLU', standard: 5, competencies: 'LC 26, 27, 31', title: 'Superintendent Academy (SLU)', format: 'Academy', hours: 33, status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'Saint Louis University',
-      indicator: 'Completes a cohort academy with Saint Louis University', evidence: 'Academy completion' },
-    { code: 'ACA 202', option: 'WIL', standard: 5, competencies: 'LC 26, 27, 32', title: 'WIL Academy/Cohort', format: 'Academy', hours: 29, status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'WIL',
-      indicator: 'Completes the WIL academy and cohort', evidence: 'Academy completion' },
-    { code: 'ACA 203', option: 'COMM', standard: 4, competencies: 'LC 24, 25', title: 'Communications Academy (Donovan Group)', format: 'Academy', hours: '', status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'Donovan Group',
+    // Leadership academies (apply; for pay).
+    { code: 'ACA 201', option: 'SLU', standard: 5, competencies: 'LC 26, 27, 31', title: 'Superintendent Leadership Academy (Saint Louis University)', format: 'Academy', hours: 33, status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'Saint Louis University',
+      indicator: 'Completes a cohort leadership academy with Saint Louis University', evidence: 'Academy completion' },
+    { code: 'ACA 202', option: 'WIL', standard: 5, competencies: 'LC 26, 27, 32', title: 'Women in Leadership Academy', format: 'Academy', hours: 29, status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'WIL',
+      indicator: 'Completes the Women in Leadership cohort academy', evidence: 'Academy completion' },
+    { code: 'ACA 203', option: 'COMM', standard: 4, competencies: 'LC 24, 25', title: 'Communications Academy', format: 'Academy', hours: '', status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'Donovan Group',
       indicator: 'Completes the Communications Academy', evidence: 'Academy completion' },
-    { code: 'ACA 204', option: 'WILREG', standard: 5, competencies: 'LC 27', title: 'WIL Regional Cohorts', format: 'Cohort', hours: '', status: 'Choice', kind: 'external', modality: 'Regional', provider: 'WIL',
-      indicator: 'Takes part in a WIL regional cohort', evidence: 'Cohort participation' },
-    { code: 'ACA 301', option: 'COLLAB', standard: 5, competencies: 'LC 26, 27', title: 'Collaborative Cohort (PLC)', format: 'Cohort', hours: '', status: 'Choice', kind: 'external', modality: 'Cohort', provider: 'MASA',
-      indicator: 'Leads and learns in a collaborative cohort of peers', evidence: 'Cohort participation' },
     { code: 'COA 201', phase: 3, standard: 5, competencies: 'LC 28, 29', title: 'Coaching (Year 2)', format: 'Coaching', hours: 15, status: 'Required', window: 'All year', kind: 'support', category: 'Coaching', modality: 'One-on-one',
       indicator: 'Continues work with a coach (15 to 20 hours)', evidence: 'Logged coaching hours' },
     { code: 'COA 301', phase: 4, standard: 5, competencies: 'LC 28, 29', title: 'Coaching (Year 3)', format: 'Coaching', hours: 15, status: 'Required', window: 'All year', kind: 'support', category: 'Coaching', modality: 'One-on-one',
       indicator: 'Continues work with a coach (15 to 20 hours)', evidence: 'Logged coaching hours' },
     { code: 'CAP 301', phase: 4, standard: 5, competencies: 'LC 31, 32', title: 'Capstone (proposed): applied project, peer presentation, or plan review with the coach', format: 'Capstone', hours: '', status: 'Open', window: 'Spring', kind: 'external', modality: 'With your coach',
       indicator: 'Shares an applied project or plan review that shows growth across the pathway', evidence: 'Capstone presentation or plan review' },
-    // Open offerings superintendents can enroll in (sample: the team edits or replaces these on the Courses tab).
-    { code: 'OPN 101', phase: 2, standard: 3, competencies: 'LC 13, 16', title: 'Budget Season Workshop', format: 'Leadership 90', status: 'Open', window: 'Spring', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
-      indicator: 'Builds a budget calendar and communicates budget choices', evidence: 'Budget calendar and talking points' },
+    // Elected additions and open offerings superintendents can enroll in (samples: law, book study, safety, conferences).
+    { code: 'OPN 101', phase: 2, standard: 3, competencies: 'LC 13, 15', title: 'School Law Essentials for New Superintendents', format: 'Leadership 90', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
+      indicator: 'Recognizes the legal issues a first-year superintendent meets most often', evidence: 'A first-year legal issues checklist' },
     { code: 'OPN 102', phase: 2, standard: 4, competencies: 'LC 19', title: 'Legislative Session Preview', format: 'SuperSprint', status: 'Open', window: 'January', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
       indicator: 'Anticipates how pending legislation affects the district', evidence: 'Notes for a board legislative update' },
-    { code: 'OPN 201', phase: 3, standard: 4, competencies: 'LC 20, 22', title: 'Crisis Communications Workshop', format: 'Leadership 90', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
-      indicator: 'Plans how the district communicates during a crisis', evidence: 'Crisis communication plan' },
+    { code: 'OPN 201', phase: 3, standard: 5, competencies: 'LC 26, 28, 31', title: 'Leadership Book Study (cohort)', format: 'Book study', hours: 6, status: 'Open', window: 'Winter', kind: 'external', modality: 'Virtual cohort', provider: 'The Quality Coach (sample offering)',
+      indicator: 'Reads and applies current leadership research with peers', evidence: 'Book study reflections' },
     { code: 'OPN 202', instructors: 'demo.coach@example.org', phase: 3, standard: 4, competencies: 'LC 24, 25', title: 'Planning a Board Retreat', format: 'SuperSprint', status: 'Open', window: 'Winter', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
       indicator: 'Designs a board retreat that builds trust and sets goals', evidence: 'Board retreat agenda' },
-    { code: 'OPN 203', phase: 3, standard: 5, competencies: 'LC 27', title: 'Peer Learning Visit', format: 'Site visit', hours: 3, status: 'Open', window: 'Spring', kind: 'external', modality: 'In person', provider: 'The Quality Coach (sample offering)',
-      indicator: 'Visits a peer district to study a practice worth adapting', evidence: 'Visit reflection' },
-    { code: 'OPN 204', phase: 3, standard: 5, competencies: 'LC 26, 30', title: 'Spring Leadership Conference', format: 'Conference', hours: 6, status: 'Elected', window: 'April', kind: 'external', modality: 'In person', provider: 'The Quality Coach (sample offering)',
+    { code: 'OPN 203', phase: 3, standard: 3, competencies: 'LC 10, 13', title: 'School Safety and Crisis Planning', format: 'Leadership 90', status: 'Open', window: 'Spring', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
+      indicator: 'Plans for school safety and crisis response with staff and partners', evidence: 'Crisis response plan review' },
+    { code: 'OPN 204', phase: 3, standard: 5, competencies: 'LC 26, 27, 30', title: 'MASA Spring Conference', format: 'Conference', hours: 6, status: 'Elected', window: 'Spring', kind: 'external', modality: 'In person', provider: 'MASA (sample offering)',
       indicator: 'Collects practices from colleagues across the state', evidence: 'Conference takeaways' },
     { code: 'OPN 301', phase: 4, standard: 1, competencies: 'LC 1, 2', title: 'Strategic Plan Refresh', format: 'Leadership 90', status: 'Open', window: 'Fall', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
       indicator: 'Refreshes the strategic plan with the board and community', evidence: 'Strategic plan update' },
-    { code: 'OPN 302', phase: 4, standard: 5, competencies: 'LC 29', title: 'Mentoring the Next New Superintendent', format: 'SuperSprint', status: 'Open', window: 'Spring', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
-      indicator: 'Prepares to mentor a newly hired superintendent', evidence: 'Mentoring plan' },
+    { code: 'OPN 302', phase: 4, standard: 5, competencies: 'LC 27, 29', title: 'Mentoring the Next New Superintendent', format: 'SuperSprint', status: 'Open', window: 'Spring', kind: 'session', modality: 'Virtual', provider: 'The Quality Coach (sample offering)',
+      indicator: 'Prepares to mentor a newly hired superintendent (a bridge toward Pathway 3)', evidence: 'Mentoring plan' },
   ],
 
   standards: [
@@ -1284,8 +1305,39 @@ var SEED = {
     31: 'Develops and acts on well-reasoned beliefs based on new knowledge and understanding',
     32: 'Constructively manages and adapts to change'
   },
+  // The 23 performance indicators in the MSBA/DESE/MASA Superintendent Evaluation Manual (2025), and which DESE Leadership
+  // Competency each one draws on (the manual's Appendix E, Table A). A course supports the indicators its competencies map to.
+  // LC 14, 18, 23, 26, 29, and 31 are not part of the evaluation. Alignment is TQC's; the manual does not rate courses.
+  evalManual: 'MSBA/DESE/MASA Superintendent Evaluation Manual (2025)',
+  evalIndicators: {
+    '1a': 'Develops a clear vision, mission, and measurable goals',
+    '1b': 'Communicates the vision, mission, and goals to all stakeholders',
+    '1c': "Collects, analyzes and interprets data to evaluate effectiveness of the district's vision, mission, and goals",
+    '2a': 'Engages and supports staff in aligning district curriculum to state standards and within/across subject areas, grade levels, and courses',
+    '2b': 'Supports staff use of a variety of research-based instructional practices',
+    '2c': 'Ensures the use of formative, benchmark, and summative assessments',
+    '2d': 'Ensures multiple sources of student, school, and district-level data are used to improve student learning',
+    '2e': 'Promotes a culture of continuous professional learning',
+    '3a': 'Implements policies, procedures, and guidelines for the effective operation of the district',
+    '3b': 'Ensures the district is in compliance with state and federal requirements for reporting and recordkeeping',
+    '3c': 'Ensures the effective management of fiscal and non-fiscal resources to support district goals and priorities',
+    '3d': 'Recruits, hires, and retains effective personnel',
+    '3e': 'Implements a state-approved educator evaluation system',
+    '3f': 'Oversees the planning and management of district facilities and grounds',
+    '4a': 'Provides for the well-being of each student in the district',
+    '4b': 'Builds positive and ethical relationships with students in the district',
+    '4c': 'Builds positive and ethical relationships with staff',
+    '4d': 'Builds a positive and ethical relationship with the school board',
+    '4e': 'Ensures a culture of support and respect among students, staff, families, and the community',
+    '5a': 'Connects and engages with professional organizations and associations',
+    '5b': 'Demonstrates a commitment to personal on-going growth and development',
+    '5c': 'Leads district improvement using innovative and effective change processes',
+    '5d': 'Understands, responds to, and influences the political, social, economic, legal, and cultural context'
+  },
+  evalCrosswalk: { 1: '1a', 2: '1b', 3: '1c', 30: '1c', 4: '2a', 5: '2b', 7: '2c', 8: '2d', 9: '2e', 11: '3a', 13: '3a', 15: '3b',
+    16: '3c', 17: '3c', 12: '3d', 6: '3e', 10: '3f', 19: '4a', 20: '4b', 21: '4c', 24: '4d', 22: '4e', 27: '5a', 28: '5b', 32: '5c', 25: '5d' },
   alignmentNotes: {
-    MSBA: 'Enter the matching performance indicator(s) from the MSBA/DESE/MASA Superintendent Evaluation Manual.',
+    MSBA: 'From the MSBA/DESE/MASA Superintendent Evaluation Manual (2025). Each course page lists the performance indicators it supports.',
     MARE: 'Enter the matching area or indicator from the MARE superintendent evaluation tool.'
   },
 
@@ -1332,12 +1384,12 @@ var SEED = {
   ],
 
   // Demo logins (DEMO_LOGINS on Settings): each person gets their own copy of this sample superintendent. Year 2 of the
-  // 2025 cohort: Onboarding and Year 1 badges earned; in Year 2 enrolled in the Instructional Strand and Year 2 Coaching,
+  // 2025 cohort: Onboarding Series and Year 1 badges earned; in Year 2 enrolled in the Instructional Leadership Strand and Year 2 Coaching,
   // with two strand sessions finished and three still to come, and coaching hours under way.
   demoLoginProfile: { evaluation: 'MSBA', district: 'Sample District (demo)', title: 'Superintendent (demo)', startDate: '2025-04-01', cohort: 'C-SAMPLE-2025',
     mentor: 'Dr. Sample Mentor A', coach: 'TQC Leadership Coach',
-    done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201', 'INS 202'],
-    inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 6], ['Regional Meetings', 2, 3], ['Coaching', 3, 6]], choices: { 3: 'INSTR' },
+    done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'CNF 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201', 'INS 202'],
+    inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Regional Meetings', 2, 3], ['Coaching', 3, 6]], choices: { 3: 'INSTR' },
     enrolled: ['OPN 202'], // signed up for one open offering; the others are in the catalog to try
     // [code, what they turned in, coach feedback ('' = waiting for feedback), days ago]
     submissions: [
@@ -1353,34 +1405,34 @@ var SEED = {
 
   demoSuperintendents: [
     { name: 'Walter Payton', evaluation: 'MSBA', email: 'wpayton.sample@example.org', district: 'Sample District A', startDate: '2025-04-01', cohort: 'C-SAMPLE-2025', mentor: 'Dr. Sample Mentor A',
-      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201'],
-      inProgress: [['INS 202', 25]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 6], ['Regional Meetings', 2, 3], ['Coaching', 3, 4]], choices: { 3: 'INSTR' } },
+      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'CNF 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201'],
+      inProgress: [['INS 202', 25]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Regional Meetings', 2, 3], ['Coaching', 3, 4]], choices: { 3: 'INSTR' } },
     { name: 'Lisa Leslie', evaluation: 'MARE', email: 'lleslie.sample@example.org', district: 'Sample District B', startDate: '2026-04-01', cohort: 'C-SAMPLE-2026', mentor: 'Dr. Sample Mentor B',
       done: ['BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'LDR 101', 'EVT 101'], inProgress: [['VIS 102', 40]],
       hours: [['Coaching', 2, 3], ['Mentoring', 2, 1]], choices: {} },
     { name: 'Jerry Rice', evaluation: 'LOCAL', localName: 'Sample District C Board Evaluation', email: 'jrice.sample@example.org', district: 'Sample District C', startDate: '2024-04-01', cohort: 'C-SAMPLE-2024', mentor: 'Dr. Sample Mentor A',
       done: ['ASM 101', 'ASM 102', 'CNF 101', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201', 'INS 202', 'INS 203', 'INS 204', 'INS 205'],
-      inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 8], ['Coaching', 3, 15], ['Coaching', 4, 8]], choices: { 3: 'INSTR', 4: 'SLU' } },
+      inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Coaching', 3, 15], ['Coaching', 4, 8]], choices: { 3: 'INSTR', 4: 'SLU' } },
     { name: 'Sue Bird', evaluation: 'MSBA', email: 'sbird.sample@example.org', district: 'Sample District D', startDate: '2024-04-01', cohort: 'C-SAMPLE-2024', mentor: 'Dr. Sample Mentor B',
       done: ['ASM 101', 'ASM 102', 'CNF 101', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101',
         'MGT 201', 'MGT 202', 'MGT 203', 'MGT 204', 'MGT 205', 'INS 201', 'INS 202', 'INS 203', 'INS 204', 'INS 205', 'CAP 301'],
-      inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 9], ['Coaching', 3, 16], ['Coaching', 4, 15], ['Conferences', 2, 6]], choices: { 3: 'MGTOPS', 4: 'INSTR' } },
+      inProgress: [], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Coaching', 3, 16], ['Coaching', 4, 15], ['Conferences', 2, 6]], choices: { 3: 'MGTOPS', 4: 'INSTR' } },
     { name: 'Barry Sanders', email: 'bsanders.sample@example.org', district: 'Sample District E', startDate: '2027-04-01', cohort: 'C-SAMPLE-2027',
       done: [], inProgress: [], hours: [], choices: {} },
     { name: 'Candace Parker', evaluation: 'MARE', email: 'cparker.sample@example.org', district: 'Sample District F', startDate: '2025-04-01', cohort: 'C-SAMPLE-2025',
       done: ['BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'FIN 101'], inProgress: [],
       hours: [['Coaching', 2, 7]], choices: {} },
     { name: 'Peyton Manning', evaluation: 'MSBA', email: 'pmanning.sample@example.org', district: 'Sample District G', startDate: '2024-04-01', cohort: 'C-SAMPLE-2024', mentor: 'Dr. Sample Mentor C',
-      done: ['BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201', 'INS 202', 'INS 203', 'INS 204'],
-      inProgress: [['INS 205', 50]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 5], ['Coaching', 3, 12]], choices: { 3: 'INSTR' } },
+      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'CNF 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'INS 201', 'INS 202', 'INS 203', 'INS 204'],
+      inProgress: [['INS 205', 50]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Coaching', 3, 12]], choices: { 3: 'INSTR' } },
     { name: 'Maya Moore', evaluation: 'LOCAL', localName: 'Sample District H Superintendent Review', email: 'mmoore.sample@example.org', district: 'Sample District H', startDate: '2025-04-01', cohort: 'C-SAMPLE-2025',
-      done: ['ASM 101', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'MGT 201', 'MGT 202'],
-      inProgress: [['MGT 203', 60]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 4], ['Coaching', 3, 6]], choices: { 3: 'MGTOPS' } },
+      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'CNF 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'MGT 201', 'MGT 202'],
+      inProgress: [['MGT 203', 60]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Coaching', 3, 6]], choices: { 3: 'MGTOPS' } },
     { name: 'Reggie White', email: 'rwhite.sample@example.org', district: 'Sample District I', startDate: '2026-04-01', cohort: 'C-SAMPLE-2026',
       done: ['BRD 101', 'BRD 102', 'BRD 103', 'REL 101', 'VIS 101', 'MGT 101'], inProgress: [['BRD 104', 30]], hours: [['Coaching', 2, 2]], choices: {} },
     { name: 'Diana Taurasi', email: 'dtaurasi.sample@example.org', district: 'Sample District J', startDate: '2024-04-01', cohort: 'C-SAMPLE-2024', mentor: 'Dr. Sample Mentor C',
-      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'ACA 202', 'MGT 201', 'MGT 202', 'MGT 203'],
-      inProgress: [['MGT 204', 40]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 7], ['Coaching', 3, 15], ['Coaching', 4, 10]], choices: { 3: 'WIL', 4: 'MGTOPS' } }
+      done: ['ASM 101', 'ASM 102', 'BRD 101', 'BRD 102', 'BRD 103', 'BRD 104', 'REL 101', 'CNF 101', 'MGT 101', 'VIS 101', 'VIS 102', 'LDR 101', 'EVT 101', 'FIN 101', 'ACA 202', 'MGT 201', 'MGT 202', 'MGT 203'],
+      inProgress: [['MGT 204', 40]], hours: [['Coaching', 2, 10], ['Mentoring', 2, 10], ['Coaching', 3, 15], ['Coaching', 4, 10]], choices: { 3: 'WIL', 4: 'MGTOPS' } }
   ]
 };
 
@@ -1932,6 +1984,22 @@ function getStandards_() {
   }).sort(function (a, b) { return a.num - b.num; });
 }
 
+/**
+ * The MSBA/DESE/MASA Superintendent Evaluation performance indicators a course supports, from its DESE Leadership
+ * Competencies ("LC 4, 8" or "LC 4-9") through the manual's crosswalk. Returns [{id: '2a', name: '...'}] in order.
+ */
+function evalIndicatorsFor_(competencies) {
+  var nums = [];
+  String(competencies || '').replace(/(\d+)\s*[-\u2013]\s*(\d+)|(\d+)/g, function (m, a, b, one) {
+    if (one) nums.push(Number(one));
+    else for (var n = Number(a); n <= Number(b) && n - Number(a) < 40; n++) nums.push(n);
+    return m;
+  });
+  var ids = [];
+  nums.forEach(function (n) { var id = SEED.evalCrosswalk[n]; if (id && ids.indexOf(id) === -1) ids.push(id); });
+  return ids.sort().map(function (id) { return { id: id, name: SEED.evalIndicators[id] }; });
+}
+
 function getCourses_() {
   return readTable_(SHEETS.COURSES)
     .filter(function (c) { return c.Code && isTrue_(c.Active, true); })
@@ -1942,6 +2010,7 @@ function getCourses_() {
         title: c['Course Title'], format: c.Format || '',
         minutes: Number(c.Minutes) || FORMAT_MINUTES[c.Format] || '', evidence: c.Evidence,
         competencies: c['DESE Competencies'] || '',
+        evalIndicators: evalIndicatorsFor_(c['DESE Competencies']),
         // Pathway fields (see Pathway.js): phase 1-4 (blank for Year 2/3 choices), hours, Required/Elected/Choice/Recommended/Open.
         phase: Number(c.Phase) || 0, hours: c.Hours === '' || c.Hours === null || c.Hours === undefined ? null : Number(c.Hours),
         status: String(c.Status || 'Required'), window: String(c.Window || ''), option: String(c.Option || ''), series: String(c.Series || ''),
@@ -2896,7 +2965,7 @@ function ensurePathwayModel_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty(PATHWAY_MODEL_PROP) === '2026-10' && props.getProperty('COURSE_FORMATS') === '2026-10' && props.getProperty('OPTION_PHASES') === '2026-11' && props.getProperty('CERT_COLUMN') === '2026-11' &&
     props.getProperty('ACCESS_MODEL') === '2026-11' && props.getProperty(STANDALONE_PROP) === '2026-11' &&
-    props.getProperty(CLASS_PAGES_PROP) === '2026-11' && props.getProperty(ENROLLMENT_PROP) === '2026-11' && props.getProperty(TEACHING_PROP) === '2026-11' && props.getProperty(COURSES_V2_PROP) === '2026-11' &&
+    props.getProperty(CLASS_PAGES_PROP) === '2026-11' && props.getProperty(ENROLLMENT_PROP) === '2026-11' && props.getProperty(TEACHING_PROP) === '2026-11' && props.getProperty(COURSES_V2_PROP) === '2026-11' && props.getProperty(CATALOG_PROP) === '2026-11-11' &&
     props.getProperty('SITE_NAME') === '2026-11') return [];
   var done = [];
   withLock_(function () {
@@ -2949,7 +3018,7 @@ function ensurePathwayModel_() {
     props.setProperty(PATHWAY_MODEL_PROP, '2026-10');
   });
   resetRequestMemo_(); // tabs may have been renamed, archived, or added
-  done = done.concat(moveToStandalone_()).concat(moveToClassPages_()).concat(moveToEnrollment_()).concat(moveToTeaching_()).concat(moveToCoursesV2_());
+  done = done.concat(moveToStandalone_()).concat(moveToClassPages_()).concat(moveToEnrollment_()).concat(moveToTeaching_()).concat(moveToCoursesV2_()).concat(moveToCatalog1111_());
   renameSite_();
   if (done.length) log_('Pathway update', '', 'Moved to the New/Early Career Superintendent Pathway', done.join('; '));
   if (props.getProperty('COURSE_FORMATS') !== '2026-10') {
@@ -2984,6 +3053,89 @@ function ensurePathwayModel_() {
   resetRequestMemo_();
   return done;
 }
+/**
+ * One-time update to the sample program from the November 11, 2026 planning session (SEED). Course codes stay the same
+ * where a course continues, so class pages, submissions, enrollments, and progress stay linked. For each seed course,
+ * option, series, and phase it rewrites the planning fields (title, hours, status, window, standard, …) and keeps what the
+ * team set on the sheet for delivery (Link, session date and time, instructors). Courses and options the plan dropped are
+ * turned off (Active = FALSE), never deleted. Copies of the four tabs are kept as "Archived - … <date>" when anything
+ * changes. Sample people are reloaded so their badges follow the new hour minimums; demo logins rebuild at next sign-in.
+ */
+var CATALOG_PROP = 'CATALOG_1111';
+function moveToCatalog1111_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(CATALOG_PROP) === '2026-11-11') return [];
+  var done = [];
+  withLock_(function () {
+    if (props.getProperty(CATALOG_PROP) === '2026-11-11') return;
+    var changes = 0;
+    var upsert = function (rows, seedRows, key, fields, keepIfSet) {
+      var by = {};
+      rows.forEach(function (r) { if (r[key] !== '' && r[key] !== undefined) by[String(r[key]).trim()] = r; });
+      seedRows.forEach(function (n) {
+        var r = by[String(n[key])];
+        if (!r) { rows.push(n); changes++; return; }
+        fields.forEach(function (f) {
+          if ((keepIfSet || []).indexOf(f) > -1 && String(r[f] || '') !== '') return;
+          if (String(r[f] === undefined ? '' : r[f]) !== String(n[f] === undefined ? '' : n[f])) { r[f] = n[f]; changes++; }
+        });
+      });
+      return rows;
+    };
+    var retire = function (rows, key, ids) {
+      rows.forEach(function (r) { if (ids.indexOf(String(r[key]).trim()) > -1 && isTrue_(r.Active, true)) { r.Active = false; changes++; } });
+      return rows;
+    };
+    var courseFields = ['Course Title', 'Phase', 'Status', 'Format', 'Hours', 'Window', 'Option', 'Series', 'Kind', 'Category', 'Standard #',
+      'DESE Competencies', 'Level', 'Indicator', 'Evidence', 'Modality', 'Provider', 'Minutes', 'Active', 'Instructor Emails'];
+    var courses = retire(upsert(readTable_(SHEETS.COURSES), courseRows_().map(arrToObj_(HEADERS.COURSES)), 'Code', courseFields, ['Instructor Emails']), 'Code', SEED.retiredCourses || []);
+    var phases = upsert(readTable_(SHEETS.TIERS), phaseRows_().map(arrToObj_(HEADERS.TIERS)), 'Level', ['Phase', 'Hours Required', 'Elected Minimum', 'Choice', 'Window', 'Badge', 'Description']);
+    var options = retire(upsert(readTable_(SHEETS.OPTIONS), optionRows_().map(arrToObj_(HEADERS.OPTIONS)), 'Option ID', ['Name', 'Kind', 'Standard #', 'Phases', 'For Pay', 'Provider', 'Description', 'Active']), 'Option ID', SEED.retiredOptions || []);
+    var series = upsert(readTable_(SHEETS.SERIES), seriesRows_().map(arrToObj_(HEADERS.SERIES)), 'Series ID', ['Name', 'Standard #', 'DESE Competencies', 'Badge', 'Description', 'Active']);
+    if (changes) {
+      var ss = ss_(), stamp = Utilities.formatDate(new Date(), tz_(), 'yyyy-MM-dd');
+      [SHEETS.COURSES, SHEETS.TIERS, SHEETS.OPTIONS, SHEETS.SERIES].forEach(function (name) {
+        var sh = ss.getSheetByName(name);
+        if (!sh) return;
+        var n = 'Archived - ' + name + ' ' + stamp;
+        if (ss.getSheetByName(n)) ss.deleteSheet(ss.getSheetByName(n));
+        sh.copyTo(ss).setName(n);
+      });
+      writeTable_(SHEETS.COURSES, HEADERS.COURSES, courses);
+      writeTable_(SHEETS.TIERS, HEADERS.TIERS, phases);
+      writeTable_(SHEETS.OPTIONS, HEADERS.OPTIONS, options);
+      writeTable_(SHEETS.SERIES, HEADERS.SERIES, series);
+      done.push('Sample program updated to the November 11, 2026 plan (' + changes + ' changes; old copies kept as "Archived - … ' + stamp + '")');
+      resetRequestMemo_();
+      // Sample people: reload their demo progress, hours, and choices; demo logins rebuild the next time they sign in.
+      var supts = readTable_(SHEETS.SUPTS);
+      var seedEmails = SEED.demoSuperintendents.map(function (d) { return d.email; });
+      var demoLogins = supts.filter(function (r) { var e = norm_(r.Email); return isSampleEmail_(e) && /^demo\./.test(e) && seedEmails.indexOf(e) === -1; }).map(function (r) { return norm_(r.Email); });
+      if (demoLogins.length) writeTable_(SHEETS.SUPTS, HEADERS.SUPTS, supts.filter(function (r) { return demoLogins.indexOf(norm_(r.Email)) === -1; }));
+      var present = SEED.demoSuperintendents.filter(function (d) { return supts.some(function (s) { return norm_(s.Email) === d.email; }); });
+      if (present.length) {
+        var prog = readTable_(SHEETS.PROGRESS).filter(function (r) { return !(seedEmails.indexOf(norm_(r.Email)) > -1 && (r.Source === 'Demo' || r.Source === 'Substitution')); });
+        writeTable_(SHEETS.PROGRESS, HEADERS.PROGRESS, prog.concat(demoRows_(present).progress.map(arrToObj_(HEADERS.PROGRESS))));
+        seedSamplePathwayRows_();
+        updateSummaryColumns_(present.map(function (d) { return d.email; }));
+      }
+    }
+    // MSBA evaluation areas left blank get the manual's standard and performance indicators; typed areas are kept.
+    if (tabByName_(SHEETS.ALIGN)) {
+      var al = readTable_(SHEETS.ALIGN), filled = 0;
+      al.forEach(function (r) {
+        if (String(r.System).toUpperCase() === 'MSBA' && !String(r['Evaluation Area'] || '').trim() && msbaSeedArea_(Number(r['Standard #']))) {
+          r['Evaluation Area'] = msbaSeedArea_(Number(r['Standard #'])); filled++;
+        }
+      });
+      if (filled) { writeTable_(SHEETS.ALIGN, HEADERS.ALIGN, al); done.push('MSBA evaluation alignment filled in for ' + filled + ' standards'); }
+    }
+    props.setProperty(CATALOG_PROP, '2026-11-11');
+  });
+  resetRequestMemo_();
+  return done;
+}
+
 /**
  * One-time move to a stand-alone roadmap (Nov 2026: the program no longer runs inside TalentLMS). Removes the TalentLMS
  * columns (Courses gets a Link column in their place; Superintendents and Progress lose theirs, with cell formats reset
@@ -3857,11 +4009,17 @@ function headerStyle_(name, n) {
   if (sheet) sheet.getRange(1, 1, 1, n).setFontWeight('bold').setFontColor('#ffffff').setBackground('#3A55A4');
 }
 
-/** MSBA and MARE starter rows (areas blank, for a coach to fill in) plus the demo's sample local alignment. */
+/** "Standard 2, Performance Indicators 2a-2e": the MSBA/DESE/MASA manual uses the same five standards. */
+function msbaSeedArea_(num) {
+  var ids = Object.keys(SEED.evalIndicators).filter(function (k) { return k.charAt(0) === String(num); }).sort();
+  return ids.length ? 'Standard ' + num + ', Performance Indicators ' + ids[0] + '\u2013' + ids[ids.length - 1] : '';
+}
+
+/** MSBA rows (filled from the evaluation manual) and MARE rows (blank, for a coach to fill in) plus the demo's sample local alignment. */
 function alignmentSeedRows_() {
   var rows = [];
   ['MSBA', 'MARE'].forEach(function (sys) {
-    SEED.standards.forEach(function (st) { rows.push([sys, '', st.num, '', SEED.alignmentNotes[sys]]); });
+    SEED.standards.forEach(function (st) { rows.push([sys, '', st.num, sys === 'MSBA' ? msbaSeedArea_(st.num) : '', SEED.alignmentNotes[sys]]); });
   });
   var demo = SEED.demoLocalAlignment;
   SEED.standards.forEach(function (st) { rows.push(['LOCAL', demo.email, st.num, demo.areas[st.num] || '', 'Sample local evaluation (demo).']); });
@@ -7002,12 +7160,12 @@ window.HELP_TOPICS = [
       'Describe the learning and your evidence. Your coach and program administrators review it.'] },
   { id: 'badges', video: 'badges', roles: ['sup', 'coach', 'masa'], title: 'Badges and the MASA/TQC Pathway Certificate', fig: 'badges', requires: ['updateSummaryColumns_'],
     show: { view: 'badges', target: '.bdg-grid', tip: 'Your badges.' },
-    steps: ['Open the **Badges** tab. Phase badges show required events and approved hours; Competency Series and session badges are aligned to the DESE standards. Click a session badge to open its standard in **Standards Alignment**, then use **Back** to return.',
+    steps: ['Open the **Badges** tab. The strip at the top follows the three levels: Course/Session Completion, then Competency Series Badges (Board Relations Series, Instructional Leadership Strand, Management Strand) and a badge for each phase, then the MASA/TQC Pathway Certificate. Phase badges show required events and approved hours; series and session badges are aligned to the DESE standards. Click a session badge to open its standard in **Standards Alignment**, then use **Back** to return.',
       'Completing all four phases awards the **MASA/TQC Pathway Certificate**. Click **Print certificate** to print or save it as a PDF.',
       'The certificate is professional learning recognition, not a Missouri educator certificate.'] },
   { id: 'evaluation', video: 'evaluation', roles: ['sup', 'coach'], title: 'Connect your badges to your board’s evaluation', requires: ['setEvaluationSystem', 'uploadEvaluationFile'],
     show: { view: 'evaluation', target: '[data-act="eval-pick"]', tip: 'Choose your evaluation.' },
-    steps: ['Open the **Evaluation** tab and choose MSBA, MARE, your district’s own tool, or standards only. For a local tool, the superintendent or an administrator gives it a name and uploads a blank copy with no ratings or board comments. Ask the program team to add the alignment.',
+    steps: ['Open the **Evaluation** tab and choose MSBA, MARE, your district’s own tool, or standards only. For a local tool, the superintendent or an administrator gives it a name and uploads a blank copy with no ratings or board comments. Ask the program team to add the alignment. Each course also lists the MSBA/DESE/MASA evaluation performance indicators it supports (for example, Evaluation 2a, 2d) on its row and its class page.',
       'Open the **Standards Alignment** tab to see completed work grouped by DESE standard. Click **Print report** to bring it to your board. Your selected tool and alignment labels update immediately. **Aligning evaluation…** stays visible while the choice saves; you can browse other tabs. Wait for **Evaluation saved** before making another change for that person. If saving cannot be confirmed, the previous alignment is restored and a message explains how to refresh or retry. Mentors do not see this tab; coach and public demo choices are not saved.'] },
 
   { id: 'standards-alignment', video: 'standards-alignment', roles: ['sup', 'coach', 'masa'], title: 'Use Standards Alignment and print your report', requires: ['buildAppData_'],
@@ -7710,6 +7868,8 @@ window.HELP_TOPICS = [
     var chips = '<span class="chip chip-mono">' + esc(c.code) + '</span>' + fmtTag(c) +
       (c.window ? '<span class="chip">' + icon('calendar') + ' ' + esc(c.window) + '</span>' : '') +
       (c.standard ? '<span class="chip chip-dese" title="DESE Leadership Competencies ' + esc(c.competencies) + '">Standard ' + c.standard + '</span>' : '') +
+      (c.evalIndicators && c.evalIndicators.length ? '<span class="chip chip-eval" title="Superintendent evaluation performance indicators (MSBA/DESE/MASA manual): ' +
+        esc(c.evalIndicators.map(function (x) { return x.id + ' ' + x.name; }).join('; ')) + '">Evaluation ' + esc(c.evalIndicators.map(function (x) { return x.id; }).join(', ')) + '</span>' : '') +
       (series ? '<span class="chip series-chip">' + icon('award') + ' ' + esc(series.name) + '</span>' : '') +
       (c.modality ? '<span class="chip">' + esc(c.modality) + '</span>' : '') +
       (c.provider && c.kind !== 'session' && c.provider !== 'The Quality Coach' ? '<span class="chip">' + esc(c.provider) + '</span>' : '');
@@ -7805,8 +7965,14 @@ window.HELP_TOPICS = [
         (ev.system ? '<div class="badge-eval">' + evalTag(ev, x.std.num) + '</div>' : '') +
         '<div class="lvl-label">' + x.done + ' session badge' + (x.done === 1 ? '' : 's') + ' · ' + x.hours + ' hrs</div></button>';
     }).join('');
+    var sessionsDone = sum.standards.reduce(function (t, x) { return t + (x.done || 0); }, 0);
+    var seriesDone = (P.series || []).filter(function (x) { return x.complete; }).length;
     return '<section class="card section"><div class="section-head"><h2>Badges</h2>' +
       '<p>Three levels from the MASA agreement: a badge for each completed session or event, Competency Series badges, and the ' + esc(C.name || 'MASA/TQC Pathway Certificate') + '. Each phase also earns a badge.</p></div>' +
+      '<ol class="bdg-path" aria-label="Badge progression">' +
+        '<li class="' + (sessionsDone ? 'on' : '') + '"><b>Course/Session Completion</b><small>' + sessionsDone + ' earned</small></li>' +
+        '<li class="' + (seriesDone ? 'on' : '') + '"><b>Competency Series Badges</b><small>' + seriesDone + ' of ' + (P.series || []).length + ' series · ' + (P.completedPhases || 0) + ' of 4 phases</small></li>' +
+        '<li class="' + (P.complete ? 'on' : '') + '"><b>Pathway Completion</b><small>' + esc(C.name || 'MASA/TQC Pathway Certificate') + '</small></li></ol>' +
       '<div class="bdg-grid">' + cert + phases + '</div>' +
       '<p class="small muted cert-note">' + esc(C.disclaimer || '') + ' ' + esc(C.alignment || '') + '</p>' +
       '<h3 class="sub-h">Competency Series</h3><div class="bdg-grid">' + series + '</div>' +
@@ -8723,6 +8889,8 @@ window.HELP_TOPICS = [
       (c.indicator ? '<p><b>What you’ll be able to do:</b> ' + esc(c.indicator) + '.</p>' : '') +
       (c.evidence ? '<p><b>Evidence of growth:</b> ' + esc(c.evidence) + '.</p>' : '') +
       (std ? '<p class="small muted">Aligned to DESE Standard ' + std.num + ', ' + esc(std.name) + (c.competencies ? ' (' + esc(c.competencies) + ')' : '') + '. Badge: ' + esc(std.badge) + '.</p>' : '') +
+      (c.evalIndicators && c.evalIndicators.length ? '<div class="eval-pis"><p class="small"><b>Superintendent evaluation:</b> supports these performance indicators in the MSBA/DESE/MASA Superintendent Evaluation Manual.</p><ul class="small">' +
+        c.evalIndicators.map(function (x) { return '<li><b>' + esc(x.id) + '</b> ' + esc(x.name) + '</li>'; }).join('') + '</ul></div>' : '') +
       '<div class="class-progress"><h5>Your progress</h5>' + eventRow(c, sup, summarize(sup), e.phase) + '</div></section>';
 
     var resources = mats.filter(function (m) { return m.type === 'Resource'; });
@@ -9446,6 +9614,19 @@ window.HELP_TOPICS = [
     return '<div class="cw-section"><div class="cw-sec-head"><h3>' + esc(title) + '</h3>' + (ed() ? '<button class="linkish" type="button" data-act="cw-edit-home" data-key="' + key + '">Edit</button>' : '') + '</div>' +
       (html ? '<div class="rich">' + html + '</div>' : '<p class="muted small">' + esc(emptyText) + '</p>') + '</div>';
   }
+  /** DESE standard and competencies, plus the superintendent evaluation performance indicators the course supports. */
+  function alignmentHtml(code) {
+    var c = T.courseByCode && T.courseByCode(code);
+    if (!c || !c.standard) return '';
+    var std = (S.data.standards || []).filter(function (x) { return x.num === c.standard; })[0];
+    var pis = c.evalIndicators || [];
+    return '<div class="cw-section"><h3>Alignment</h3>' +
+      (c.indicator ? '<p><b>What you’ll be able to do:</b> ' + esc(c.indicator) + '.' + (c.evidence ? ' <b>Evidence:</b> ' + esc(c.evidence) + '.' : '') + '</p>' : '') +
+      '<p class="small">DESE Standard ' + c.standard + (std ? ', ' + esc(std.name) : '') + (c.competencies ? ' (' + esc(c.competencies) + ')' : '') + '.</p>' +
+      (pis.length ? '<div class="eval-pis"><p class="small"><b>Superintendent evaluation:</b> supports these performance indicators in the MSBA/DESE/MASA Superintendent Evaluation Manual.</p><ul class="small">' +
+        pis.map(function (x) { return '<li><b>' + esc(x.id) + '</b> ' + esc(x.name) + '</li>'; }).join('') + '</ul></div>' : '') + '</div>';
+  }
+
   function homeView() {
     var d = CW.data, st = d.settings;
     if (d.closedCourse) return '<div class="empty-state"><h3>This course isn’t open yet</h3><p class="muted">Your instructor is still building it. Check back soon.</p></div>';
@@ -9466,7 +9647,7 @@ window.HELP_TOPICS = [
             (ed() ? '<span class="item-tools"><button class="linkish" data-act="cw-ann-edit" data-id="' + esc(a.id) + '">Edit</button><button class="linkish" data-act="cw-ann-del" data-id="' + esc(a.id) + '">Remove</button></span>' : '') + '</div><div class="rich">' + a.body + '</div></article>';
         }).join('') + (anns.length > 3 && !CW.allAnns ? '<button class="linkish" data-act="cw-ann-all">Show all ' + anns.length + '</button>' : '') : '<p class="muted small">No announcements yet.</p>') + '</div>' +
       section('Welcome', 'welcome', st.welcome, 'Add a welcome message.') +
-      '<div class="cw-section"><h3>Session</h3>' + session + '</div>' +
+      '<div class="cw-section"><h3>Session</h3>' + session + '</div>' + alignmentHtml(d.code) +
       section('What you’ll learn', 'objectives', st.objectives, 'Add the course objectives.') +
       section('Syllabus', 'syllabus', st.syllabus, 'Add a syllabus: schedule, expectations, and how credit works.') +
       section('Your instructor', 'instructorInfo', st.instructorInfo, 'Add instructor information and how to reach you.') +
