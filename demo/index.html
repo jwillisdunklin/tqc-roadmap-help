@@ -688,7 +688,7 @@
   .disc .post p { margin: 6px 0 2px; } .post-actions .linkish { font-size: 12.5px; padding: 2px 6px 2px 0; }
   .post-form { margin-top: 14px; } .post-form textarea { width: 100%; margin-top: 5px; } .post-form label { font-size: 13px; color: var(--muted); }
   .reply-form { margin: 8px 0 0 26px; display: grid; gap: 6px; } .reply-form .btn { justify-self: start; }
-  /* ---------- Course workspace (Course.html) ---------- */
+  /* ---------- Course workspace (CourseUI.html) ---------- */
   .cw { padding: 0; overflow: hidden; }
   .cw-head { padding: 22px 26px 14px; border-bottom: 1px solid var(--line); }
   .cw-head .back { padding-left: 0; }
@@ -9318,7 +9318,7 @@ window.HELP_TOPICS = [
     });
   }
 
-  /* Bridge for Course.html (the course workspace): the helpers it shares with this page. */
+  /* Bridge for CourseUI.html (the course workspace): the helpers it shares with this page. */
   window.TQC = { api: api, esc: esc, icon: icon, S: S, go: go, goBack: goBack, toast: toast, fail: fail, load: load, render: render, openDlg: openDlg, closeDlg: closeDlg,
     current: current, viewer: viewer, fmtDay: fmtDay, hrs: hrs, initials: initials, renderDiscussion: renderDiscussion, eventRow: eventRow, summarize: summarize,
     canActFor: canActFor, courseByCode: courseByCode, fmtTag: fmtTag, enrollButton: enrollButton, enrollState: enrollState, store: store, TOKEN_KEY: TOKEN_KEY,
@@ -9357,7 +9357,7 @@ window.HELP_TOPICS = [
 
   <script>
 /*
- * Course.html — the course workspace (Canvas-style): Home, Modules, Assignments, Discussions, Resources, People, Settings.
+ * CourseUI.html — the course workspace (Canvas-style): Home, Modules, Assignments, Discussions, Resources, People, Settings.
  * Uses the helpers App.html shares on window.TQC. The server (Course.js, Grading.js) checks every permission again;
  * the controls here only appear for people allowed to use them.
  */
