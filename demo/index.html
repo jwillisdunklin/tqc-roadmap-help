@@ -778,6 +778,38 @@
     .cw-progress .bar { flex-basis: 120px; }
     .mod-item { flex-wrap: wrap; } .mod-head { flex-wrap: wrap; }
   }
+
+  /* Import courses (ImportUI.html) */
+  .im-steps { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 16px; }
+  .im-steps li { font-size: 12.5px; color: var(--muted); padding: 3px 10px 3px 4px; border: 1px solid var(--line); border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+  .im-steps li span { width: 20px; height: 20px; border-radius: 50%; background: var(--line); color: var(--ink); display: inline-grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .im-steps li.on { color: var(--ink); border-color: var(--brand); font-weight: 600; }
+  .im-steps li.on span { background: var(--brand); color: #fff; }
+  .im-steps li.done span { background: var(--brand-tint); }
+  .im-sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 10px 0 14px; }
+  .im-source { text-align: left; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; display: grid; gap: 4px; font: inherit; color: var(--ink); }
+  .im-source:hover, .im-source:focus-visible { border-color: var(--brand); }
+  .im-source small { color: var(--muted); }
+  .im-how { margin: 6px 0 10px 18px; }
+  .im-how li { margin: 4px 0; }
+  .im-course { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+  .im-course h4 { margin: 0 0 6px; }
+  .im-mod { margin: 8px 0 0 26px; }
+  .im-mod label.check { margin-top: 4px; }
+  .im-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; margin: 8px 0; }
+  .im-field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .im-field.wide { grid-column: 1 / -1; }
+  .im-field input, .im-field select { width: 100%; box-sizing: border-box; }
+  .im-warn { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; font-size: 13.5px; }
+  .im-warn li { padding: 6px 10px; border-radius: 8px; border-left: 4px solid var(--line); background: var(--surface-2, rgba(0,0,0,.02)); }
+  .im-warn li.error { border-left-color: var(--danger, #a32929); }
+  .im-warn li.warn { border-left-color: #c98a00; }
+  .im-warn li.info { border-left-color: var(--brand); }
+  .im-files { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; font-size: 13.5px; }
+  .im-tree { margin: 6px 0 0 16px; font-size: 14px; }
+  .im-tree ul { margin: 4px 0 6px 14px; }
+  .im-bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; max-width: 420px; margin: 10px 0; }
+  .im-bar span { display: block; height: 100%; background: var(--brand); transition: width .3s; }
 </style>
 
 <script>/* demo mode */
@@ -3701,7 +3733,17 @@ function appFunctions_() {
     setConferenceRecognition: setConferenceRecognition,
     submitFeedback: submitFeedback,
     getEngagementReport: getEngagementReport,
-    addSuperintendents: addSuperintendents
+    addSuperintendents: addSuperintendents,
+    analyzeImport: analyzeImport,
+    analyzeImportSample: analyzeImportSample,
+    startImport: startImport,
+    uploadImportFile: uploadImportFile,
+    finishImportUploads: finishImportUploads,
+    runImportBatch: runImportBatch,
+    cancelImport: cancelImport,
+    cleanUpImport: cleanUpImport,
+    getImportJob: getImportJob,
+    listImportJobs: listImportJobs
   };
 }
 
@@ -4681,6 +4723,7 @@ var FLYER_FEATURES = [
     { title: 'Help built in', text: 'A how-to guide for every role, with pictures, direct Show me links, and dedicated videos for the pathway tabs and demo role previews. The guide and printable PDF are open to anyone, including on the sign-in page.', requires: [] },
     { title: 'Your information, your choice', text: 'Choose, person by person, what your coach, mentor, MASA staff, and board president can see, and write your evaluation goals by standard. A board president sees only your completed learning and the goals you share.', requires: ['saveSharing', 'saveGoals'] },
     { title: 'Course building for instructors', text: 'Administrators create courses and assign instructors (coaches and mentors can teach too). Instructors build their own courses with a visual editor, embedded videos and slide shows, documents, drafts and publishing, availability dates, prerequisites, a learner preview, rubrics, reusable quiz questions, templates, and one review page for all turned-in work.', requires: ['createCourse', 'saveItem', 'saveModule', 'saveRubric', 'saveQuestion', 'getReview', 'gradeSubmission', 'saveAsTemplate'] },
+    { title: 'Bring existing courses in', text: 'Administrators can import courses from Canvas (.imscc exports), Google Classroom (Google Takeout), and TalentLMS (course lists plus downloaded files) as unpublished drafts, with a report of anything that must be rebuilt. No student records are copied.', requires: ['analyzeImport', 'startImport', 'runImportBatch', 'cleanUpImport'] },
     { title: 'Hours and substitutions', text: 'Log coaching, mentoring, conference, and regional meeting hours (tagged with the ALEs a coaching or mentoring session connected to), and ask to count equivalent learning in place of an event.', requires: ['logHours', 'requestSubstitution'] },
     { title: 'Ready for the board', text: 'Evaluation choices update alignment labels immediately, with visible save progress. A Standards Alignment Report organized by the DESE standards and tied to the board’s evaluation (MSBA, MARE, or the district’s own).', requires: ['setEvaluationSystem', 'uploadEvaluationFile'] },
     { title: 'A printable certificate', text: 'Each year you finish earns a completion badge, and completing the full series of trainings (all four) awards the MASA/TQC Pathway Certificate of Completion, ready to print or save as a PDF. Each earned badge has a printable proof-of-growth page to share with the board president.', requires: ['updateSummaryColumns_'] },
@@ -6572,8 +6615,9 @@ function getCourseFile(code, fileId) {
   } else {
     var b = courseAccess_(code, '');
     if (!b.edit && !b.learner) {
-      var item = itemsOf_(code).filter(function (it) { return it.fileId === String(fileId); })[0];
-      if (!item || !item.published || !courseSettings_(code).published) throw new Error('That file isn’t available.');
+      // A course document, or a file linked from a page (imported pages link files as #cw-file-<id>).
+      var item = itemsOf_(code).filter(function (it) { return it.published && (it.fileId === String(fileId) || String(it.body || '').indexOf('#cw-file-' + fileId) > -1); })[0];
+      if (!item || !courseSettings_(code).published) throw new Error('That file isn’t available.');
     }
   }
   var f = DriveApp.getFileById(String(fileId)).getBlob();
@@ -6596,7 +6640,7 @@ function escAttr_(v) { return String(v).replace(/&/g, '&amp;').replace(/"/g, '&q
 function decodeEntities_(v) { return String(v).replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'); }
 
 /**
- * Keeps formatting, headings, lists, links (https/mailto), images (https), tables, and embeds from known video/slide hosts.
+ * Keeps formatting, headings, lists, links (https/mailto, and #cw-item-/#cw-file- links inside a course), images (https), tables, and embeds from known video/slide hosts.
  * Everything else (scripts, styles, event handlers, forms, other iframes, javascript: links) is removed.
  */
 function sanitizeHtml_(html, max) {
@@ -6622,6 +6666,7 @@ function sanitizeHtml_(html, max) {
     while ((am = are.exec(attrs))) attr[am[1].toLowerCase()] = decodeEntities_(am[3] !== undefined ? am[3] : am[4] !== undefined ? am[4] : am[5] !== undefined ? am[5] : '');
     if (tag === 'a') {
       if (/^(https:\/\/|mailto:)/i.test(attr.href || '')) keep.push('href="' + escAttr_(attr.href) + '"', 'target="_blank"', 'rel="noopener noreferrer"');
+      else if (/^#cw-(item|file|ref)-[\w-]{1,40}$/.test(attr.href || '')) keep.push('href="' + attr.href + '"'); // links to another item or file in this course (imports)
     } else if (tag === 'img') {
       if (!/^https:\/\//i.test(attr.src || '')) continue;
       keep.push('src="' + escAttr_(attr.src) + '"', 'alt="' + escAttr_(attr.alt || '') + '"', 'loading="lazy"');
@@ -7508,7 +7553,10 @@ function catalogData_() {
     if (c.option) return isMenuCourse_(c) ? 'Standalone session' : c.ale ? 'Core ALE' : (optName[c.option] || 'Path');
     return c.status === 'Required' ? 'Required' : c.status;
   };
-  var items = getCourses_().filter(function (c) { return c.kind !== 'support'; }).map(function (c) {
+  // Draft courses (created or imported, not yet published) stay off the public page.
+  var drafts = {};
+  readTable_(SHEETS.COURSE_SETTINGS).forEach(function (r) { if (r.Code && !isTrue_(r.Published, true)) drafts[String(r.Code)] = true; });
+  var items = getCourses_().filter(function (c) { return c.kind !== 'support' && !drafts[c.code]; }).map(function (c) {
     return { code: c.code, ale: c.ale, title: c.title, format: c.format || '', hours: c.hours, delivery: deliveryOf_(c.modality), modality: c.modality,
       stage: stageOf(c), kind: kindOf(c), window: c.window, date: c.sessionDate, time: c.sessionTime, academy: /academy/i.test(c.format) || /academy/i.test(c.title),
       indicators: (c.evalIndicators || []).map(function (x) { return x.id; }), provider: c.provider || '' };
@@ -7550,7 +7598,7 @@ function renderCatalog_() {
   }).join('') || '<p class="muted">No dates are posted yet. Sessions below are listed with their planned window.</p>';
 
   var tba = d.undated.map(function (x) {
-    return '<li' + attrs(x) + '>' + aleTag(x) + ' <b>' + e(x.title) + '</b> <span class="muted">· ' + e(x.stage) + ' · ' + e(x.window || 'Dates to be announced') + '</span> ' + deliv(x) + '</li>';
+    return '<li' + attrs(x) + '>' + aleTag(x) + ' <b>' + e(x.title) + '</b> <span class="muted">· ' + e(x.stage) + (String(x.window || '').trim() === String(x.stage || '').trim() ? '' : ' · ' + e(x.window || 'Dates to be announced')) + '</span> ' + deliv(x) + '</li>';
   }).join('');
 
   var groups = {};
@@ -7615,6 +7663,1352 @@ function renderCatalog_() {
     '<section class="card"><h2>Course catalog</h2>' + catalog + '</section>' +
     '<p class="fine">' + e(d.certificate.name) + ': ' + e(d.certificate.disclaimer) + (d.supportEmail ? ' Questions: ' + e(d.supportEmail) + '.' : '') + '</p>' +
     '</main><script>' + script + '<\/script></body></html>';
+}
+
+</script>
+<script>/* Import.js */
+/**
+ * Import.js — administrator-only course import (the "Import courses" workspace).
+ *
+ * Sources (see docs/course-import.md for export steps, what transfers, and what does not):
+ *   canvas     A Canvas course export (.imscc, IMS Common Cartridge with Canvas's own course_settings/ extensions).
+ *   classroom  A Google Takeout Classroom export (one JSON file per class), plus any Drive files the administrator adds.
+ *   talentlms  A TalentLMS course list exported as CSV or XLSX, plus course files downloaded separately.
+ * SCORM, xAPI (Tin Can), and cmi5 packages are detected and reported as unsupported: the Roadmap has no player for them.
+ *
+ * Flow: the page reads the upload in the browser (ZIP entries are listed first so oversized or unsafe archives are
+ * refused before anything is expanded), sends the listing and the text files to analyzeImport, which checks the archive
+ * again here and returns a plan (courses, modules, items, files, warnings). The administrator chooses what to bring in
+ * and maps the Roadmap fields (code, phase, hours, standard, competencies, instructors); startImport saves the plan in
+ * the private import folder and opens a job; uploadImportFile stores each needed file in the private course-files
+ * folder; runImportBatch builds the drafts in resumable steps; cancelImport / cleanUpImport remove only what the job
+ * created and nobody has changed since. Every call here requires an administrator. Source systems are never contacted.
+ *
+ * Never imported in this version: learner accounts, enrollments, grades, submissions, discussion replies, quiz
+ * attempts, completion histories, or source roles. Imported courses are unpublished drafts and every item starts
+ * unpublished; instructors come only from the administrator's mapping.
+ */
+
+var IMPORT_LIMITS = {
+  archiveBytes: 100 * 1024 * 1024,      // the upload itself (checked in the browser; the server never receives it whole)
+  entries: 3000,                        // files in one archive
+  totalBytes: 300 * 1024 * 1024,        // everything in the archive, expanded
+  ratio: 100,                           // expanded/compressed size for any entry over 1 MB (ZIP bomb guard)
+  textBytes: 8 * 1024 * 1024,           // XML/HTML/JSON/CSV sent for analysis
+  planBytes: 6 * 1024 * 1024,           // the reviewed plan sent to startImport
+  courses: 20,                          // courses in one job
+  items: 500,                           // items in one course
+  bodyChars: 45000,                     // one page or description (a spreadsheet cell holds 50,000 characters)
+  batchMs: 20000                        // work per runImportBatch call (Apps Script calls stop at 6 minutes)
+};
+var IMPORT_SOURCES = { canvas: 'Canvas (Common Cartridge .imscc)', classroom: 'Google Classroom (Google Takeout)', talentlms: 'TalentLMS (CSV/XLSX export and course files)' };
+var IMPORT_JOBS_SHEET = 'Import Jobs';
+var IMPORT_ITEMS_SHEET = 'Import Items';
+var IMPORT_JOB_HEADERS = ['Job ID', 'Source', 'Source Name', 'Source Keys', 'Status', 'Created', 'Created By', 'Updated', 'Plan File ID', 'Courses', 'Total Steps', 'Done Steps', 'Warnings', 'Failures', 'Message'];
+var IMPORT_ITEM_HEADERS = ['Job ID', 'Step', 'Kind', 'Source Key', 'Code', 'Target ID', 'Fingerprint', 'Status', 'Message', 'Created'];
+var IMPORT_TEXT_EXT_ = /\.(xml|html?|qti|json|csv|txt|imsmanifest)$/i;
+var IMPORT_BLOCKED_EXT_ = /\.(exe|dll|bat|cmd|com|msi|msp|sh|bash|ps1|psm1|vbs|vbe|wsf|jar|scr|app|dmg|pkg|deb|rpm|apk|js|mjs|cjs|php|py|rb|pl|cgi|asp|aspx|jsp|swf|lnk|reg|hta|cpl)$/i;
+var IMPORT_EXT_MIME_ = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', txt: 'text/plain', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif' };
+
+/** Every import call: a real, signed-in administrator (never a demo visitor or the in-browser sample demo). */
+function assertImportAdmin_() {
+  var v = assertAdmin_();
+  if (v.isVisitor || v.sandboxRole) throw new Error('Administrator access is required for that action.');
+  return v;
+}
+
+/* ------------------------------------------------------------------ */
+/* Small helpers: XML, CSV, hashing, paths                             */
+/* ------------------------------------------------------------------ */
+
+function xmlDecode_(s) {
+  return String(s).replace(/&#x([0-9a-f]+);/gi, function (m, h) { return String.fromCharCode(parseInt(h, 16)); })
+    .replace(/&#(\d+);/g, function (m, d) { return String.fromCharCode(Number(d)); })
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+}
+
+/**
+ * A small, tolerant XML reader (elements, attributes, text, CDATA). Namespace prefixes are dropped. DOCTYPE blocks are
+ * removed first, so no external entities are ever read.
+ */
+function parseXml_(xml) {
+  xml = String(xml || '').replace(/^﻿/, '').replace(/<\?[\s\S]*?\?>/g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/<!DOCTYPE[^>\[]*(\[[\s\S]*?\])?\s*>/gi, '');
+  var root = { name: '#root', attrs: {}, children: [], text: '' }, stack = [root], m;
+  var re = /<!\[CDATA\[([\s\S]*?)\]\]>|<(\/?)([A-Za-z_][\w:.\-]*)((?:\s+[^\s=>\/]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>|([^<]+)/g;
+  while ((m = re.exec(xml))) {
+    var top = stack[stack.length - 1];
+    if (m[1] !== undefined) { top.text += m[1]; continue; }
+    if (m[6] !== undefined) { top.text += xmlDecode_(m[6]); continue; }
+    var name = m[3].replace(/^.*:/, '');
+    if (m[2]) {
+      for (var i = stack.length - 1; i > 0; i--) if (stack[i].name === name) { stack.length = i; break; }
+      continue;
+    }
+    var node = { name: name, attrs: {}, children: [], text: '' }, am, are = /([^\s=]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+    while ((am = are.exec(m[4] || ''))) node.attrs[am[1].replace(/^.*:/, '')] = xmlDecode_(am[3] !== undefined ? am[3] : am[4]);
+    top.children.push(node);
+    if (!m[5]) stack.push(node);
+  }
+  return root;
+}
+function xkids_(n, name) { return n ? n.children.filter(function (c) { return !name || c.name.toLowerCase() === name.toLowerCase(); }) : []; }
+function xkid_(n, name) { return xkids_(n, name)[0] || null; }
+function xall_(n, name, out) {
+  out = out || [];
+  (n ? n.children : []).forEach(function (c) { if (c.name.toLowerCase() === name.toLowerCase()) out.push(c); xall_(c, name, out); });
+  return out;
+}
+function xfirst_(n, name) { return xall_(n, name)[0] || null; }
+function xtext_(n) { return n ? (n.text + n.children.map(xtext_).join('')).trim() : ''; }
+function xval_(n, name) { return xtext_(xfirst_(n, name)); }
+
+/** RFC 4180 CSV (quoted fields, doubled quotes, CRLF or LF). Returns rows of strings. */
+function parseCsv_(text) {
+  text = String(text || '').replace(/^﻿/, '');
+  var rows = [], row = [], f = '', q = false;
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(f); f = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += ch;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+}
+
+/** The first worksheet of an XLSX file, from its XML parts (xl/sharedStrings.xml, xl/worksheets/sheet1.xml). */
+function parseXlsxSheet_(sheetXml, sharedXml) {
+  var shared = xall_(parseXml_(sharedXml || ''), 'si').map(function (si) { return xall_(si, 't').map(function (t) { return t.text; }).join(''); });
+  var rows = [];
+  xall_(parseXml_(sheetXml), 'row').forEach(function (r) {
+    var out = [];
+    xkids_(r, 'c').forEach(function (cell) {
+      var ref = String(cell.attrs.r || ''), col = 0, letters = ref.replace(/\d+/g, '');
+      for (var i = 0; i < letters.length; i++) col = col * 26 + (letters.charCodeAt(i) - 64);
+      col = col ? col - 1 : out.length;
+      var v = xval_(cell, 'v'), t = cell.attrs.t;
+      if (t === 's') v = shared[Number(v)] || '';
+      else if (t === 'inlineStr') v = xall_(cell, 't').map(function (x) { return x.text; }).join('');
+      out[col] = v;
+    });
+    for (var j = 0; j < out.length; j++) if (out[j] === undefined) out[j] = '';
+    rows.push(out);
+  });
+  return rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+}
+
+/** Short, stable fingerprint of a value (used to tell whether imported content was changed after the import). */
+function importHash_(v) {
+  var s = typeof v === 'string' ? v : JSON.stringify(v), h1 = 5381, h2 = 52711;
+  for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); h1 = (h1 * 33) ^ c; h2 = (h2 * 33) ^ c; }
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36) + s.length.toString(36);
+}
+
+/** A safe relative path inside an archive, or null (absolute paths, drive letters, "..", and control characters). */
+function safeArchivePath_(p) {
+  p = String(p || '').replace(/\\/g, '/');
+  if (!p || p.length > 400 || /[\u0000-\u001f]/.test(p) || /^\//.test(p) || /^[a-z]:/i.test(p)) return null;
+  var parts = p.split('/');
+  if (parts.some(function (s) { return s === '..'; })) return null;
+  return parts.filter(function (s) { return s && s !== '.'; }).join('/');
+}
+function baseName_(p) { return String(p || '').split('/').pop(); }
+function extOf_(p) { var m = String(p || '').match(/\.([a-z0-9]+)$/i); return m ? m[1].toLowerCase() : ''; }
+function importMime_(p) { return IMPORT_EXT_MIME_[extOf_(p)] || ''; }
+function fileStatus_(path, size) {
+  if (IMPORT_BLOCKED_EXT_.test(path)) return 'blocked (program or script file)';
+  if (!importMime_(path)) return /\.(mp4|mov|m4v|webm|mp3|m4a|wav)$/i.test(path) ? 'unsupported type (audio/video: host it on YouTube, Vimeo, or Drive and add a link)' : 'unsupported type';
+  if (size > UPLOAD_MAX_BYTES) return 'too large (over 10 MB)';
+  return 'ok';
+}
+
+/**
+ * Checks an archive listing: [{ path, size (expanded), compressed }]. Refuses unsafe paths, too many files, too much
+ * expanded data, and entries that expand suspiciously (ZIP bombs). Returns the cleaned listing.
+ */
+function validateArchive_(entries) {
+  entries = [].concat(entries || []);
+  if (entries.length > IMPORT_LIMITS.entries) throw new Error('That archive has ' + entries.length + ' files; the limit is ' + IMPORT_LIMITS.entries + '. Export a smaller course or split it.');
+  var total = 0, seen = {}, out = [];
+  entries.forEach(function (e) {
+    var raw = String(e && e.path || '');
+    var p = safeArchivePath_(raw);
+    if (p === null) throw new Error('The archive contains an unsafe file path (' + raw.slice(0, 80) + '). It was not imported.');
+    if (!p || /\/$/.test(raw)) return; // folders
+    var size = Math.max(0, Number(e.size) || 0), comp = Math.max(0, Number(e.compressed) || 0);
+    if (size > 1024 * 1024 && comp > 0 && size / comp > IMPORT_LIMITS.ratio) throw new Error('"' + p.slice(0, 80) + '" expands ' + Math.round(size / comp) + ' times its packed size, which looks like a ZIP bomb. The archive was not imported.');
+    total += size;
+    if (seen[p]) return;
+    seen[p] = true;
+    out.push({ path: p, size: size });
+  });
+  if (total > IMPORT_LIMITS.totalBytes) throw new Error('The archive expands to ' + Math.round(total / 1048576) + ' MB; the limit is ' + Math.round(IMPORT_LIMITS.totalBytes / 1048576) + ' MB.');
+  return out;
+}
+
+/** SCORM, xAPI (Tin Can), cmi5, or Common Cartridge (Canvas or other), from the archive's files. */
+function detectPackage_(paths, texts) {
+  var has = function (re) { return paths.some(function (p) { return re.test(p); }); };
+  if (has(/(^|\/)cmi5\.xml$/i)) return 'cmi5';
+  if (has(/(^|\/)tincan\.xml$/i)) return 'xapi';
+  var manifest = texts['imsmanifest.xml'] || '';
+  if (manifest) {
+    if (/imsccv1p|imscc_xmlv1p|IMS Common Cartridge|imscp_v1p1.*imsccv/i.test(manifest)) return has(/^course_settings\//) ? 'canvas' : 'common-cartridge';
+    if (/adlcp|ADL SCORM|scormtype/i.test(manifest)) return /2004|adlcp_v1p3|CAM 1\.3/i.test(manifest) ? 'scorm2004' : 'scorm12';
+    return 'ims-package';
+  }
+  if (has(/\.json$/i) && Object.keys(texts).some(function (k) { return /\.json$/i.test(k) && /"posts"\s*:|"courseWork"\s*:|"courseWorkMaterial"\s*:/.test(texts[k]); })) return 'classroom';
+  return '';
+}
+var UNSUPPORTED_PACKAGES_ = { scorm12: 'a SCORM 1.2 package', scorm2004: 'a SCORM 2004 package', xapi: 'an xAPI (Tin Can) package', cmi5: 'a cmi5 package', 'ims-package': 'an IMS content package (not a Canvas course export)' };
+
+/* ------------------------------------------------------------------ */
+/* HTML from a source: links, files, images, and embeds                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Rewrites one HTML body for import. Links to other items become "#cw-ref-N" (resolved to the imported item or file
+ * after the drafts exist); images inside a page become download links (course files are private, so they can't be
+ * shown inline to the public web); unknown embeds, non-https links, and media that isn't in the export are reported.
+ * ctx = { refs: [], warn(level, message), fileFor(path) -> path|null, itemFor(kind, id) -> key|null (null = later) }.
+ */
+function importHtml_(html, ctx, where) {
+  html = String(html || '');
+  var m = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (m) html = m[1];
+  var ref = function (kind, key) { ctx.refs.push({ kind: kind, key: key }); return '#cw-ref-' + (ctx.refs.length - 1); };
+  html = html.replace(/<(a|img|iframe|video|audio|source|embed|object)\b([^>]*)>/gi, function (tag, name, attrs) {
+    name = name.toLowerCase();
+    var am = attrs.match(/\b(href|src|data)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    var url = am ? xmlDecode_(am[3] !== undefined ? am[3] : am[4] !== undefined ? am[4] : am[5]) : '';
+    var label = (attrs.match(/\balt\s*=\s*"([^"]*)"/i) || attrs.match(/\btitle\s*=\s*"([^"]*)"/i) || [])[1] || '';
+    var target = importTarget_(url, ctx, where);
+    if (name === 'a') {
+      if (/instructure_inline_media_comment|media_comment/.test(attrs) || /\/media_objects\//.test(url)) { ctx.warn('warn', where + ': a recorded media comment is not in the export; record or upload it again.'); return '<a>'; }
+      if (target.ref) return '<a href="' + target.ref + '">';
+      if (target.https) return '<a href="' + escAttr_(target.https) + '">';
+      return '<a>';
+    }
+    if (name === 'img') {
+      if (target.file) return '<a href="' + target.ref + '">[Image: ' + escAttr_(label || baseName_(target.file)) + ']</a>';
+      if (target.https) return '<img src="' + escAttr_(target.https) + '" alt="' + escAttr_(label) + '">';
+      ctx.warn('warn', where + ': an image could not be found in the export (' + (url || 'no address').slice(0, 80) + ').');
+      return label ? '[Image: ' + escAttr_(label) + ']' : '';
+    }
+    // iframe, video, audio, source, embed, object
+    var emb = target.https ? videoEmbed_(target.https) : null;
+    if (!emb && target.https && safeEmbedSrc_(target.https)) emb = { kind: 'iframe', src: target.https };
+    if (emb && emb.kind === 'iframe') return '<iframe src="' + escAttr_(emb.src) + '" title="Embedded video"></iframe>';
+    if (target.file) return '<a href="' + target.ref + '">[Media: ' + escAttr_(baseName_(target.file)) + ']</a>';
+    ctx.warn('warn', where + ': embedded content' + (url ? ' from ' + url.replace(/^https?:\/\//, '').split('/')[0].slice(0, 60) : '') + ' was removed; only YouTube, Vimeo, Loom, Google Drive, and Google Slides embeds are kept.');
+    return '';
+  });
+  return html;
+}
+
+/** Where one link or media address points: an imported item, a file in the export, an https address, or nowhere. */
+function importTarget_(url, ctx, where) {
+  url = String(url || '').trim();
+  if (!url || url.charAt(0) === '#') return {};
+  var dec = function (s) { try { return decodeURIComponent(s); } catch (e) { return s; } };
+  var fb = url.match(/^(?:\$IMS-CC-FILEBASE\$|%24IMS-CC-FILEBASE%24|\$IMS_CC_FILEBASE\$)\/?([^?#]*)/i);
+  if (fb) {
+    var p = ctx.fileFor('web_resources/' + dec(fb[1]).replace(/^\/+/, ''));
+    if (p) return { file: p, ref: '#cw-ref-' + (ctx.refs.push({ kind: 'file', key: p }) - 1) };
+    ctx.warn('warn', where + ': a linked file is missing from the export (' + dec(fb[1]).slice(0, 80) + ').');
+    return {};
+  }
+  var wiki = url.match(/^(?:\$WIKI_REFERENCE\$|%24WIKI_REFERENCE%24)\/pages\/([^?#]+)/i);
+  if (wiki) return { ref: '#cw-ref-' + (ctx.refs.push({ kind: 'item', key: 'wiki:' + dec(wiki[1]).toLowerCase(), where: where }) - 1) };
+  var obj = url.match(/^(?:\$CANVAS_OBJECT_REFERENCE\$|%24CANVAS_OBJECT_REFERENCE%24)\/(\w+)\/([^?#\/]+)/i);
+  if (obj) {
+    if (/^(assignments|discussion_topics|quizzes|assessments|pages|wiki_pages|files|attachments)$/i.test(obj[1])) return { ref: '#cw-ref-' + (ctx.refs.push({ kind: 'item', key: 'id:' + dec(obj[2]), where: where }) - 1) };
+    ctx.warn('info', where + ': a link to the Canvas ' + obj[1].replace(/_/g, ' ') + ' area was removed (no matching Roadmap page).');
+    return {};
+  }
+  if (/^(\$CANVAS_COURSE_REFERENCE\$|%24CANVAS_COURSE_REFERENCE%24)/i.test(url)) { ctx.warn('info', where + ': a link to a Canvas course page (' + url.split('/').slice(1).join('/').slice(0, 40) + ') was removed.'); return {}; }
+  if (/^https:\/\//i.test(url)) {
+    if (/\/courses\/\d+\//.test(url) && /instructure\.com|canvas/i.test(url)) ctx.warn('warn', where + ': a link still points at the original Canvas course (' + url.slice(0, 80) + '); check it after import.');
+    return { https: url };
+  }
+  if (/^http:\/\//i.test(url)) { ctx.warn('warn', where + ': a non-secure (http://) link was removed: ' + url.slice(0, 80)); return {}; }
+  if (/^mailto:/i.test(url)) return { https: url };
+  var rel = ctx.fileFor(dec(url.split(/[?#]/)[0]).replace(/^\.?\//, ''));
+  if (rel) return { file: rel, ref: '#cw-ref-' + (ctx.refs.push({ kind: 'file', key: rel }) - 1) };
+  ctx.warn('warn', where + ': a link could not be resolved (' + url.slice(0, 80) + ') and was removed.');
+  return {};
+}
+
+/* ------------------------------------------------------------------ */
+/* Canvas (.imscc)                                                     */
+/* ------------------------------------------------------------------ */
+
+function parseCanvas_(texts, files) {
+  var warnings = [], refs = [], fileSet = {};
+  files.forEach(function (f) { fileSet[f.path] = f; });
+  var warn = function (level, message) { warnings.push({ level: level, message: message }); };
+  var manifestXml = texts['imsmanifest.xml'];
+  if (!manifestXml) throw new Error('imsmanifest.xml is missing, so this is not a Canvas course export. In Canvas: Settings → Export Course Content → Course → Create Export, then download the .imscc file.');
+  var manifest = parseXml_(manifestXml);
+  var resources = {};
+  var dec = function (s) { try { return decodeURIComponent(String(s || '')); } catch (e) { return String(s || ''); } };
+  xall_(manifest, 'resource').forEach(function (r) {
+    resources[r.attrs.identifier] = { id: r.attrs.identifier, type: String(r.attrs.type || ''), href: safeArchivePath_(dec(r.attrs.href)) || '',
+      files: xkids_(r, 'file').map(function (f) { return safeArchivePath_(dec(f.attrs.href)) || ''; }), deps: xkids_(r, 'dependency').map(function (d) { return d.attrs.identifierref; }) };
+  });
+  var fileFor = function (p) {
+    p = safeArchivePath_(p);
+    if (!p) return null;
+    if (fileSet[p]) return p;
+    var lower = p.toLowerCase();
+    var hit = files.filter(function (f) { return f.path.toLowerCase() === lower; })[0];
+    return hit ? hit.path : null;
+  };
+  var ctx = { refs: refs, warn: warn, fileFor: fileFor };
+  var settings = parseXml_(texts['course_settings/course_settings.xml'] || '');
+  var title = xval_(settings, 'title') || xval_(xfirst_(manifest, 'general'), 'string') || 'Imported Canvas course';
+  var course = { key: 'canvas:' + (xfirst_(settings, 'course') ? (xfirst_(settings, 'course').attrs.identifier || title) : title), title: title.slice(0, 200),
+    description: '', syllabus: '', welcome: '', meta: { sourceCode: xval_(settings, 'course_code') }, modules: [], items: [], rubrics: [], announcements: [], refs: refs, warnings: warnings, files: [] };
+  var desc = xval_(settings, 'public_description');
+  if (desc) course.description = importHtml_(desc, ctx, 'Course description');
+  if (texts['course_settings/syllabus.html']) course.syllabus = importHtml_(texts['course_settings/syllabus.html'], ctx, 'Syllabus');
+
+  // Rubrics.
+  var rubricKeys = {};
+  xall_(parseXml_(texts['course_settings/rubrics.xml'] || ''), 'rubric').forEach(function (r) {
+    var criteria = xall_(r, 'criterion').map(function (c) {
+      return { description: (xval_(c, 'description') || 'Criterion').slice(0, 300), points: Number(xval_(c, 'points')) || 0,
+        ratings: xall_(c, 'rating').map(function (x) { return { label: (xval_(x, 'description') || '').slice(0, 120), points: Number(xval_(x, 'points')) || 0 }; }) };
+    }).filter(function (c) { return c.description; });
+    if (!criteria.length) return;
+    var key = 'rubric:' + r.attrs.identifier;
+    rubricKeys[r.attrs.identifier] = key;
+    course.rubrics.push({ key: key, title: (xval_(r, 'title') || 'Rubric').slice(0, 150), criteria: criteria });
+  });
+
+  // Every content resource as a Roadmap item (keyed by its Canvas identifier).
+  var itemsById = {}, wikiByName = {}, used = {};
+  var dirOf = function (res) { var p = res.href || res.files[0] || ''; return p.indexOf('/') > -1 ? p.split('/')[0] : ''; };
+  var depFile = function (res, re) {
+    var out = null;
+    res.deps.concat([res.id]).forEach(function (d) { var r2 = resources[d]; if (r2) r2.files.concat([r2.href]).forEach(function (f) { if (!out && re.test(f || '')) out = f; }); });
+    if (!out) Object.keys(texts).forEach(function (k) { if (!out && re.test(k) && k.indexOf(res.id) > -1) out = k; });
+    return out;
+  };
+  Object.keys(resources).forEach(function (id) {
+    var res = resources[id], t = res.type, it = null, where;
+    if (/^webcontent$/i.test(t) && /^wiki_content\//i.test(res.href)) {
+      var html = texts[res.href] || '';
+      var head = parseXml_((html.match(/<head[^>]*>([\s\S]*?)<\/head>/i) || [])[1] || '');
+      var metas = {}; xall_(head, 'meta').forEach(function (mm) { if (mm.attrs.name) metas[mm.attrs.name] = mm.attrs.content; });
+      var ptitle = xval_(head, 'title') || baseName_(res.href).replace(/\.html?$/i, '');
+      where = 'Page “' + ptitle + '”';
+      if (!html) warn('warn', where + ': the page file is missing from the export.');
+      it = { key: 'id:' + id, type: 'Page', title: ptitle, body: importHtml_(html, ctx, where), requirement: 'view' };
+      if (metas.workflow_state === 'unpublished') it.sourceUnpublished = true;
+      wikiByName[baseName_(res.href).replace(/\.html?$/i, '').toLowerCase()] = it.key;
+      if (metas.front_page === 'true' && !course.welcome) { course.welcome = it.body; it.frontPage = true; }
+    } else if (/learning-application-resource/i.test(t) && depFile(res, /assignment_settings\.xml$/i)) {
+      var s = parseXml_(texts[depFile(res, /assignment_settings\.xml$/i)] || '');
+      var atitle = xval_(s, 'title') || 'Assignment';
+      where = 'Assignment “' + atitle + '”';
+      var bodyPath = res.href && /\.html?$/i.test(res.href) ? res.href : res.files.filter(function (f) { return /\.html?$/i.test(f); })[0];
+      var stypes = xval_(s, 'submission_types').split(',').map(function (x) { return x.trim(); }).filter(String);
+      var map = { online_text_entry: 'text', online_url: 'link', online_upload: 'file' };
+      var mapped = stypes.map(function (x) { return map[x]; }).filter(Boolean);
+      stypes.forEach(function (x) {
+        if (x === 'external_tool') warn('error', where + ': it uses an external tool (LTI), such as New Quizzes or a publisher tool. External tools are not part of the export and are not supported; rebuild this activity.');
+        else if (!map[x] && x !== 'none' && x !== 'not_graded') warn('warn', where + ': submission type “' + x.replace(/_/g, ' ') + '” isn’t available in the Roadmap; learners can turn in text, a link, or a file.');
+      });
+      var pts = Number(xval_(s, 'points_possible')) || 0, gtype = xval_(s, 'grading_type');
+      it = { key: 'id:' + id, type: 'Assignment', title: atitle, body: importHtml_(texts[bodyPath] || xval_(s, 'description') || '', ctx, where), points: pts,
+        grading: gtype === 'pass_fail' || !pts ? 'complete' : 'points', submissionTypes: mapped.length ? mapped : ['text', 'link', 'file'], requirement: 'submit' };
+      if (/^(letter_grade|gpa_scale|percent)$/.test(gtype)) warn('info', where + ': Canvas grading type “' + gtype.replace(/_/g, ' ') + '” becomes points out of ' + pts + '.');
+      var rid = xval_(s, 'rubric_identifierref') || xval_(s, 'rubric_external_identifier');
+      if (rid && rubricKeys[rid]) { it.rubricKey = rubricKeys[rid]; it.grading = 'rubric'; }
+      else if (rid) warn('warn', where + ': its rubric is not in the export.');
+      if (xval_(s, 'peer_reviews') === 'true') warn('warn', where + ': peer reviews are not supported and were not set up.');
+      if (xval_(s, 'workflow_state') === 'unpublished') it.sourceUnpublished = true;
+      if (xval_(s, 'quiz_identifierref')) it = null; // a quiz's assignment record: the quiz itself is imported from its own resource
+    } else if (/imsdt_xmlv1p1/i.test(t)) {
+      var topicPath = res.href || res.files[0];
+      var topic = parseXml_(texts[topicPath] || '');
+      var dtitle = xval_(topic, 'title') || 'Discussion';
+      where = 'Discussion “' + dtitle + '”';
+      var metaPath = res.deps.map(function (d) { return resources[d] && (resources[d].href || resources[d].files[0]); }).filter(Boolean)[0] || null;
+      var meta = parseXml_(metaPath ? texts[metaPath] || '' : '');
+      var body = importHtml_(xval_(topic, 'text'), ctx, where);
+      if (xval_(meta, 'type') === 'announcement') {
+        course.announcements.push({ key: 'id:' + id, title: dtitle.slice(0, 200), body: body });
+        used['id:' + id] = true;
+        return;
+      }
+      it = { key: 'id:' + id, type: 'Discussion', title: dtitle, body: body, requirement: 'contribute' };
+      if (xval_(meta, 'workflow_state') === 'unpublished') it.sourceUnpublished = true;
+      if (xval_(meta, 'assignment') || xfirst_(meta, 'assignment')) warn('info', where + ': it was a graded discussion in Canvas; set its points or rubric after import if needed.');
+    } else if (/assessment/i.test(t) || /imsqti/i.test(t)) {
+      var metaFile = depFile(res, /assessment_meta\.xml$/i), qtiFile = depFile(res, /non_cc_assessments\/.*\.qti$|\.xml\.qti$/i) || depFile(res, /assessment_qti\.xml$/i) || res.href;
+      var qm = parseXml_(texts[metaFile] || '');
+      var qtitle = xval_(qm, 'title') || xval_(parseXml_(texts[qtiFile] || ''), 'title') || (xfirst_(parseXml_(texts[qtiFile] || ''), 'assessment') || { attrs: {} }).attrs.title || 'Quiz';
+      where = 'Quiz “' + qtitle + '”';
+      if (!texts[qtiFile]) { warn('error', where + ': the quiz questions are missing from the export; rebuild this quiz.'); return; }
+      var qs = parseQti_(texts[qtiFile], where, warn, ctx);
+      var qtype = xval_(qm, 'quiz_type');
+      if (/survey/.test(qtype)) warn('warn', where + ': it was a Canvas survey; answer keys don’t apply, so check each question.');
+      if (!qs.length) { warn('error', where + ': none of its questions can be imported, so it becomes a page listing what to rebuild.'); it = { key: 'id:' + id, type: 'Page', title: qtitle + ' (rebuild this quiz)', body: importHtml_(xval_(qm, 'description'), ctx, where), requirement: 'view' }; }
+      else it = { key: 'id:' + id, type: 'Quiz', title: qtitle, body: importHtml_(xval_(qm, 'description'), ctx, where), questions: qs, attempts: Math.max(1, Math.min(10, Number(xval_(qm, 'allowed_attempts')) > 0 ? Number(xval_(qm, 'allowed_attempts')) : 1)), requirement: 'submit', grading: 'points' };
+      if (Number(xval_(qm, 'allowed_attempts')) === -1) warn('info', where + ': unlimited attempts become 10.');
+      if (xval_(qm, 'time_limit')) warn('info', where + ': time limits are not supported; the quiz is untimed.');
+      if (xval_(qm, 'workflow_state') === 'unpublished') it.sourceUnpublished = true;
+    } else if (/imsbasiclti/i.test(t)) {
+      var lti = parseXml_(texts[res.href || res.files[0]] || '');
+      warn('error', 'External tool “' + (xval_(lti, 'title') || id) + '” (LTI) is not supported and was not imported. Its content lives in the tool, not in the export.');
+      return;
+    } else if (/^webcontent$/i.test(t) && res.href && fileSet[res.href] && !/^wiki_content\//.test(res.href) && !/\.html?$/i.test(res.href)) {
+      it = { key: 'id:' + id, type: 'Resource', title: baseName_(res.href), fileRef: res.href, requirement: 'view' };
+    }
+    if (it) { it.title = String(it.title).slice(0, 200); itemsById[it.key] = it; }
+  });
+
+  // Modules (Canvas's module_meta.xml; the manifest's organization otherwise).
+  var modXml = parseXml_(texts['course_settings/module_meta.xml'] || '');
+  var mods = xall_(modXml, 'module');
+  var order = [];
+  if (mods.length) {
+    mods.forEach(function (mod, mi) {
+      var mkey = 'module:' + (mod.attrs.identifier || mi);
+      course.modules.push({ key: mkey, title: (xval_(mod, 'title') || 'Module ' + (mi + 1)).slice(0, 150), sequential: xval_(mod, 'require_sequential_progress') === 'true', sourceUnpublished: xval_(mod, 'workflow_state') === 'unpublished' });
+      if (xfirst_(mod, 'prerequisites') && xall_(mod, 'prerequisite').length) warn('info', 'Module “' + xval_(mod, 'title') + '”: prerequisites were not copied; set them in Modules after import.');
+      if (xval_(mod, 'unlock_at')) warn('info', 'Module “' + xval_(mod, 'title') + '”: its unlock date was not copied (it belonged to the old term).');
+      var reqs = {};
+      xall_(mod, 'completion_requirement').forEach(function (cr) { reqs[xval_(cr, 'identifierref')] = { type: cr.attrs.type, min: Number(xval_(cr, 'min_score')) || 0 }; });
+      xall_(mod, 'item').forEach(function (mi2) {
+        var ctype = xval_(mi2, 'content_type'), rid = xval_(mi2, 'identifierref'), ititle = xval_(mi2, 'title');
+        var req = reqs[mi2.attrs.identifier];
+        if (ctype === 'ContextModuleSubHeader') { warn('info', 'Module “' + xval_(mod, 'title') + '”: text header “' + ititle + '” isn’t a Roadmap item and was left out.'); return; }
+        if (ctype === 'ExternalUrl') {
+          var url = xval_(mi2, 'url');
+          if (/^https:\/\//i.test(url)) order.push({ mkey: mkey, item: { key: 'url:' + mi2.attrs.identifier, type: videoEmbed_(url) ? 'Video' : 'Resource', title: (ititle || url).slice(0, 200), link: url, requirement: 'view' }, req: req });
+          else warn('warn', 'Link “' + ititle + '” was not imported: only https:// links are allowed (' + url.slice(0, 80) + ').');
+          return;
+        }
+        if (ctype === 'ContextExternalTool') { if (!(rid && resources[rid] && /imsbasiclti/i.test(resources[rid].type))) warn('error', 'External tool “' + ititle + '” (LTI) in module “' + xval_(mod, 'title') + '” is not supported and was not imported.'); return; }
+        var it2 = itemsById['id:' + rid];
+        if (!it2) { if (rid && resources[rid] && /imsbasiclti|external/i.test(resources[rid].type)) return; if (ctype !== 'Attachment' || !rid) warn('warn', 'Module item “' + ititle + '” (' + (ctype || 'unknown') + ') was not found in the export.'); return; }
+        if (ititle && it2.type !== 'Page') it2.title = ititle.slice(0, 200);
+        order.push({ mkey: mkey, item: it2, req: req });
+        used[it2.key] = true;
+      });
+    });
+  } else {
+    var org = xfirst_(manifest, 'organization');
+    var top = org ? xkids_(xkid_(org, 'item') || org, 'item') : [];
+    top.forEach(function (mod, mi) {
+      var mkey = 'module:' + (mod.attrs.identifier || mi);
+      course.modules.push({ key: mkey, title: (xval_(xkid_(mod, 'title'), '') || xtext_(xkid_(mod, 'title')) || 'Module ' + (mi + 1)).slice(0, 150) });
+      xall_(mod, 'item').forEach(function (x) {
+        var it3 = itemsById['id:' + x.attrs.identifierref];
+        if (it3) { order.push({ mkey: mkey, item: it3 }); used[it3.key] = true; }
+      });
+    });
+  }
+  var reqMap = { must_view: 'view', must_mark_done: 'mark_done', must_contribute: 'contribute', must_submit: 'submit', min_score: 'min_score' };
+  order.forEach(function (o) {
+    var it = JSON.parse(JSON.stringify(o.item));
+    it.moduleKey = o.mkey;
+    if (o.req && reqMap[o.req.type]) {
+      var r = reqMap[o.req.type];
+      if (r === 'min_score') {
+        var pts = it.type === 'Quiz' ? (it.questions || []).reduce(function (s, q) { return s + (q.points || 0); }, 0) : it.points;
+        if (['Assignment', 'Quiz'].indexOf(it.type) > -1 && pts) { it.requirement = 'min_score'; it.minScore = Math.max(0, Math.min(100, Math.round(o.req.min / pts * 100))); }
+        else warn('warn', '“' + it.title + '”: its minimum-score requirement couldn’t be converted; set the requirement after import.');
+      } else if ((r === 'contribute' && it.type !== 'Discussion') || (r === 'submit' && ['Assignment', 'Quiz'].indexOf(it.type) < 0)) it.requirement = 'mark_done';
+      else it.requirement = r;
+    } else it.requirement = '';
+    if (course.items.some(function (x) { return x.key === it.key; })) it.key = it.key + '#' + course.items.length;
+    course.items.push(it);
+  });
+  // Pages and activities that no module lists (files outside modules are reported below instead).
+  var loose = Object.keys(itemsById).filter(function (k) { return !used[k]; }).map(function (k) { return itemsById[k]; })
+    .filter(function (it) { return it.type !== 'Resource' && !it.frontPage; });
+  if (loose.length) {
+    course.modules.push({ key: 'module:unfiled', title: 'Other imported content' });
+    loose.forEach(function (it) { var c = JSON.parse(JSON.stringify(it)); c.moduleKey = 'module:unfiled'; c.requirement = ''; course.items.push(c); });
+    warn('info', loose.length + ' page(s) or activities were not in any Canvas module; they are in “Other imported content”.');
+  }
+  var unusedFiles = files.filter(function (f) { return /^web_resources\//.test(f.path) && !refs.some(function (r) { return r.key === f.path; }) && !course.items.some(function (it) { return it.fileRef === f.path; }); });
+  if (unusedFiles.length) warn('info', unusedFiles.length + ' file(s) in the Canvas Files area aren’t linked from any module or page and were left out (' + unusedFiles.slice(0, 3).map(function (f) { return baseName_(f.path); }).join(', ') + (unusedFiles.length > 3 ? ', …' : '') + ').');
+  resolveRefs_(course, wikiByName, warn);
+  warn('info', 'Canvas course exports contain course content only: no students, grades, submissions, or discussion replies.');
+  return finishCourses_([course], files, []);
+}
+
+/** Canvas Classic Quizzes (QTI 1.2 with Canvas's question_type metadata) → Roadmap questions. Others are reported. */
+function parseQti_(xml, where, warn, ctx) {
+  var doc = parseXml_(xml), out = [], skipped = {};
+  if (xall_(doc, 'sourcebank_ref').length || xall_(doc, 'selection_number').length) warn('warn', where + ': it draws questions from a question bank or group; only questions written into the quiz itself were imported.');
+  xall_(doc, 'item').forEach(function (item, i) {
+    var meta = {};
+    xall_(item, 'qtimetadatafield').forEach(function (f) { meta[xval_(f, 'fieldlabel')] = xval_(f, 'fieldentry'); });
+    var type = meta.question_type || (xfirst_(item, 'render_choice') ? 'multiple_choice_question' : xfirst_(item, 'render_fib') ? 'short_answer_question' : '');
+    var promptHtml = xtext_(xfirst_(xkid_(item, 'presentation') || item, 'mattext'));
+    var prompt = htmlToText_(promptHtml).slice(0, 1500);
+    if (/<img\b/i.test(promptHtml)) warn('warn', where + ', question ' + (i + 1) + ': an image in the question was left out; add it back as text or a link.');
+    var points = Number(meta.points_possible) || 1;
+    var labels = xall_(item, 'response_label').map(function (l) { return { id: l.attrs.ident, text: htmlToText_(xtext_(xfirst_(l, 'mattext'))).slice(0, 300) }; });
+    var correct = [];
+    xall_(item, 'respcondition').forEach(function (rc) {
+      var sv = xfirst_(rc, 'setvar');
+      if (sv && Number(xtext_(sv)) > 0) xall_(rc, 'varequal').forEach(function (v) { correct.push(xtext_(v)); });
+    });
+    var q = null;
+    if (type === 'multiple_choice_question') {
+      var idx = labels.map(function (l) { return l.id; }).indexOf(correct[0]);
+      if (labels.length >= 2 && idx > -1) q = { type: 'mc', choices: labels.map(function (l) { return l.text; }).slice(0, 10), answer: idx };
+      else warn('warn', where + ', question ' + (i + 1) + ': no correct answer was marked, so it was left out.');
+    } else if (type === 'true_false_question') {
+      var lab = labels.filter(function (l) { return l.id === correct[0]; })[0];
+      if (lab) q = { type: 'tf', choices: [], answer: /^true$/i.test(lab.text) };
+    } else if (type === 'short_answer_question') {
+      var acc = correct.map(function (c) { return String(c).trim(); }).filter(String).slice(0, 10);
+      if (acc.length) q = { type: 'short', choices: [], answer: acc };
+    } else if (type === 'essay_question') q = { type: 'essay', choices: [], answer: '' };
+    else if (type === 'text_only_question') { warn('info', where + ': a text-only block was left out (“' + prompt.slice(0, 60) + '”).'); return; }
+    if (!q) { if (!/^(multiple_choice|true_false|short_answer)_question$/.test(type)) skipped[type || 'unknown'] = (skipped[type || 'unknown'] || 0) + 1; return; }
+    if (!prompt) { warn('warn', where + ', question ' + (i + 1) + ': it has no text and was left out.'); return; }
+    q.key = 'q:' + (item.attrs.ident || i); q.prompt = prompt; q.points = Math.max(0, Math.min(100, points)); q.bank = 'Imported';
+    out.push(q);
+  });
+  Object.keys(skipped).forEach(function (t) {
+    warn('error', where + ': ' + skipped[t] + ' “' + t.replace(/_question$/, '').replace(/_/g, ' ') + '” question(s) are not supported (the Roadmap has multiple choice, true/false, short answer, and essay) and were left out; rebuild them.');
+  });
+  return out;
+}
+
+/** Turns "#cw-ref-N" item references into imported item keys (wiki page names and Canvas ids). Unresolved ones are reported. */
+function resolveRefs_(course, wikiByName, warn) {
+  var keys = {};
+  course.items.forEach(function (it) { keys[it.key] = true; keys[it.key.split('#')[0]] = keys[it.key.split('#')[0]] || it.key; });
+  course.refs.forEach(function (r) {
+    if (r.kind !== 'item') return;
+    var k = r.key.indexOf('wiki:') === 0 ? wikiByName[r.key.slice(5)] : r.key;
+    if (k && course.items.some(function (it) { return it.key === k; })) r.key = k;
+    else { r.broken = true; warn('warn', (r.where || 'A page') + ': a link to another course item (' + r.key.replace(/^(wiki|id):/, '') + ') points at something not in this import; the link text was kept without the link.'); }
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Google Classroom (Google Takeout)                                   */
+/* ------------------------------------------------------------------ */
+
+function parseClassroom_(texts, files) {
+  var warnings = [], courses = [];
+  var warn = function (level, message) { warnings.push({ level: level, message: message }); };
+  var byBase = {};
+  files.forEach(function (f) { var b = baseName_(f.path).toLowerCase(); (byBase[b] = byBase[b] || []).push(f.path); (byBase[b.replace(/\.[^.]+$/, '')] = byBase[b.replace(/\.[^.]+$/, '')] || []).push(f.path); });
+  Object.keys(texts).filter(function (k) { return /\.json$/i.test(k); }).forEach(function (path) {
+    var data;
+    try { data = JSON.parse(texts[path]); } catch (e) { warn('warn', baseName_(path) + ' is not valid JSON and was skipped.'); return; }
+    if (!data || typeof data !== 'object' || (!data.posts && !data.name)) return;
+    var cw = [], refs = [], cWarn = [];
+    var w = function (level, message) { cWarn.push({ level: level, message: message }); };
+    var title = String(data.name || baseName_(path).replace(/\.json$/i, '') || 'Imported class').slice(0, 200);
+    var course = { key: 'classroom:' + (data.id || title + (data.section ? ' ' + data.section : '')), title: title, description: data.description ? '<p>' + escAttr_(String(data.description)).replace(/\n/g, '<br>') + '</p>' : '',
+      syllabus: '', welcome: '', meta: { section: String(data.section || ''), room: String(data.room || '') }, modules: [], items: [], rubrics: [], announcements: [], refs: refs, warnings: cWarn, files: [] };
+    var ctx = { refs: refs, warn: w, fileFor: function () { return null; } };
+    var topicKey = {};
+    (data.topics || []).forEach(function (t, i) {
+      var k = 'topic:' + (t.topicId || t.name || i);
+      topicKey[t.name] = k;
+      course.modules.push({ key: k, title: String(t.name || 'Topic ' + (i + 1)).slice(0, 150) });
+    });
+    var general = function () {
+      if (!course.modules.some(function (m) { return m.key === 'topic:none'; })) course.modules.unshift({ key: 'topic:none', title: 'General' });
+      return 'topic:none';
+    };
+    var drive = 0, missing = 0, forms = 0, learners = 0;
+    (data.posts || []).forEach(function (post, pi) {
+      var mkey = post.topics && post.topics[0] && topicKey[post.topics[0].name] ? topicKey[post.topics[0].name] : general();
+      var body = '', it = null, ptitle;
+      var text2html = function (s) { return s ? '<p>' + escAttr_(String(s)).replace(/\n/g, '<br>') + '</p>' : ''; };
+      if (post.courseWork) {
+        var w2 = post.courseWork; ptitle = String(w2.title || 'Assignment ' + (pi + 1));
+        if ((w2.submissions || []).length || (post.comments || []).length) learners++;
+        var kind = String(w2.workType || 'ASSIGNMENT');
+        body = text2html(w2.description);
+        if (kind === 'MULTIPLE_CHOICE_QUESTION') {
+          var ch = ((w2.multipleChoiceQuestion || {}).choices || []).map(String);
+          body += ch.length ? '<p>Choices:</p><ul>' + ch.map(function (c) { return '<li>' + escAttr_(c) + '</li>'; }).join('') + '</ul>' : '';
+          w('warn', 'Question “' + ptitle + '”: Classroom multiple-choice questions have no answer key, so it became an assignment with a written response listing the choices.');
+          it = { type: 'Assignment', submissionTypes: ['text'] };
+        } else if (kind === 'SHORT_ANSWER_QUESTION') it = { type: 'Assignment', submissionTypes: ['text'] };
+        else it = { type: 'Assignment', submissionTypes: ['text', 'link', 'file'] };
+        it.points = Number(w2.maxPoints) || 0;
+        it.grading = it.points ? 'points' : 'complete';
+        it.requirement = 'submit';
+        if (w2.dueDate) w('info', '“' + ptitle + '”: its due date was not copied (it belonged to the old class).');
+      } else if (post.courseWorkMaterial) {
+        ptitle = String(post.courseWorkMaterial.title || 'Material ' + (pi + 1));
+        body = text2html(post.courseWorkMaterial.description);
+        it = { type: 'Page', requirement: 'view' };
+      } else if (post.announcement || post.text !== undefined) {
+        var ann = post.announcement || post;
+        var atext = String(ann.text || '');
+        course.announcements.push({ key: 'ann:' + pi, title: (atext.split('\n')[0] || 'Announcement').slice(0, 80), body: text2html(atext) });
+        if ((post.materials || []).length) w('info', 'An announcement had attachments; they are listed in its text only.');
+        return;
+      } else return;
+      it.key = 'post:' + (post.id || pi);
+      it.title = ptitle.slice(0, 200);
+      it.moduleKey = mkey;
+      var attach = [];
+      (post.materials || []).forEach(function (m, mi) {
+        if (m.driveFile && m.driveFile.driveFile) {
+          var df = m.driveFile.driveFile, dtitle = String(df.title || 'Drive file');
+          drive++;
+          var found = byBase[dtitle.toLowerCase()] || byBase[dtitle.toLowerCase().replace(/\.[^.]+$/, '')];
+          var a = { key: it.key + ':m' + mi, type: 'Resource', title: dtitle.slice(0, 200), moduleKey: mkey, requirement: 'view', driveTitle: dtitle };
+          if (found) a.fileRef = found[0];
+          else {
+            missing++;
+            a.needsFile = 'drive:' + (df.id || dtitle);
+            a.driveLink = /^https:\/\//.test(df.alternateLink || '') ? df.alternateLink : '';
+            course.files.push({ path: a.needsFile, name: dtitle, size: 0, status: 'missing', drive: true, link: a.driveLink, usedBy: it.title });
+          }
+          attach.push(a);
+        } else if (m.youtubeVideo) {
+          var yv = m.youtubeVideo, yurl = yv.alternateLink || (yv.id ? 'https://www.youtube.com/watch?v=' + yv.id : '');
+          if (yurl) attach.push({ key: it.key + ':m' + mi, type: 'Video', title: String(yv.title || 'Video').slice(0, 200), link: yurl, moduleKey: mkey, requirement: 'view' });
+        } else if (m.link) {
+          if (/^https:\/\//i.test(m.link.url || '')) attach.push({ key: it.key + ':m' + mi, type: 'Resource', title: String(m.link.title || m.link.url).slice(0, 200), link: m.link.url, moduleKey: mkey, requirement: 'view' });
+          else w('warn', '“' + ptitle + '”: link ' + String(m.link.url || '').slice(0, 80) + ' was not imported (only https:// links are allowed).');
+        } else if (m.form) {
+          forms++;
+          w('error', '“' + ptitle + '”: Google Form “' + (m.form.title || 'form') + '” was not converted. Forms quizzes don’t become Roadmap quizzes automatically; rebuild it as a quiz, or keep it as a link.' + (m.form.formUrl ? '' : ''));
+          if (/^https:\/\//.test(m.form.formUrl || '')) attach.push({ key: it.key + ':m' + mi, type: 'Resource', title: ('Form: ' + (m.form.title || 'Google Form')).slice(0, 200), link: m.form.formUrl, moduleKey: mkey, requirement: '' , needsReview: true });
+        } else w('warn', '“' + ptitle + '”: an attachment of an unknown kind (' + Object.keys(m).join(', ').slice(0, 40) + ') was not imported. Practice sets, video questions, and add-on activities are not supported.');
+      });
+      it.body = importHtml_(body, ctx, '“' + ptitle + '”');
+      course.items.push(it);
+      attach.forEach(function (a) { course.items.push(a); });
+    });
+    if (!course.modules.length) course.modules.push({ key: 'topic:none', title: 'General' });
+    if (drive) w(missing ? 'warn' : 'info', drive + ' attachment(s) are Google Drive files, which Takeout lists by name but doesn’t include. ' + (missing ? missing + ' weren’t found in this upload: download each from Drive and add it in the review step, or keep the Drive link (viewers then need access in Drive; sharing isn’t changed).' : 'All were matched to files in this upload.'));
+    if (learners) w('info', 'Student submissions and comments in the export were not imported.');
+    if (forms) w('info', forms + ' Google Form(s) need to be rebuilt.');
+    courses.push(course);
+  });
+  if (!courses.length) throw new Error('No Google Classroom classes were found. Upload the Takeout .zip (or the class .json files inside Takeout/Classroom). In Google Takeout, choose only Classroom.');
+  warn('info', 'Google Takeout exports class posts, topics, and materials. Announcements and standalone materials are missing from some exports; check against the class before deleting it.');
+  return finishCourses_(courses, files, warnings);
+}
+
+/* ------------------------------------------------------------------ */
+/* TalentLMS (CSV/XLSX course list)                                    */
+/* ------------------------------------------------------------------ */
+
+var TALENT_FIELDS_ = { title: ['name', 'course name', 'course', 'title', 'course title'], code: ['code', 'course code'], description: ['description', 'course description'],
+  category: ['category', 'category name', 'categories'], id: ['id', 'course id'] };
+
+function parseTalent_(texts, files) {
+  var warnings = [], rows = null, src = '';
+  var warn = function (level, message) { warnings.push({ level: level, message: message }); };
+  Object.keys(texts).forEach(function (k) {
+    if (rows) return;
+    if (/\.csv$/i.test(k)) { rows = parseCsv_(texts[k]); src = k; }
+    else if (/xl\/worksheets\/sheet1\.xml$/i.test(k)) { rows = parseXlsxSheet_(texts[k], texts[k.replace(/worksheets\/sheet1\.xml$/i, 'sharedStrings.xml')] || ''); src = k.split('::')[0]; }
+  });
+  if (!rows || rows.length < 2) throw new Error('No course rows were found. Export the course list from TalentLMS as CSV or XLSX (see the help topic), and upload that file.');
+  var head = rows[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  var col = {};
+  Object.keys(TALENT_FIELDS_).forEach(function (f) { col[f] = head.map(function (h, i) { return TALENT_FIELDS_[f].indexOf(h) > -1 ? i : -1; }).filter(function (i) { return i > -1; })[0]; });
+  if (col.title === undefined) throw new Error('The file needs a course name column ("Name" or "Course name"). Columns found: ' + rows[0].slice(0, 10).join(', '));
+  var mappedIdx = Object.keys(col).map(function (k) { return col[k]; });
+  var unmapped = rows[0].filter(function (h, i) { return mappedIdx.indexOf(i) < 0 && String(h).trim(); });
+  if (unmapped.length) warn('info', 'Columns not used (no matching Roadmap field): ' + unmapped.slice(0, 12).join(', ') + (unmapped.length > 12 ? ', …' : '') + '.');
+  var courses = [], seen = {};
+  rows.slice(1).forEach(function (r, i) {
+    var t = String(r[col.title] || '').trim();
+    if (!t) { warn('warn', 'Row ' + (i + 2) + ' has no course name and was skipped.'); return; }
+    var key = 'talentlms:' + (col.id !== undefined && r[col.id] ? r[col.id] : t);
+    if (seen[key]) { warn('warn', 'Row ' + (i + 2) + ' repeats “' + t + '” and was skipped.'); return; }
+    seen[key] = true;
+    var d = col.description !== undefined ? String(r[col.description] || '') : '';
+    courses.push({ key: key, title: t.slice(0, 200), description: d ? '<p>' + escAttr_(d).replace(/\n/g, '<br>') + '</p>' : '', syllabus: '', welcome: '',
+      meta: { sourceCode: col.code !== undefined ? String(r[col.code] || '') : '', category: col.category !== undefined ? String(r[col.category] || '') : '' },
+      modules: [{ key: 'module:materials', title: 'Course materials' }], items: [], rubrics: [], announcements: [], refs: [], files: [],
+      warnings: [{ level: 'warn', message: 'TalentLMS exports course details only. Units built in the TalentLMS editor (content, tests, surveys, assignments) are not in the export and must be rebuilt; add any files you downloaded from the course in the review step.' }] });
+  });
+  if (!courses.length) throw new Error('No courses with names were found in ' + baseName_(src) + '.');
+  warn('info', 'TalentLibrary courses are licensed inside TalentLMS and cannot be downloaded or transferred.');
+  return finishCourses_(courses, files, warnings);
+}
+
+/* ------------------------------------------------------------------ */
+/* Plans                                                               */
+/* ------------------------------------------------------------------ */
+
+/** Adds each course's file list (what it uses, with a status) and counts. */
+function finishCourses_(courses, files, warnings) {
+  var fileByPath = {};
+  files.forEach(function (f) { fileByPath[f.path] = f; });
+  courses.forEach(function (c) {
+    var need = {};
+    c.items.forEach(function (it) { if (it.fileRef) need[it.fileRef] = it.title; });
+    c.refs.forEach(function (r) { if (r.kind === 'file') need[r.key] = need[r.key] || 'a link in a page'; });
+    Object.keys(need).forEach(function (p) {
+      var f = fileByPath[p];
+      c.files.push({ path: p, name: baseName_(p), size: f ? f.size : 0, status: f ? fileStatus_(p, f.size) : 'missing', usedBy: need[p] });
+    });
+    c.files.filter(function (f) { return f.status !== 'ok' && !f.drive; }).forEach(function (f) {
+      c.warnings.push({ level: f.status === 'missing' ? 'warn' : 'warn', message: 'File “' + f.name + '” (' + f.usedBy + '): ' + f.status + '.' });
+    });
+    if (c.items.length > IMPORT_LIMITS.items) { c.warnings.push({ level: 'error', message: c.items.length + ' items is more than the ' + IMPORT_LIMITS.items + ' allowed in one course; only the first ' + IMPORT_LIMITS.items + ' will be imported.' }); c.items = c.items.slice(0, IMPORT_LIMITS.items); }
+    c.counts = { modules: c.modules.length, items: c.items.length, questions: c.items.reduce(function (s, it) { return s + (it.questions || []).length; }, 0), announcements: c.announcements.length, files: c.files.length };
+  });
+  return { courses: courses, warnings: warnings };
+}
+
+/**
+ * Administrator: check an upload and describe what can be imported. payload = { source, name, size, entries:
+ * [{ path, size, compressed }], texts: { path: text } }. Nothing is saved.
+ */
+function analyzeImport(payload) {
+  var v = assertImportAdmin_();
+  payload = payload || {};
+  var source = String(payload.source || '');
+  if (!IMPORT_SOURCES[source]) throw new Error('Choose where the course comes from: Canvas, Google Classroom, or TalentLMS.');
+  if (Number(payload.size) > IMPORT_LIMITS.archiveBytes) throw new Error('That upload is ' + Math.round(payload.size / 1048576) + ' MB; the limit is ' + Math.round(IMPORT_LIMITS.archiveBytes / 1048576) + ' MB.');
+  var files = validateArchive_(payload.entries);
+  var texts = {}, textBytes = 0;
+  Object.keys(payload.texts || {}).forEach(function (k) {
+    var p = k.indexOf('::') > -1 ? k : safeArchivePath_(k);
+    if (!p) throw new Error('The upload contains an unsafe file path.');
+    var t = String(payload.texts[k] || '');
+    textBytes += t.length;
+    texts[p] = t;
+  });
+  if (textBytes > IMPORT_LIMITS.textBytes) throw new Error('The export has more than ' + Math.round(IMPORT_LIMITS.textBytes / 1048576) + ' MB of pages and settings. Export fewer courses at once, or split the course.');
+  var blocked = files.filter(function (f) { return IMPORT_BLOCKED_EXT_.test(f.path); });
+  var kind = detectPackage_(files.map(function (f) { return f.path; }), texts);
+  var plan;
+  if (UNSUPPORTED_PACKAGES_[kind]) {
+    plan = { courses: [], warnings: [{ level: 'error', message: 'This is ' + UNSUPPORTED_PACKAGES_[kind] + '. The Roadmap has no ' + (kind === 'cmi5' ? 'cmi5' : kind === 'xapi' ? 'xAPI' : kind === 'ims-package' ? 'player for IMS packages' : 'SCORM') + (kind === 'ims-package' ? ' or' : ' player or') + ' tracking, so it can’t be imported as a working course. Keep it in a system that plays it and link to it, or rebuild the content.' }] };
+  } else if (source === 'canvas') {
+    if (kind === 'classroom') throw new Error('This looks like a Google Classroom export. Choose Google Classroom as the source.');
+    plan = parseCanvas_(texts, files);
+    if (kind === 'common-cartridge') plan.warnings.unshift({ level: 'warn', message: 'This is a Common Cartridge without Canvas’s course settings, so module order, completion rules, and rubrics may be missing.' });
+  } else if (source === 'classroom') plan = parseClassroom_(texts, files);
+  else plan = parseTalent_(texts, files);
+  if (blocked.length) plan.warnings.push({ level: 'warn', message: blocked.length + ' program or script file(s) in the archive were blocked and will not be imported (' + blocked.slice(0, 3).map(function (f) { return baseName_(f.path); }).join(', ') + ').' });
+  plan.source = source; plan.sourceName = String(payload.name || '').slice(0, 200); plan.packageType = kind || source;
+  plan.limits = { fileMB: UPLOAD_MAX_BYTES / 1048576, items: IMPORT_LIMITS.items, courses: IMPORT_LIMITS.courses };
+  var keys = importedKeys_();
+  plan.courses.forEach(function (c) { if (keys[c.key]) c.alreadyImported = keys[c.key]; });
+  return plan;
+}
+
+/** Source keys already imported by jobs that weren't cleaned up: { key: 'CODE (job id)' }. */
+function importedKeys_() {
+  var out = {};
+  if (!tabByName_(IMPORT_ITEMS_SHEET)) return out;
+  readTable_(IMPORT_ITEMS_SHEET).forEach(function (r) {
+    if (String(r.Kind) === 'course' && String(r.Status) === 'created') out[String(r['Source Key'])] = String(r.Code) + ' (job ' + String(r['Job ID']) + ')';
+  });
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Jobs                                                                */
+/* ------------------------------------------------------------------ */
+
+function importFolder_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('IMPORT_FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) { /* removed: make a new one */ } }
+  var folder = DriveApp.createFolder('TQC Roadmap - Course Imports (private)');
+  props.setProperty('IMPORT_FOLDER_ID', folder.getId());
+  return folder;
+}
+/** The two import tabs, made the first time someone imports (never during normal startup). */
+function ensureImportSheets_() {
+  if (!tabByName_(IMPORT_JOBS_SHEET)) writeTable_(IMPORT_JOBS_SHEET, IMPORT_JOB_HEADERS, []);
+  if (!tabByName_(IMPORT_ITEMS_SHEET)) writeTable_(IMPORT_ITEMS_SHEET, IMPORT_ITEM_HEADERS, []);
+}
+function jobRow_(jobId) {
+  var row = readTable_(IMPORT_JOBS_SHEET).filter(function (r) { return String(r['Job ID']) === String(jobId); })[0];
+  if (!row) throw new Error('That import job was not found.');
+  return row;
+}
+function saveJob_(jobId, patch) {
+  withLock_(function () {
+    var rows = readTable_(IMPORT_JOBS_SHEET);
+    var r = rows.filter(function (x) { return String(x['Job ID']) === String(jobId); })[0];
+    if (!r) throw new Error('That import job was not found.');
+    Object.keys(patch).forEach(function (k) { r[k] = patch[k]; });
+    r.Updated = new Date();
+    writeTable_(IMPORT_JOBS_SHEET, IMPORT_JOB_HEADERS, rows);
+  });
+}
+function jobPlan_(row) { return JSON.parse(DriveApp.getFileById(String(row['Plan File ID'])).getBlob().getDataAsString()); }
+function jobItems_(jobId) { return readTable_(IMPORT_ITEMS_SHEET).filter(function (r) { return String(r['Job ID']) === String(jobId); }); }
+
+/** Cleans one course from the page into what the server will write (everything sanitized and bounded again here). */
+function cleanImportCourse_(c, m, taken) {
+  var code = String(m.code || '').trim().toUpperCase().replace(/\s+/g, ' ');
+  if (!/^[A-Z]{2,5} \d{3}$/.test(code)) throw new Error('“' + c.title + '”: use a Roadmap code like "LDR 301" (letters, a space, three digits).');
+  if (taken[code]) throw new Error(code + ' already exists or is used twice. Imports never overwrite a course; choose another code.');
+  taken[code] = true;
+  var title = String(m.title || c.title || '').trim().slice(0, 200);
+  if (!title) throw new Error('Every course needs a title.');
+  var phase = m.phase === '' || m.phase === undefined ? 0 : Number(m.phase), hours = m.hours === '' || m.hours === undefined ? 0 : Number(m.hours), std = m.standard === '' || m.standard === undefined ? 0 : Number(m.standard);
+  if (!(phase >= 0 && phase <= 4)) throw new Error(code + ': choose a phase (or leave it blank).');
+  if (!(hours >= 0 && hours <= 200)) throw new Error(code + ': hours must be between 0 and 200.');
+  if (!(std >= 0 && std <= 5)) throw new Error(code + ': choose a DESE standard 1-5 (or leave it blank).');
+  var comps = String(m.competencies || '').trim();
+  if (comps && !/^LC \d{1,2}(\s*,\s*(LC )?\d{1,2})*$/i.test(comps)) throw new Error(code + ': write competencies like "LC 4, 9" (or leave them blank).');
+  var instructors = String(m.instructors || '').split(/[,;\s]+/).map(norm_).filter(String);
+  instructors.forEach(function (e) { if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) throw new Error(e + ' is not a valid email address.'); });
+  var max = IMPORT_LIMITS.bodyChars;
+  var html = function (h, label) {
+    h = String(h || '');
+    if (h.length > max) { h = h.slice(0, max); warnings.push({ level: 'warn', message: label + ' was longer than ' + max + ' characters and was cut short; check the end.' }); }
+    return sanitizeHtml_(h, 0);
+  };
+  var warnings = [].concat(c.warnings || []).slice(0, 400).map(function (w) { return { level: String(w.level || 'info'), message: String(w.message || '').slice(0, 400) }; });
+  var modKeys = {};
+  var modules = [].concat(c.modules || []).slice(0, 200).map(function (md, i) {
+    var k = String(md.key || 'module:' + i); modKeys[k] = true;
+    return { key: k, title: String(md.title || 'Module ' + (i + 1)).trim().slice(0, 150) || 'Module ' + (i + 1), sequential: !!md.sequential };
+  });
+  if (!modules.length) { modules.push({ key: 'module:main', title: 'Course materials' }); modKeys['module:main'] = true; }
+  var refs = [].concat(c.refs || []).slice(0, 5000).map(function (r) { return { kind: r.kind === 'file' ? 'file' : 'item', key: String(r.key || ''), broken: !!r.broken }; });
+  var rubrics = [].concat(c.rubrics || []).slice(0, 100).map(function (r) {
+    return { key: String(r.key), title: String(r.title || 'Rubric').slice(0, 150), criteria: [].concat(r.criteria || []).slice(0, 30).map(function (x) {
+      return { description: String(x.description || '').slice(0, 300), points: Math.max(0, Math.min(1000, Number(x.points) || 0)),
+        ratings: [].concat(x.ratings || []).slice(0, 10).map(function (g) { return { label: String(g.label || '').slice(0, 120), points: Math.max(0, Math.min(1000, Number(g.points) || 0)) }; }) };
+    }).filter(function (x) { return x.description; }) };
+  }).filter(function (r) { return r.criteria.length; });
+  var rubricKeys = {}; rubrics.forEach(function (r) { rubricKeys[r.key] = true; });
+  var seen = {};
+  var items = [].concat(c.items || []).slice(0, IMPORT_LIMITS.items).map(function (it, i) {
+    var type = COURSE_ITEM_TYPES.filter(function (t) { return t === it.type; })[0];
+    if (!type) throw new Error('“' + it.title + '” has an unknown item type.');
+    var key = String(it.key || 'item:' + i);
+    if (seen[key]) key = key + '#' + i;
+    seen[key] = true;
+    var link = String(it.link || '').trim();
+    if (link && !/^https:\/\/\S+$/i.test(link)) link = '';
+    if (type === 'Video' && !videoEmbed_(link)) { type = 'Resource'; }
+    var qs = type === 'Quiz' ? [].concat(it.questions || []).slice(0, 200).map(function (q, qi) {
+      if (!QUESTION_TYPES[q.type]) return null;
+      var choices = q.type === 'mc' ? [].concat(q.choices || []).slice(0, 10).map(function (x) { return String(x).slice(0, 300); }) : [];
+      var answer = q.type === 'mc' ? Math.max(0, Math.min(choices.length - 1, Number(q.answer) || 0)) : q.type === 'tf' ? !!q.answer : q.type === 'short' ? [].concat(q.answer || []).map(function (x) { return String(x).slice(0, 200); }).slice(0, 10) : '';
+      if (q.type === 'mc' && choices.length < 2) return null;
+      return { key: String(q.key || key + ':q' + qi), type: q.type, prompt: String(q.prompt || '').trim().slice(0, 1500), choices: choices, answer: answer, points: Math.max(0, Math.min(100, Number(q.points) || 1)), bank: 'Imported' };
+    }).filter(function (q) { return q && q.prompt; }) : [];
+    if (type === 'Quiz' && !qs.length) type = 'Page';
+    var req = REQUIREMENTS.hasOwnProperty(String(it.requirement || '')) ? String(it.requirement || '') : '';
+    if (req === 'contribute' && type !== 'Discussion') req = 'mark_done';
+    if ((req === 'submit' || req === 'min_score') && ['Assignment', 'Quiz'].indexOf(type) < 0) req = 'mark_done';
+    var points = Math.max(0, Math.min(1000, Number(it.points) || 0));
+    var grading = ['none', 'complete', 'points'].indexOf(String(it.grading)) > -1 ? String(it.grading) : it.grading === 'rubric' ? 'points' : (type === 'Assignment' ? 'complete' : type === 'Quiz' ? 'points' : 'none');
+    if (grading === 'points' && !points && type === 'Assignment') grading = 'complete';
+    return { key: key, type: type, title: String(it.title || 'Untitled').trim().slice(0, 200) || 'Untitled', moduleKey: modKeys[it.moduleKey] ? String(it.moduleKey) : modules[0].key,
+      body: html(it.body, '“' + it.title + '”'), link: link, fileRef: it.fileRef ? String(it.fileRef) : (it.needsFile ? String(it.needsFile) : ''), points: points, grading: grading,
+      requirement: req, minScore: req === 'min_score' ? Math.max(0, Math.min(100, Number(it.minScore) || 0)) : '', attempts: Math.max(1, Math.min(10, Number(it.attempts) || 1)),
+      submissionTypes: [].concat(it.submissionTypes || []).filter(function (t) { return ['text', 'link', 'file'].indexOf(t) > -1; }),
+      rubricKey: rubricKeys[it.rubricKey] && ['Assignment', 'Discussion'].indexOf(type) > -1 ? String(it.rubricKey) : '', questions: qs };
+  });
+  var announcements = [].concat(c.announcements || []).slice(0, 200).map(function (a, i) { return { key: String(a.key || 'ann:' + i), title: String(a.title || 'Announcement').slice(0, 200), body: html(a.body, 'Announcement “' + a.title + '”') }; });
+  return { key: String(c.key || '').slice(0, 300), sourceTitle: String(c.title || '').slice(0, 200), code: code, title: title, phase: phase, hours: hours, standard: std, competencies: comps.toUpperCase().replace(/\bLC\s*/g, 'LC ').replace(/,\s*(\d)/g, ', LC $1'),
+    instructors: instructors, format: String(m.format || 'Course').slice(0, 60), modality: String(m.modality || 'Virtual').slice(0, 120), provider: String(m.provider || '').slice(0, 120),
+    description: html(c.description, 'The course description'), syllabus: html(c.syllabus, 'The syllabus'), welcome: html(c.welcome, 'The welcome page'),
+    modules: modules, items: items, rubrics: rubrics, announcements: announcements, refs: refs, warnings: warnings };
+}
+
+/**
+ * Administrator: start an import. req = { source, sourceName, courses: [course from the plan, trimmed to the chosen
+ * items], mapping: { courseKey: { code, title, phase, hours, standard, competencies, instructors, format, modality } },
+ * files: [{ path, name, provided }], confirmDuplicate }. Saves the plan privately and returns the files to upload.
+ */
+function startImport(req) {
+  var v = assertImportAdmin_();
+  req = req || {};
+  if (!IMPORT_SOURCES[req.source]) throw new Error('Choose a source.');
+  if (JSON.stringify(req).length > IMPORT_LIMITS.planBytes) throw new Error('This import is too large to send at once. Import fewer courses or items at a time.');
+  var src = [].concat(req.courses || []);
+  if (!src.length) throw new Error('Choose at least one course to import.');
+  if (src.length > IMPORT_LIMITS.courses) throw new Error('Import up to ' + IMPORT_LIMITS.courses + ' courses at a time.');
+  ensureImportSheets_();
+  var keys = importedKeys_();
+  var dup = src.filter(function (c) { return keys[c.key]; });
+  if (dup.length && !req.confirmDuplicate) return { duplicate: dup.map(function (c) { return c.title + ' was already imported as ' + keys[c.key]; }) };
+  var taken = {};
+  getCourses_().forEach(function (c) { taken[c.code] = true; });
+  readTable_(SHEETS.COURSES).forEach(function (r) { taken[String(r.Code)] = true; });
+  var courses = src.map(function (c) { return cleanImportCourse_(c, (req.mapping || {})[c.key] || {}, taken); });
+  // Files: every file the chosen items use, unless it can't be stored (type/size) or the administrator skips it.
+  var provided = {};
+  [].concat(req.files || []).forEach(function (f) { if (f && f.path && f.provided) provided[String(f.path)] = String(f.name || baseName_(f.path)).slice(0, 120); });
+  var needed = [];
+  courses.forEach(function (c, ci) {
+    var paths = {};
+    c.items.forEach(function (it) { if (it.fileRef) paths[it.fileRef] = true; });
+    c.refs.forEach(function (r) { if (r.kind === 'file') paths[r.key] = true; });
+    Object.keys(paths).forEach(function (p) {
+      var name = provided[p] || baseName_(p);
+      if (p.indexOf('drive:') === 0 && !provided[p]) return; // a Drive file nobody supplied: stays a link or a warning
+      if (fileStatus_(name, 0) !== 'ok') return;
+      needed.push({ course: ci, path: p, name: name, code: c.code });
+    });
+  });
+  var jobId = 'imp' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
+  var plan = { jobId: jobId, source: req.source, sourceName: String(req.sourceName || '').slice(0, 200), courses: courses, files: needed, createdBy: v.email };
+  var file = importFolder_().createFile(Utilities.newBlob(JSON.stringify(plan), 'application/json', jobId + ' plan.json'));
+  var steps = importSteps_(plan).length;
+  withLock_(function () {
+    var rows = readTable_(IMPORT_JOBS_SHEET);
+    rows.push({ 'Job ID': jobId, 'Source': req.source, 'Source Name': plan.sourceName, 'Source Keys': courses.map(function (c) { return c.key; }).join('\n').slice(0, 40000), 'Status': needed.length ? 'Uploading files' : 'Ready',
+      'Created': new Date(), 'Created By': v.email, 'Updated': new Date(), 'Plan File ID': file.getId(), 'Courses': courses.map(function (c) { return c.code + ' ' + c.title; }).join('\n'),
+      'Total Steps': steps, 'Done Steps': 0, 'Warnings': courses.reduce(function (s, c) { return s + c.warnings.length; }, 0), 'Failures': 0, 'Message': '' });
+    writeTable_(IMPORT_JOBS_SHEET, IMPORT_JOB_HEADERS, rows);
+  });
+  log_(v.email, '', 'Import started', jobId + ': ' + courses.map(function (c) { return c.code; }).join(', '));
+  return { jobId: jobId, files: needed.map(function (f) { return { path: f.path, name: f.name, code: f.code }; }), job: importJobReply_(jobId) };
+}
+
+/** Administrator: store one file the job needs. file = { name, mimeType, data (base64) }. Safe to repeat. */
+function uploadImportFile(jobId, path, file) {
+  var v = assertImportAdmin_();
+  var row = jobRow_(jobId);
+  if (['Uploading files', 'Ready', 'Running', 'Paused'].indexOf(String(row.Status)) < 0) throw new Error('This import is ' + String(row.Status).toLowerCase() + '; files can’t be added now.');
+  var plan = jobPlan_(row);
+  var need = plan.files.filter(function (f) { return f.path === String(path); })[0];
+  if (!need) throw new Error('That file isn’t part of this import.');
+  var done = jobItems_(jobId).filter(function (r) { return String(r.Kind) === 'file' && String(r['Source Key']) === need.path && String(r.Status) === 'created'; })[0];
+  if (done) return { path: need.path, fileId: String(done['Target ID']), already: true };
+  file = file || {};
+  var mime = importMime_(need.name);
+  if (!mime) throw new Error('“' + need.name + '” isn’t a file type the Roadmap stores (PDF, Word, PowerPoint, Excel, text, or image).');
+  var bytes = Utilities.base64Decode(String(file.data || ''));
+  if (!bytes.length) throw new Error('“' + need.name + '” is empty.');
+  if (bytes.length > UPLOAD_MAX_BYTES) throw new Error('“' + need.name + '” is larger than 10 MB.');
+  var saved = courseFilesFolder_().createFile(Utilities.newBlob(bytes, mime, need.code + ' - ' + need.name.replace(/[\\/:*?"<>|]/g, '_')));
+  var id = saved.getId();
+  withLock_(function () {
+    var cf = readTable_(SHEETS.COURSE_FILES);
+    cf.push({ 'File ID': id, 'Code': need.code, 'Name': need.name, 'Uploaded By': v.email, 'Uploaded On': new Date(), 'Kind': 'course' });
+    writeTable_(SHEETS.COURSE_FILES, HEADERS.COURSE_FILES, cf);
+    var items = readTable_(IMPORT_ITEMS_SHEET);
+    items.push({ 'Job ID': jobId, 'Step': 'files', 'Kind': 'file', 'Source Key': need.path, 'Code': need.code, 'Target ID': id, 'Fingerprint': importHash_(need.name), 'Status': 'created', 'Message': need.name, 'Created': new Date() });
+    writeTable_(IMPORT_ITEMS_SHEET, IMPORT_ITEM_HEADERS, items);
+  });
+  return { path: need.path, fileId: id };
+}
+
+/** Administrator: done adding files (anything not uploaded is reported, and the items that used it still import). */
+function finishImportUploads(jobId) {
+  assertImportAdmin_();
+  var row = jobRow_(jobId);
+  if (String(row.Status) === 'Uploading files') saveJob_(jobId, { Status: 'Ready' });
+  return importJobReply_(jobId);
+}
+
+/** The import's steps, in order. Each step is safe to run again (see runImportStep_). */
+function importSteps_(plan) {
+  var steps = [];
+  plan.courses.forEach(function (c, ci) {
+    steps.push({ id: ci + ':course', ci: ci, kind: 'course' });
+    steps.push({ id: ci + ':modules', ci: ci, kind: 'modules' });
+    if (c.rubrics.length || c.items.some(function (it) { return it.questions.length; })) steps.push({ id: ci + ':bank', ci: ci, kind: 'bank' });
+    for (var k = 0; k < c.items.length; k += 40) steps.push({ id: ci + ':items:' + k, ci: ci, kind: 'items', from: k, to: Math.min(c.items.length, k + 40) });
+    if (c.announcements.length) steps.push({ id: ci + ':announcements', ci: ci, kind: 'announcements' });
+    steps.push({ id: ci + ':links', ci: ci, kind: 'links' });
+  });
+  return steps;
+}
+
+/** Administrator: build the next part of the import (call again until done is true). */
+function runImportBatch(jobId) {
+  var v = assertImportAdmin_();
+  var row = jobRow_(jobId);
+  var status = String(row.Status);
+  if (status === 'Uploading files') throw new Error('Finish adding files first (or skip the rest).');
+  if (/^(Complete|Cancelled|Cleaned up)/.test(status)) return importJobReply_(jobId);
+  var plan = jobPlan_(row), steps = importSteps_(plan), start = Date.now();
+  saveJob_(jobId, { Status: 'Running', Message: '' });
+  var failures = Number(row.Failures) || 0;
+  var doneIds = {};
+  jobItems_(jobId).forEach(function (r) { if (String(r.Kind) === 'step' && String(r.Status) === 'created') doneIds[String(r.Step)] = true; });
+  for (var i = 0; i < steps.length; i++) {
+    if (doneIds[steps[i].id]) continue;
+    if (Date.now() - start > IMPORT_LIMITS.batchMs) break;
+    if (String(jobRow_(jobId).Status) === 'Cancelled') return importJobReply_(jobId);
+    try {
+      runImportStep_(plan, steps[i], v.email);
+      doneIds[steps[i].id] = true;
+    } catch (e) {
+      failures++;
+      saveJob_(jobId, { Status: 'Paused', Failures: failures, Message: 'Step ' + steps[i].id + ' failed: ' + String(e && e.message || e).slice(0, 300) + ' You can retry; finished parts are not repeated.' });
+      return importJobReply_(jobId);
+    }
+  }
+  var n = steps.filter(function (s) { return doneIds[s.id]; }).length;
+  var complete = n === steps.length;
+  var warnCount = plan.courses.reduce(function (s, c) { return s + c.warnings.filter(function (w) { return w.level !== 'info'; }).length; }, 0) + missingFiles_(plan, jobId).length;
+  saveJob_(jobId, { 'Done Steps': n, Status: complete ? (warnCount ? 'Complete with warnings' : 'Complete') : 'Running', Failures: failures });
+  if (complete) log_(v.email, '', 'Import finished', jobId);
+  return importJobReply_(jobId);
+}
+
+function missingFiles_(plan, jobId) {
+  var have = {};
+  jobItems_(jobId).forEach(function (r) { if (String(r.Kind) === 'file' && String(r.Status) === 'created') have[String(r['Source Key'])] = true; });
+  var out = [];
+  plan.courses.forEach(function (c) {
+    c.items.forEach(function (it) { if (it.fileRef && !have[it.fileRef]) out.push({ code: c.code, item: it.title, path: it.fileRef }); });
+  });
+  return out;
+}
+
+/** Fingerprints of what an import wrote (so cleanup can tell whether anyone changed it afterwards). */
+function importFp_(kind, r) {
+  var pick = {
+    course: ['Code', 'Course Title', 'Phase', 'Hours', 'Standard #', 'Instructor Emails', 'Status'],
+    settings: ['Code', 'Published', 'Welcome', 'Syllabus', 'Objectives'],
+    module: ['Module ID', 'Title', 'Published', 'Prerequisites', 'Sequential', 'Active'],
+    item: ['Material ID', 'Type', 'Title', 'Details', 'Link', 'Body', 'Module ID', 'Published', 'Requirement', 'Points', 'Grading', 'Rubric ID', 'Quiz Questions', 'File ID', 'Active'],
+    question: ['Question ID', 'Type', 'Prompt', 'Choices', 'Answer', 'Points', 'Active'],
+    rubric: ['Rubric ID', 'Title', 'Criteria', 'Active'],
+    announcement: ['Announcement ID', 'Title', 'Body', 'Published']
+  }[kind];
+  return importHash_(pick.map(function (k) { var x = r[k]; return x instanceof Date ? x.getTime() : String(x === undefined || x === null ? '' : x); }));
+}
+
+/**
+ * One step. Ids are made from the job id and the source key, so running a step again finds what it wrote before:
+ * rows that already exist are left alone, and only missing ones are added.
+ */
+function runImportStep_(plan, step, by) {
+  var c = plan.courses[step.ci], jobId = plan.jobId, code = c.code;
+  var idFor = function (prefix, key) { return prefix + importHash_(jobId + '|' + code + '|' + key).slice(0, 11); };
+  var record = [];
+  var note = function (kind, key, id, row) { record.push({ 'Job ID': jobId, 'Step': step.id, 'Kind': kind, 'Source Key': String(key).slice(0, 300), 'Code': code, 'Target ID': id, 'Fingerprint': importFp_(kind, row), 'Status': 'created', 'Message': '', 'Created': new Date() }); };
+  withLock_(function () {
+    if (step.kind === 'course') {
+      var rows = readTable_(SHEETS.COURSES);
+      var existing = rows.filter(function (r) { return String(r.Code) === code; })[0];
+      if (existing && !jobItems_(jobId).some(function (r) { return String(r.Kind) === 'course' && String(r.Code) === code; })) throw new Error(code + ' was created by someone else while this import waited. Imports never overwrite a course.');
+      if (!existing) {
+        var row = { 'Code': code, 'Course Title': c.title, 'Phase': c.phase || '', 'Status': 'Open', 'Format': c.format, 'Hours': c.hours || '', 'Kind': 'session',
+          'Standard #': c.standard || '', 'Level': c.phase || 3, 'Indicator': htmlToText_(c.description).slice(0, 600), 'Evidence': '', 'Modality': c.modality,
+          'Provider': c.provider || 'The Quality Coach', 'Minutes': c.hours ? Math.round(c.hours * 60) : '', 'Active': true, 'Instructor Emails': c.instructors.join(', '), 'DESE Competencies': c.competencies };
+        rows.push(row);
+        writeTable_(SHEETS.COURSES, HEADERS.COURSES, rows);
+        note('course', c.key, code, row);
+      }
+      var st = readTable_(SHEETS.COURSE_SETTINGS);
+      if (!st.some(function (r) { return String(r.Code) === code; })) {
+        var srow = { 'Code': code, 'Published': false, 'Welcome': c.welcome || c.description, 'Syllabus': c.syllabus, 'Objectives': '', 'Instructor Info': '', 'Grading': 'complete',
+          'Notify Announcements': true, 'Notify Feedback': true, 'Notify Due': false, 'Updated': new Date(), 'Updated By': by };
+        st.push(srow);
+        writeTable_(SHEETS.COURSE_SETTINGS, HEADERS.COURSE_SETTINGS, st);
+        note('settings', c.key, code, srow);
+      }
+    } else if (step.kind === 'modules') {
+      var mods = readTable_(SHEETS.MODULES), have = {};
+      mods.forEach(function (m) { have[String(m['Module ID'])] = true; });
+      var base = mods.filter(function (m) { return String(m.Code) === code; }).length;
+      c.modules.forEach(function (m, i) {
+        var id = idFor('m', m.key);
+        if (have[id]) return;
+        var r = { 'Module ID': id, 'Code': code, 'Title': m.title, 'Position': base + i + 1, 'Published': false, 'Unlock At': '', 'Prerequisites': '', 'Sequential': !!m.sequential, 'Active': true };
+        mods.push(r); note('module', m.key, id, r);
+      });
+      writeTable_(SHEETS.MODULES, HEADERS.MODULES, mods);
+    } else if (step.kind === 'bank') {
+      var qs = readTable_(SHEETS.QUESTIONS), haveQ = {};
+      qs.forEach(function (q) { haveQ[String(q['Question ID'])] = true; });
+      c.items.forEach(function (it) {
+        it.questions.forEach(function (q) {
+          var id = idFor('q', it.key + '|' + q.key);
+          if (haveQ[id]) return;
+          var r = { 'Question ID': id, 'Code': code, 'Bank': q.bank || 'Imported', 'Type': q.type, 'Prompt': q.prompt, 'Choices': JSON.stringify(q.choices || []), 'Answer': JSON.stringify(q.answer === undefined ? '' : q.answer), 'Points': q.points, 'Active': true };
+          qs.push(r); note('question', it.key + '|' + q.key, id, r);
+        });
+      });
+      writeTable_(SHEETS.QUESTIONS, HEADERS.QUESTIONS, qs);
+      var rs = readTable_(SHEETS.RUBRICS), haveR = {};
+      rs.forEach(function (r) { haveR[String(r['Rubric ID'])] = true; });
+      c.rubrics.forEach(function (rb) {
+        var id = idFor('r', rb.key);
+        if (haveR[id]) return;
+        var r = { 'Rubric ID': id, 'Code': code, 'Title': rb.title, 'Criteria': JSON.stringify(rb.criteria.map(function (x, i) { return { id: 'c' + (i + 1), description: x.description, points: x.points, ratings: x.ratings }; })), 'Active': true };
+        rs.push(r); note('rubric', rb.key, id, r);
+      });
+      writeTable_(SHEETS.RUBRICS, HEADERS.RUBRICS, rs);
+    } else if (step.kind === 'items') {
+      var files = {};
+      jobItems_(jobId).forEach(function (r) { if (String(r.Kind) === 'file' && String(r.Status) === 'created') files[String(r['Source Key'])] = String(r['Target ID']); });
+      var mats = readTable_(SHEETS.MATERIALS), haveM = {};
+      mats.forEach(function (m) { haveM[String(m['Material ID'])] = true; });
+      var pos = mats.filter(function (m) { return String(m.Code) === code; }).length;
+      c.items.slice(step.from, step.to).forEach(function (it) {
+        var id = idFor('i', it.key);
+        if (haveM[id]) return;
+        pos++;
+        var fileId = it.fileRef ? files[it.fileRef] || '' : '';
+        var details = '';
+        if (it.fileRef && !fileId) details = it.fileRef.indexOf('drive:') === 0 ? 'Needs attention: this Google Drive file wasn’t uploaded. Add the file, or paste its Drive link.' : 'Needs attention: the file “' + baseName_(it.fileRef) + '” wasn’t imported; upload it here.';
+        var r = { 'Material ID': id, 'Code': code, 'Type': it.type, 'Title': it.title, 'Details': details, 'Link': it.type === 'Page' || it.type === 'Discussion' || it.type === 'Quiz' ? '' : it.link,
+          'Body': it.body, 'Module ID': idFor('m', it.moduleKey), 'Position': pos, 'Published': false, 'Available From': '', 'Available Until': '', 'Due Date': '',
+          'Due (days after session)': '', 'Requirement': it.requirement, 'Min Score': it.minScore, 'Points': it.type === 'Quiz' ? it.questions.reduce(function (s, q) { return s + q.points; }, 0) || '' : it.points || '',
+          'Grading': ['Assignment', 'Quiz', 'Discussion'].indexOf(it.type) > -1 ? (it.rubricKey ? 'points' : it.grading) : 'none', 'Rubric ID': it.rubricKey ? idFor('r', it.rubricKey) : '',
+          'Quiz Questions': it.questions.map(function (q) { return idFor('q', it.key + '|' + q.key); }).join(', '), 'Attempts Allowed': it.type === 'Quiz' ? it.attempts : '',
+          'Submission Types': it.type === 'Assignment' ? (it.submissionTypes.length ? it.submissionTypes : ['text', 'link', 'file']).join(',') : '', 'File ID': fileId, 'File Name': fileId ? baseName_(it.fileRef.indexOf('drive:') === 0 ? it.title : it.fileRef) : '', 'Active': true };
+        mats.push(r); note('item', it.key, id, r);
+      });
+      writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, mats);
+    } else if (step.kind === 'announcements') {
+      var anns = readTable_(SHEETS.ANNOUNCEMENTS), haveA = {};
+      anns.forEach(function (a) { haveA[String(a['Announcement ID'])] = true; });
+      c.announcements.forEach(function (an) {
+        var id = idFor('a', an.key);
+        if (haveA[id]) return;
+        // Unpublished and never emailed: announcements from an old class are for review, not for sending again.
+        var r = { 'Announcement ID': id, 'Code': code, 'Title': an.title, 'Body': an.body, 'Posted On': new Date(), 'Posted By': by, 'Posted By Name': 'Imported', 'Published': false, 'Show From': '' };
+        anns.push(r); note('announcement', an.key, id, r);
+      });
+      writeTable_(SHEETS.ANNOUNCEMENTS, HEADERS.ANNOUNCEMENTS, anns);
+    } else if (step.kind === 'links') {
+      // Item and file references: "#cw-ref-N" → "#cw-item-<id>" / "#cw-file-<id>"; anything that didn't import keeps its text only.
+      var fileIds = {};
+      jobItems_(jobId).forEach(function (r) { if (String(r.Kind) === 'file' && String(r.Status) === 'created') fileIds[String(r['Source Key'])] = String(r['Target ID']); });
+      var itemKeys = {};
+      c.items.forEach(function (it) { itemKeys[it.key] = idFor('i', it.key); });
+      var fix = function (html) {
+        return String(html || '').replace(/<a href="#cw-ref-(\d+)"/g, function (m, n) {
+          var r = c.refs[Number(n)];
+          if (!r || r.broken) return '<a';
+          if (r.kind === 'item' && itemKeys[r.key]) return '<a href="#cw-item-' + itemKeys[r.key] + '"';
+          if (r.kind === 'file' && fileIds[r.key]) return '<a href="#cw-file-' + fileIds[r.key] + '"';
+          return '<a';
+        });
+      };
+      var mats2 = readTable_(SHEETS.MATERIALS), touched = [];
+      mats2.forEach(function (r) {
+        if (String(r.Code) !== code || String(r['Material ID']).charAt(0) !== 'i' || String(r.Body).indexOf('#cw-ref-') < 0) return;
+        var mine = c.items.some(function (it) { return itemKeys[it.key] === String(r['Material ID']); });
+        if (!mine) return;
+        r.Body = fix(r.Body); touched.push(r);
+      });
+      if (touched.length) writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, mats2);
+      var st2 = readTable_(SHEETS.COURSE_SETTINGS), srow2 = st2.filter(function (r) { return String(r.Code) === code; })[0], sChanged = false;
+      if (srow2 && /#cw-ref-/.test(String(srow2.Welcome) + String(srow2.Syllabus))) { srow2.Welcome = fix(srow2.Welcome); srow2.Syllabus = fix(srow2.Syllabus); sChanged = true; writeTable_(SHEETS.COURSE_SETTINGS, HEADERS.COURSE_SETTINGS, st2); }
+      // Refresh the fingerprints of what this step changed, so cleanup still recognizes the imported versions.
+      var items = readTable_(IMPORT_ITEMS_SHEET);
+      items.forEach(function (x) {
+        if (String(x['Job ID']) !== jobId) return;
+        var t = touched.filter(function (r) { return String(x.Kind) === 'item' && String(r['Material ID']) === String(x['Target ID']); })[0];
+        if (t) x.Fingerprint = importFp_('item', t);
+        if (sChanged && String(x.Kind) === 'settings' && String(x.Code) === code) x.Fingerprint = importFp_('settings', srow2);
+      });
+      writeTable_(IMPORT_ITEMS_SHEET, IMPORT_ITEM_HEADERS, items);
+    }
+    var log = readTable_(IMPORT_ITEMS_SHEET);
+    record.push({ 'Job ID': jobId, 'Step': step.id, 'Kind': 'step', 'Source Key': step.id, 'Code': code, 'Target ID': '', 'Fingerprint': '', 'Status': 'created', 'Message': '', 'Created': new Date() });
+    writeTable_(IMPORT_ITEMS_SHEET, IMPORT_ITEM_HEADERS, log.concat(record));
+  });
+}
+
+/** Administrator: stop a job. Nothing more is built; use cleanUpImport to remove what it made. */
+function cancelImport(jobId) {
+  var v = assertImportAdmin_();
+  var row = jobRow_(jobId);
+  if (/^(Complete|Cleaned up)/.test(String(row.Status))) throw new Error('This import already finished. Use “Remove imported drafts” to undo it.');
+  saveJob_(jobId, { Status: 'Cancelled', Message: 'Cancelled by ' + v.email });
+  log_(v.email, '', 'Import cancelled', jobId);
+  return importJobReply_(jobId);
+}
+
+/**
+ * Administrator: remove what a job created, except anything changed since the import (those are kept and listed),
+ * and never a course that has learner activity, enrollments, or content added by someone else.
+ */
+function cleanUpImport(jobId) {
+  var v = assertImportAdmin_();
+  var row = jobRow_(jobId);
+  if (String(row.Status) === 'Running') throw new Error('Cancel the import first.');
+  var removed = 0, kept = [];
+  withLock_(function () {
+    var log = readTable_(IMPORT_ITEMS_SHEET);
+    var mine = log.filter(function (r) { return String(r['Job ID']) === String(jobId) && String(r.Status) === 'created' && String(r.Kind) !== 'step'; });
+    var tables = { module: [SHEETS.MODULES, HEADERS.MODULES, 'Module ID'], item: [SHEETS.MATERIALS, HEADERS.MATERIALS, 'Material ID'], question: [SHEETS.QUESTIONS, HEADERS.QUESTIONS, 'Question ID'],
+      rubric: [SHEETS.RUBRICS, HEADERS.RUBRICS, 'Rubric ID'], announcement: [SHEETS.ANNOUNCEMENTS, HEADERS.ANNOUNCEMENTS, 'Announcement ID'] };
+    var markRemoved = function (x, msg) { x.Status = 'removed'; x.Message = msg || 'Removed by ' + v.email; removed++; };
+    var markKept = function (x, why) { x.Status = 'kept'; x.Message = why; kept.push((x.Code ? x.Code + ': ' : '') + why); };
+    ['announcement', 'item', 'question', 'rubric', 'module'].forEach(function (kind) {
+      var t = tables[kind], rows = readTable_(t[0]), changed = false;
+      mine.filter(function (x) { return String(x.Kind) === kind; }).forEach(function (x) {
+        var r = rows.filter(function (y) { return String(y[t[2]]) === String(x['Target ID']); })[0];
+        if (!r) { markRemoved(x, 'Already gone'); return; }
+        if (importFp_(kind, r) !== String(x.Fingerprint)) { markKept(x, kind + ' “' + (r.Title || r.Prompt || '').toString().slice(0, 60) + '” was changed after the import'); return; }
+        rows.splice(rows.indexOf(r), 1); changed = true; markRemoved(x);
+      });
+      if (changed) writeTable_(t[0], t[1], rows);
+    });
+    // Files: only when nothing left in the course still uses them.
+    var mats = readTable_(SHEETS.MATERIALS), cf = readTable_(SHEETS.COURSE_FILES), cfChanged = false;
+    mine.filter(function (x) { return String(x.Kind) === 'file'; }).forEach(function (x) {
+      var id = String(x['Target ID']);
+      if (mats.some(function (m) { return String(m['File ID']) === id || String(m.Body || '').indexOf('#cw-file-' + id) > -1; })) { markKept(x, 'file “' + x.Message + '” is still used'); return; }
+      try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* already gone */ }
+      cf = cf.filter(function (r) { return String(r['File ID']) !== id; }); cfChanged = true; markRemoved(x, 'File moved to Drive trash');
+    });
+    if (cfChanged) writeTable_(SHEETS.COURSE_FILES, HEADERS.COURSE_FILES, cf);
+    // The course itself: only if it is still exactly as imported and nobody has used it.
+    var activity = function (code) {
+      return [SHEETS.PROGRESS, SHEETS.SUBMISSIONS, SHEETS.ENROLL, SHEETS.ITEM_PROGRESS, SHEETS.QUIZ_ATTEMPTS, SHEETS.DISCUSSIONS].some(function (s) {
+        return readTable_(s).some(function (r) { return String(r.Code || r['Course Code']) === code; });
+      });
+    };
+    var leftover = function (code) {
+      return [SHEETS.MODULES, SHEETS.MATERIALS, SHEETS.QUESTIONS, SHEETS.RUBRICS, SHEETS.ANNOUNCEMENTS].some(function (s) {
+        return readTable_(s).some(function (r) { return String(r.Code) === code && isTrue_(r.Active, true); });
+      });
+    };
+    mine.filter(function (x) { return String(x.Kind) === 'course'; }).forEach(function (x) {
+      var code = String(x.Code), courses = readTable_(SHEETS.COURSES), r = courses.filter(function (y) { return String(y.Code) === code; })[0];
+      var setX = mine.filter(function (y) { return String(y.Kind) === 'settings' && String(y.Code) === code; })[0];
+      var st = readTable_(SHEETS.COURSE_SETTINGS), sr = st.filter(function (y) { return String(y.Code) === code; })[0];
+      if (!r) { markRemoved(x, 'Already gone'); if (setX) markRemoved(setX, 'Already gone'); return; }
+      if (importFp_('course', r) !== String(x.Fingerprint)) { markKept(x, 'the course details were changed after the import'); return; }
+      if (sr && setX && importFp_('settings', sr) !== String(setX.Fingerprint)) { markKept(x, 'the course home page or publishing was changed after the import'); return; }
+      if (leftover(code)) { markKept(x, 'the course still has content (added or changed after the import)'); return; }
+      if (activity(code)) { markKept(x, 'people have already used the course'); return; }
+      courses.splice(courses.indexOf(r), 1);
+      writeTable_(SHEETS.COURSES, HEADERS.COURSES, courses);
+      if (sr) { st.splice(st.indexOf(sr), 1); writeTable_(SHEETS.COURSE_SETTINGS, HEADERS.COURSE_SETTINGS, st); }
+      markRemoved(x); if (setX) markRemoved(setX);
+    });
+    writeTable_(IMPORT_ITEMS_SHEET, IMPORT_ITEM_HEADERS, log);
+  });
+  saveJob_(jobId, { Status: kept.length ? 'Cleaned up (some kept)' : 'Cleaned up', Message: removed + ' removed' + (kept.length ? '; kept: ' + kept.slice(0, 5).join('; ') : '') });
+  log_(v.email, '', 'Import cleaned up', jobId + ': ' + removed + ' removed, ' + kept.length + ' kept');
+  var out = importJobReply_(jobId);
+  out.removed = removed; out.kept = kept;
+  out.data = buildAppData_();
+  return out;
+}
+
+/** Progress and the report for one job. */
+function importJobReply_(jobId) {
+  var row = jobRow_(jobId), plan = jobPlan_(row);
+  var log = jobItems_(jobId);
+  var files = log.filter(function (r) { return String(r.Kind) === 'file' && String(r.Status) === 'created'; }).length;
+  var missing = missingFiles_(plan, jobId);
+  return {
+    id: String(row['Job ID']), source: String(row.Source), sourceLabel: IMPORT_SOURCES[row.Source] || '', sourceName: String(row['Source Name'] || ''), status: String(row.Status),
+    created: fmtDateTime_(row.Created), createdBy: String(row['Created By'] || ''), total: Number(row['Total Steps']) || 0, done: Number(row['Done Steps']) || 0,
+    failures: Number(row.Failures) || 0, message: String(row.Message || ''), filesNeeded: plan.files.length, filesUploaded: files,
+    resumable: /^(Running|Paused|Ready)$/.test(String(row.Status)),
+    courses: plan.courses.map(function (c) {
+      return { code: c.code, title: c.title, modules: c.modules.length, items: c.items.length, announcements: c.announcements.length,
+        questions: c.items.reduce(function (s, it) { return s + it.questions.length; }, 0), exists: getCourses_().some(function (x) { return x.code === c.code; }),
+        attention: c.warnings.filter(function (w) { return w.level !== 'info'; }).map(function (w) { return w.message; })
+          .concat(missing.filter(function (m) { return m.code === c.code; }).map(function (m) { return '“' + m.item + '” needs its file (' + baseName_(m.path.replace(/^drive:/, '')) + ').'; })),
+        notes: c.warnings.filter(function (w) { return w.level === 'info'; }).map(function (w) { return w.message; }) };
+    })
+  };
+}
+
+/** Administrator: one job's progress and report. */
+function getImportJob(jobId) { assertImportAdmin_(); return importJobReply_(jobId); }
+
+/** Administrator: recent import jobs. */
+function listImportJobs() {
+  assertImportAdmin_();
+  if (!tabByName_(IMPORT_JOBS_SHEET)) return [];
+  return readTable_(IMPORT_JOBS_SHEET).slice(-30).reverse().map(function (r) {
+    return { id: String(r['Job ID']), source: IMPORT_SOURCES[r.Source] || String(r.Source), sourceName: String(r['Source Name'] || ''), status: String(r.Status), created: fmtDateTime_(r.Created),
+      createdBy: String(r['Created By'] || ''), courses: String(r.Courses || ''), done: Number(r['Done Steps']) || 0, total: Number(r['Total Steps']) || 0 };
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* A synthetic sample (for training and the help videos)               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Administrator: analyze the built-in synthetic Canvas export (made up for training; not from a real Canvas course),
+ * so the workflow can be practiced without a file.
+ */
+function analyzeImportSample() {
+  var s = importSample_();
+  return analyzeImport({ source: 'canvas', name: 'Synthetic sample export (training).imscc', size: 20000, entries: s.entries, texts: s.texts });
+}
+
+function importSample_() {
+  var t = {
+    'imsmanifest.xml': '<?xml version="1.0"?><manifest identifier="SAMPLE" xmlns="http://www.imsglobal.org/xsd/imsccv1p1/imscp_v1p1"><metadata><schema>IMS Common Cartridge</schema></metadata>' +
+      '<organizations><organization identifier="org"><item identifier="root"><item identifier="mod1"><title>Week 1: Board relations</title><item identifier="mi1" identifierref="page1"><title>Welcome</title></item></item></item></organization></organizations>' +
+      '<resources><resource identifier="page1" type="webcontent" href="wiki_content/welcome.html"><file href="wiki_content/welcome.html"/></resource>' +
+      '<resource identifier="page2" type="webcontent" href="wiki_content/board-calendar.html"><file href="wiki_content/board-calendar.html"/></resource>' +
+      '<resource identifier="asg1" type="associatedcontent/imscc_xmlv1p1/learning-application-resource" href="asg1/first-agenda.html"><file href="asg1/first-agenda.html"/><file href="asg1/assignment_settings.xml"/></resource>' +
+      '<resource identifier="disc1" type="imsdt_xmlv1p1"><file href="disc1.xml"/><dependency identifierref="disc1meta"/></resource>' +
+      '<resource identifier="disc1meta" type="associatedcontent/imscc_xmlv1p1/learning-application-resource" href="disc1meta.xml"><file href="disc1meta.xml"/></resource>' +
+      '<resource identifier="ann1" type="imsdt_xmlv1p1"><file href="ann1.xml"/><dependency identifierref="ann1meta"/></resource>' +
+      '<resource identifier="ann1meta" type="associatedcontent/imscc_xmlv1p1/learning-application-resource" href="ann1meta.xml"><file href="ann1meta.xml"/></resource>' +
+      '<resource identifier="quiz1" type="imsqti_xmlv1p2/imscc_xmlv1p1/assessment"><file href="quiz1/assessment_qti.xml"/><dependency identifierref="quiz1meta"/></resource>' +
+      '<resource identifier="quiz1meta" type="associatedcontent/imscc_xmlv1p1/learning-application-resource" href="quiz1/assessment_meta.xml"><file href="quiz1/assessment_meta.xml"/><file href="non_cc_assessments/quiz1.xml.qti"/></resource>' +
+      '<resource identifier="lti1" type="imsbasiclti_xmlv1p0"><file href="lti1.xml"/></resource>' +
+      '<resource identifier="file1" type="webcontent" href="web_resources/Board%20Calendar.pdf"><file href="web_resources/Board Calendar.pdf"/></resource></resources></manifest>',
+    'course_settings/course_settings.xml': '<course identifier="sample-course"><title>Board Relations Essentials (synthetic sample)</title><course_code>BRD-SAMPLE</course_code><public_description>A made-up course used to practice importing.</public_description></course>',
+    'course_settings/syllabus.html': '<html><body><p>Syllabus: read the welcome page, then turn in your first agenda.</p></body></html>',
+    'course_settings/module_meta.xml': '<modules><module identifier="mod1"><title>Week 1: Board relations</title><workflow_state>active</workflow_state><position>1</position><require_sequential_progress>false</require_sequential_progress><items>' +
+      '<item identifier="mi1"><content_type>WikiPage</content_type><workflow_state>active</workflow_state><title>Welcome</title><identifierref>page1</identifierref></item>' +
+      '<item identifier="mi2"><content_type>WikiPage</content_type><title>Board calendar</title><identifierref>page2</identifierref></item>' +
+      '<item identifier="mi3"><content_type>Assignment</content_type><title>Draft your first agenda</title><identifierref>asg1</identifierref></item>' +
+      '<item identifier="mi4"><content_type>DiscussionTopic</content_type><title>Introduce yourself</title><identifierref>disc1</identifierref></item>' +
+      '<item identifier="mi5"><content_type>Quizzes::Quiz</content_type><title>Check your understanding</title><identifierref>quiz1</identifierref></item>' +
+      '<item identifier="mi6"><content_type>ExternalUrl</content_type><title>MSBA board resources</title><url>https://www.example.org/board-resources</url></item>' +
+      '<item identifier="mi7"><content_type>ContextExternalTool</content_type><title>Publisher practice tool</title><identifierref>lti1</identifierref></item>' +
+      '</items><completion_requirements><completion_requirement type="must_view"><identifierref>mi1</identifierref></completion_requirement><completion_requirement type="must_submit"><identifierref>mi3</identifierref></completion_requirement>' +
+      '<completion_requirement type="min_score"><identifierref>mi5</identifierref><min_score>2</min_score></completion_requirement></completion_requirements></module></modules>',
+    'course_settings/rubrics.xml': '<rubrics><rubric identifier="rub1"><title>Agenda rubric</title><points_possible>10</points_possible><data><criterion><description>Consent agenda used</description><points>5</points><ratings><rating><description>Yes</description><points>5</points></rating><rating><description>No</description><points>0</points></rating></ratings></criterion>' +
+      '<criterion><description>Clear superintendent report</description><points>5</points><ratings><rating><description>Clear</description><points>5</points></rating><rating><description>Unclear</description><points>0</points></rating></ratings></criterion></data></rubric></rubrics>',
+    'wiki_content/welcome.html': '<html><head><title>Welcome</title><meta name="workflow_state" content="active"></head><body><p>Welcome! Start with the <a href="$WIKI_REFERENCE$/pages/board-calendar">board calendar</a> and the <a href="$IMS-CC-FILEBASE$/Board%20Calendar.pdf">calendar PDF</a>.</p>' +
+      '<p><img src="$IMS-CC-FILEBASE$/Board%20Calendar.pdf" alt="Calendar preview"></p><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe><iframe src="https://tracker.example.com/widget"></iframe></body></html>',
+    'wiki_content/board-calendar.html': '<html><head><title>Board calendar</title></head><body><p>Plan the year’s meetings. See <a href="$CANVAS_OBJECT_REFERENCE$/assignments/asg1">the agenda assignment</a> and <a href="$WIKI_REFERENCE$/pages/missing-page">a page that was deleted</a>.</p></body></html>',
+    'asg1/first-agenda.html': '<html><body><p>Draft the agenda for your first board meeting with a consent agenda.</p></body></html>',
+    'asg1/assignment_settings.xml': '<assignment identifier="asg1"><title>Draft your first agenda</title><points_possible>10</points_possible><grading_type>points</grading_type><submission_types>online_upload,online_text_entry</submission_types><rubric_identifierref>rub1</rubric_identifierref><workflow_state>published</workflow_state></assignment>',
+    'disc1.xml': '<topic><title>Introduce yourself</title><text texttype="text/html">&lt;p&gt;Share your district and one goal for the year.&lt;/p&gt;</text></topic>',
+    'disc1meta.xml': '<topicMeta identifier="disc1meta"><topic_id>disc1</topic_id><title>Introduce yourself</title><type>topic</type><workflow_state>active</workflow_state></topicMeta>',
+    'ann1.xml': '<topic><title>Welcome to the course</title><text texttype="text/html">&lt;p&gt;Our first live session is next week.&lt;/p&gt;</text></topic>',
+    'ann1meta.xml': '<topicMeta identifier="ann1meta"><topic_id>ann1</topic_id><title>Welcome to the course</title><type>announcement</type></topicMeta>',
+    'quiz1/assessment_meta.xml': '<quiz identifier="quiz1"><title>Check your understanding</title><description>&lt;p&gt;Three quick questions.&lt;/p&gt;</description><points_possible>4</points_possible><allowed_attempts>2</allowed_attempts><quiz_type>assignment</quiz_type></quiz>',
+    'quiz1/assessment_qti.xml': '<questestinterop><assessment ident="quiz1" title="Check your understanding"></assessment></questestinterop>',
+    'non_cc_assessments/quiz1.xml.qti': '<questestinterop><assessment ident="quiz1" title="Check your understanding"><section ident="root">' +
+      '<item ident="q1" title="Q1"><itemmetadata><qtimetadata><qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>multiple_choice_question</fieldentry></qtimetadatafield><qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>1</fieldentry></qtimetadatafield></qtimetadata></itemmetadata>' +
+      '<presentation><material><mattext texttype="text/html">&lt;p&gt;What goes on a consent agenda?&lt;/p&gt;</mattext></material><response_lid ident="response1"><render_choice><response_label ident="a1"><material><mattext>Routine items</mattext></material></response_label><response_label ident="a2"><material><mattext>Contested votes</mattext></material></response_label></render_choice></response_lid></presentation>' +
+      '<resprocessing><respcondition continue="No"><conditionvar><varequal respident="response1">a1</varequal></conditionvar><setvar action="Set" varname="SCORE">100</setvar></respcondition></resprocessing></item>' +
+      '<item ident="q2"><itemmetadata><qtimetadata><qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>true_false_question</fieldentry></qtimetadatafield><qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>1</fieldentry></qtimetadatafield></qtimetadata></itemmetadata>' +
+      '<presentation><material><mattext>The board president sets the agenda alone.</mattext></material><response_lid ident="response1"><render_choice><response_label ident="t"><material><mattext>True</mattext></material></response_label><response_label ident="f"><material><mattext>False</mattext></material></response_label></render_choice></response_lid></presentation>' +
+      '<resprocessing><respcondition><conditionvar><varequal respident="response1">f</varequal></conditionvar><setvar action="Set">100</setvar></respcondition></resprocessing></item>' +
+      '<item ident="q3"><itemmetadata><qtimetadata><qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>matching_question</fieldentry></qtimetadatafield></qtimetadata></itemmetadata><presentation><material><mattext>Match each role.</mattext></material></presentation></item>' +
+      '<item ident="q4"><itemmetadata><qtimetadata><qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>essay_question</fieldentry></qtimetadatafield><qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>2</fieldentry></qtimetadatafield></qtimetadata></itemmetadata><presentation><material><mattext>Describe your board debrief habit.</mattext></material></presentation></item>' +
+      '</section></assessment></questestinterop>',
+    'lti1.xml': '<cartridge_basiclti_link><title>Publisher practice tool</title></cartridge_basiclti_link>'
+  };
+  var entries = Object.keys(t).map(function (p) { return { path: p, size: t[p].length, compressed: Math.ceil(t[p].length / 3) }; });
+  entries.push({ path: 'web_resources/Board Calendar.pdf', size: 1200, compressed: 1100 });
+  return { texts: t, entries: entries };
 }
 
 </script>
@@ -8179,6 +9573,36 @@ window.HELP_TOPICS = [
     steps: ['Open the **Classes** tab and click **Create a course**: code (like LDR 301), title, phase, status, DESE standard, hours, and instructors’ emails. You can start from a template. It starts as a draft.',
       'To change instructors later, open the course, then **Settings › Edit class details and instructors**. Instructor assignments are separate from coach and mentor roster assignments; any coach or mentor can also be an instructor.',
       'Instructors get a sign-in link from “First time here, or forgot your password?”. Administrators can open, edit, and grade every course.'] },
+  { id: 'admin-import', video: 'admin-import', roles: ['admin'], title: 'Import courses from Canvas, Google Classroom, or TalentLMS', requires: ['analyzeImport', 'startImport', 'uploadImportFile', 'runImportBatch', 'getImportJob'],
+    show: { view: 'teaching', target: '[data-act="import-open"]', tip: 'Import courses here.' },
+    steps: ['Open **Classes** and click **Import courses** (administrators only). Choose the source, then upload its export. To practice, click **Try the synthetic sample export** (a made-up Canvas course).',
+      '**Check this export** lists the courses, modules, items, quiz questions, announcements, and files it found, with anything that can’t come across. Choose the courses and items to bring in.',
+      'Give each course a Roadmap code (like LDR 301). Phase, hours, DESE standard, competencies, and instructors stay blank unless you fill them in: nothing is guessed, and source roles never become Roadmap access.',
+      '**Preview the drafts**, then **Import as drafts**. Progress shows files uploaded and steps done; you can **Cancel**, and a stopped import can **Retry** or **Resume** without repeating finished parts.',
+      'The report links to each draft and lists what needs attention. Every course, module, item, and announcement starts **unpublished**, and nobody is emailed. No students, grades, submissions, discussion replies, or completion histories are imported.'] },
+  { id: 'import-canvas', video: 'admin-import', roles: ['admin'], title: 'Importing from Canvas (.imscc)', requires: ['analyzeImport'],
+    steps: ['In Canvas: open the course → **Settings** → **Export Course Content** → **Course** → **Create Export**, then download the **.imscc** file (up to 100 MB here).',
+      'Comes across: course title, description, syllabus, front page (as the Home welcome), modules in order, pages, files linked from pages and modules (up to 10 MB each; PDF, Word, PowerPoint, Excel, text, images), assignments (points, submission types, rubrics), discussions, announcements (unpublished), https links, and completion requirements.',
+      'Classic Quizzes: multiple choice, true/false, short answer, and essay questions come across with their answer keys (only editors ever see them). Matching, multiple answers, numerical, fill-in-multiple-blanks, formula, file-upload, and question-bank questions are listed for you to rebuild.',
+      'Not supported and listed in the report: external tools (LTI), New Quizzes, peer reviews, recorded media comments, unlock dates and prerequisites, and embeds other than YouTube, Vimeo, Loom, Google Drive, and Google Slides. Images inside pages become links to the image file.',
+      'Links between pages, assignments, and files are pointed at the imported copies. A link to something not in the export keeps its text without the link and is listed.'] },
+  { id: 'import-classroom', video: 'admin-import', roles: ['admin'], title: 'Importing from Google Classroom (Google Takeout)', requires: ['analyzeImport'],
+    steps: ['Signed in as the teacher, go to **takeout.google.com**, choose **Deselect all**, check only **Classroom**, create the export, and download the .zip. Upload the .zip (or the class .json files inside Takeout/Classroom).',
+      'Each class becomes a course, topics become modules, materials become pages, assignments stay assignments (points kept; due dates aren’t), and announcements come across unpublished. Short-answer questions become written-response assignments; multiple-choice questions have no answer key in Classroom, so they become written responses listing the choices.',
+      'Google Drive attachments are listed by name but aren’t in a Classroom Takeout. For each one, download the file from Drive and click **Add the downloaded file**, or check **Keep the Drive link instead** (viewers then need access in Drive; the import never changes Drive sharing). Files you add to the same Takeout (Drive) are matched by name.',
+      'Google Forms quizzes, practice sets, video questions, and add-on activities are not converted; they are listed so you can rebuild them (a Form can be kept as a link). Student submissions and comments in the export are never imported.',
+      'A direct “Connect Google Classroom” option needs Google Cloud setup and approval first; see the import guide (docs/course-import.md).'] },
+  { id: 'import-talentlms', video: 'admin-import', roles: ['admin'], title: 'Importing from TalentLMS (CSV/XLSX and course files)', requires: ['analyzeImport'],
+    steps: ['In TalentLMS, export the course list as **CSV or XLSX** (from **Courses**, or **Account & Settings → Import - Export**), and download the files you uploaded to each course.',
+      'Name, code, description, and category come across (columns that don’t match a Roadmap field are listed). TalentLMS doesn’t export units built in its editor (content, tests, surveys, assignments), so those must be rebuilt.',
+      'In the review step, use **Course files and links** to add each course’s PDFs, slides, and documents (up to 10 MB each) and links to videos, and name the module each goes in.',
+      'TalentLibrary courses are licensed inside TalentLMS and can’t be downloaded or transferred. SCORM, xAPI, and cmi5 packages are recognized but not played or tracked here, so they are never added as working content.'] },
+  { id: 'import-warnings', video: 'admin-import', roles: ['admin'], title: 'Fix import warnings and undo an import', requires: ['cleanUpImport', 'cancelImport', 'listImportJobs'],
+    steps: ['**Not imported — rebuild** means the item couldn’t come across (an external tool, a Form, an unsupported question type). **Needs attention** means it came across with a gap (a missing file, a removed embed, a broken link). **Note** is for your information.',
+      'Items whose file didn’t come across say so in their details: open the item, click **Edit**, and upload the file, or paste a link. Rebuild unsupported questions in the quiz’s question bank.',
+      'Errors you may see: an unsafe file path, a file that “looks like a ZIP bomb”, more than 3,000 files, over 300 MB expanded, over 100 MB uploaded, or over 8 MB of pages. Export a smaller course or split it.',
+      '**Remove imported drafts** (on the report, or from **Earlier imports**) removes only what that import created and nobody changed since. Edited items, courses with added content or learner activity, and files still in use are kept and listed. Removed files go to the Drive trash.',
+      'Importing the same course twice asks first and always makes a new draft with a new code; nothing is overwritten.'] },
   { id: 'admin-preview', video: 'admin-roster', roles: ['admin'], title: 'See exactly what a superintendent sees',
     show: { view: 'roadmap', target: '#previewBtn', tip: 'Superintendent View.' },
     steps: ['Pick a superintendent and click **Superintendent View**. Click **Exit preview** in the yellow bar to return.'] },
@@ -8504,7 +9928,7 @@ window.HELP_TOPICS = [
     fbBtn.hidden = !!(D.viewer.isVisitor || D.viewer.isSandbox || !D.viewer.email);
     var back = document.getElementById('backBtn');
     back.hidden = !S.stack.length && !S.course && (S.view === 'roadmap' || S.view === 'roster');
-    if (S.view === 'engagement') back.hidden = false;
+    if (S.view === 'engagement' || S.view === 'import') back.hidden = false;
     back.innerHTML = icon('undo') + ' Back';
     var nav = document.getElementById('adminNav');
     if (D.viewer.isBoard) { nav.hidden=true; help.hidden=true; back.hidden=true; bar.hidden=true; return; }
@@ -8540,7 +9964,7 @@ window.HELP_TOPICS = [
       picker.innerHTML = D.superintendents.map(function (s) {
         return '<option value="' + esc(s.email) + '"' + (s.email === S.email ? ' selected' : '') + '>' + esc(s.name) + ' — ' + esc(s.district) + '</option>';
       }).join('');
-      var perPerson = ['roster', 'people', 'help', 'teaching', 'engagement'].indexOf(S.view) < 0;
+      var perPerson = ['roster', 'people', 'help', 'teaching', 'engagement', 'import'].indexOf(S.view) < 0;
       picker.parentNode.hidden = !(V.isAdmin || V.canBrowse) || !perPerson || !hasSup;
       var pv = document.getElementById('previewBtn');
       pv.hidden = !V.isAdmin || !perPerson || !hasSup || !(D.viewer.isAdmin || D.viewer.isVisitor);
@@ -8560,6 +9984,7 @@ window.HELP_TOPICS = [
     }
     if (S.view === 'people' && viewer().canEdit) { renderPeople(); return; }
     if (S.view === 'engagement' && viewer().canEdit) { renderEngagement(); return; }
+    if (S.view === 'import' && viewer().canEdit && !viewer().visitor && !D.viewer.isSandbox && window.TQC_IMPORT) { window.TQC_IMPORT.render(); return; }
     if (S.view === 'teaching' && (D.teaching || []).length) { renderTeaching(); return; }
     if (!D.superintendents.length) {
       $app.innerHTML = '<div class="card notice"><h2>No superintendents yet</h2><p class="muted">Add people on the roster to begin tracking.</p>' +
@@ -9815,7 +11240,8 @@ window.HELP_TOPICS = [
     var D = S.data, codes = D.teaching || [];
     var mine = D.courses.filter(function (c) { return codes.indexOf(c.code) > -1; });
     return '<section class="card section"><div class="section-head"><h2>' + (viewer().canEdit ? 'Classes' : 'My classes') + '</h2>' +
-      (viewer().canEdit ? '<p><button class="btn btn-primary btn-sm" type="button" data-act="course-create">' + icon('plus') + ' Create a course</button></p>' : '') +
+      (viewer().canEdit ? '<p><button class="btn btn-primary btn-sm" type="button" data-act="course-create">' + icon('plus') + ' Create a course</button>' +
+        (viewer().visitor || D.viewer.isSandbox ? '' : ' <button class="btn btn-ghost btn-sm" type="button" data-act="import-open">' + icon('upload') + ' Import courses</button>') + '</p>' : '') +
       '<p>' + (viewer().canEdit ? 'Every course in the program. Open one to build its modules, pages, assignments, quizzes, and discussions, and to review work.' :
         'The courses you teach. Open one to build its modules, pages, assignments, quizzes, and discussions, see who is taking it, and review their work.') + '</p></div>' +
       '<div class="cat-grid">' + mine.map(function (c) {
@@ -10306,6 +11732,9 @@ window.HELP_TOPICS = [
   }
 
   document.addEventListener('click', function (e) {
+    // Links inside course pages to another item or file of the same course (#cw-item-… / #cw-file-…, from imports).
+    var cwLink = e.target.closest('a[href^="#cw-item-"], a[href^="#cw-file-"]');
+    if (cwLink && window.TQC_COURSE && window.TQC_COURSE.link) { e.preventDefault(); window.TQC_COURSE.link(cwLink.getAttribute('href')); return; }
     var el = e.target.closest('[data-act], .tab, tr.row-click');
     if (!el) return;
     if (el.classList.contains('tab')) {
@@ -10321,6 +11750,8 @@ window.HELP_TOPICS = [
 
     if (act && act.indexOf('cw-') === 0 && window.TQC_COURSE && window.TQC_COURSE.handle(act, el)) return;
     if (act === 'course-create') { window.TQC_COURSE.createCourse(); return; }
+    if (act === 'import-open') { go({ view: 'import', course: null }); return; }
+    if (act && act.indexOf('im-') === 0 && window.TQC_IMPORT && window.TQC_IMPORT.handle(act, el)) return;
     if (act === 'catalog') { go({ view: 'catalog', course: null }); return; }
     if (act === 'class-edit') { openClassEditor(code); return; }
     if (act === 'mat-add') { openMaterialEditor(code, ''); return; }
@@ -11583,7 +13014,428 @@ window.HELP_TOPICS = [
     api('listTemplates').then(draw2, function () { draw2([]); });
   }
 
-  window.TQC_COURSE = { open: open, handle: handle, createCourse: openCreateCourse, reset: function () { CW = { key: '' }; RECENT = []; } };
+  /** A "#cw-item-<id>" or "#cw-file-<id>" link inside a page: open that item, or download that file. */
+  function link(href) {
+    var m = String(href || '').match(/^#cw-(item|file)-([\w-]+)$/);
+    if (!m || !CW.data) return;
+    if (m[1] === 'file') { download(m[2]); return; }
+    if (itemById(m[2])) go(S.cwTab || 'modules', m[2]);
+    else T.toast('That item isn’t available yet.');
+  }
+  window.TQC_COURSE = { open: open, handle: handle, link: link, createCourse: openCreateCourse, reset: function () { CW = { key: '' }; RECENT = []; } };
+})();
+</script>
+
+  <script>
+/*
+ * ImportUI.html — the administrator-only "Import courses" workspace (Classes → Import courses).
+ * Steps: 1 source · 2 upload · 3 check · 4 choose · 5 review warnings and map Roadmap fields · 6 preview · 7 confirm ·
+ * 8 build drafts (with progress, cancel, resume) · 9 report. Archives are opened here with JSZip, and their listing is
+ * checked for unsafe paths and ZIP bombs before anything is expanded; the server (Import.js) checks everything again.
+ */
+(function () {
+  'use strict';
+  var T = window.TQC, esc = T.esc, icon = T.icon, api = T.api, S = T.S;
+  var JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+  var JSZIP_SRI = 'sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==';
+  var LIM = { archive: 100 * 1048576, entries: 3000, total: 300 * 1048576, ratio: 100, text: 8 * 1048576, file: 10 * 1048576 };
+  var TEXT_EXT = /\.(xml|html?|qti|json|csv|txt)$/i;
+  var SOURCES = {
+    canvas: { label: 'Canvas', accept: '.imscc,.zip', multiple: false, what: 'A Canvas course export (.imscc).',
+      steps: ['In Canvas, open the course → <b>Settings</b> → <b>Export Course Content</b>.', 'Choose <b>Course</b>, then <b>Create Export</b>.', 'When it finishes, download the <b>.imscc</b> file and choose it below.'],
+      note: 'Brings in modules, pages, files, assignments, discussions, announcements, Classic Quiz questions (multiple choice, true/false, short answer, essay), rubrics, points, and completion requirements. External tools (LTI), New Quizzes, and other question types are listed for you to rebuild. The export has no students, grades, or submissions.' },
+    classroom: { label: 'Google Classroom', accept: '.zip,.json', multiple: true, what: 'A Google Takeout export of Classroom (.zip, or the class .json files).',
+      steps: ['Go to <b>takeout.google.com</b> signed in as the teacher, choose <b>Deselect all</b>, then check only <b>Classroom</b>.', 'Create the export and download the .zip.', 'Classroom lists attached Drive files by name but doesn’t include them: download those files from Drive (or add Drive to the same Takeout) and add them in the review step.'],
+      note: 'Classes become courses, topics become modules, materials become pages, assignments stay assignments, and announcements come across unpublished. Google Forms quizzes, practice sets, video questions, and add-ons are listed for you to rebuild. Student work is never imported.' },
+    talentlms: { label: 'TalentLMS', accept: '.csv,.xlsx', multiple: false, what: 'A TalentLMS course list exported as CSV or XLSX, plus any files you downloaded from the courses.',
+      steps: ['In TalentLMS, open <b>Courses</b> and export the list (CSV or XLSX), or use <b>Account &amp; Settings → Import - Export</b> to export courses.', 'Download the files you uploaded to each course (PDFs, slides, documents) from the course units.', 'Choose the course list below; add each course’s files and links in the review step.'],
+      note: 'TalentLMS exports course details (name, code, description, category), not the units built in its editor, so that content has to be rebuilt. TalentLibrary courses are licensed inside TalentLMS and can’t be transferred. SCORM, xAPI, and cmi5 packages are detected but not played here.' }
+  };
+  var STEPS = ['Source', 'Upload', 'Check', 'Choose', 'Review', 'Preview', 'Confirm', 'Build', 'Report'];
+  var IM = fresh();
+  function fresh() { return { step: 1, source: '', file: null, files: [], zip: null, plan: null, sel: {}, provided: {}, driveLink: {}, extra: {}, job: null, jobs: null, busy: '', error: '', uploads: null, cancel: false }; }
+
+  function needZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = JSZIP_URL; s.integrity = JSZIP_SRI; s.crossOrigin = 'anonymous'; s.referrerPolicy = 'no-referrer';
+      s.onload = function () { window.JSZip ? res(window.JSZip) : rej(new Error('The ZIP reader didn’t load.')); };
+      s.onerror = function () { rej(new Error('The ZIP reader couldn’t be loaded. Check your connection and try again.')); };
+      document.head.appendChild(s);
+    });
+  }
+  function mb(n) { return (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB'; }
+  function safePath(p) { p = String(p || '').replace(/\\/g, '/'); return !(/[\u0000-\u001f]/.test(p) || /^\//.test(p) || /^[a-z]:/i.test(p) || p.split('/').indexOf('..') > -1); }
+  function phases() { return (S.data.tiers || []).map(function (t) { return [t.level, t.name]; }); }
+  function sourceLabel() { return (SOURCES[IM.source] || {}).label || ''; }
+
+  /* ---------------- Reading the upload ---------------- */
+  function readText(file) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result)); }; r.onerror = function () { rej(new Error('Could not read ' + file.name + '.')); }; r.readAsText(file); }); }
+  function readB64(file) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(',')[1] || ''); }; r.onerror = function () { rej(new Error('Could not read ' + file.name + '.')); }; r.readAsDataURL(file); }); }
+
+  /** Lists a ZIP without expanding it, refuses unsafe archives, then reads only the text files. */
+  function readZip(file, prefix, out) {
+    if (file.size > LIM.archive) return Promise.reject(new Error(file.name + ' is ' + mb(file.size) + '; the limit is 100 MB.'));
+    return needZip().then(function (JSZip) { return JSZip.loadAsync(file); }).then(function (zip) {
+      var list = [], total = 0;
+      zip.forEach(function (path, f) {
+        if (f.dir) return;
+        // JSZip rewrites names like ../../x and keeps the original in unsafeOriginalName: refuse those archives outright.
+        if (!safePath(path) || (f.unsafeOriginalName && !safePath(f.unsafeOriginalName))) throw new Error('The archive contains an unsafe file path (' + String(f.unsafeOriginalName || path).slice(0, 80) + '). It was not imported.');
+        var size = (f._data && f._data.uncompressedSize) || 0, comp = (f._data && f._data.compressedSize) || 0;
+        if (size > 1048576 && comp > 0 && size / comp > LIM.ratio) throw new Error(path + ' expands ' + Math.round(size / comp) + ' times its packed size, which looks like a ZIP bomb. The archive was not imported.');
+        total += size;
+        list.push({ path: path, size: size, compressed: comp, f: f });
+      });
+      if (list.length > LIM.entries) throw new Error('That archive has ' + list.length + ' files; the limit is 3000.');
+      if (total > LIM.total) throw new Error('The archive expands to ' + mb(total) + '; the limit is 300 MB.');
+      if (!prefix) IM.zip = zip;
+      var textBytes = 0;
+      return list.reduce(function (p, e) {
+        return p.then(function () {
+          if (!prefix) out.entries.push({ path: e.path, size: e.size, compressed: e.compressed });
+          var isSheet = prefix && /^xl\/(worksheets\/sheet1|sharedStrings)\.xml$/i.test(e.path);
+          if (!(prefix ? isSheet : TEXT_EXT.test(e.path))) return;
+          textBytes += e.size;
+          if (textBytes > LIM.text) throw new Error('The export has more than 8 MB of pages and settings. Export fewer courses at once, or split the course.');
+          return e.f.async('string').then(function (t) { out.texts[(prefix ? prefix + '::' : '') + e.path] = t; });
+        });
+      }, Promise.resolve());
+    });
+  }
+
+  function analyze() {
+    var files = IM.files;
+    if (!files.length) { IM.error = 'Choose the export file first.'; draw(); return; }
+    IM.busy = 'Checking ' + files.map(function (f) { return f.name; }).join(', ') + '…'; IM.error = ''; IM.zip = null; draw();
+    var out = { source: IM.source, name: files.map(function (f) { return f.name; }).join(', '), size: files.reduce(function (s, f) { return s + f.size; }, 0), entries: [], texts: {} };
+    var chain = Promise.resolve();
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        if (/\.(zip|imscc)$/i.test(f.name)) return readZip(f, '', out);
+        if (/\.xlsx$/i.test(f.name)) { out.entries.push({ path: f.name, size: f.size, compressed: f.size }); return readZip(f, f.name, out); }
+        if (f.size > LIM.text) throw new Error(f.name + ' is larger than 8 MB.');
+        out.entries.push({ path: f.name, size: f.size, compressed: f.size });
+        return readText(f).then(function (t) { out.texts[f.name] = t; });
+      });
+    });
+    chain.then(function () { return api('analyzeImport', out); }).then(gotPlan, function (x) { IM.busy = ''; IM.error = x.message || String(x); draw(); });
+  }
+  function gotPlan(plan) {
+    IM.busy = ''; IM.plan = plan; IM.sel = {}; IM.provided = {}; IM.driveLink = {}; IM.extra = {};
+    plan.courses.forEach(function (c) {
+      var items = {};
+      c.items.forEach(function (it) { items[it.key] = true; });
+      IM.sel[c.key] = { on: !c.alreadyImported, items: items, map: { code: '', title: c.title, phase: '', hours: '', standard: '', competencies: '', instructors: '' } };
+      IM.extra[c.key] = [];
+    });
+    IM.step = 3; draw();
+  }
+
+  /* ---------------- Drawing ---------------- */
+  function draw() {
+    var box = T.app();
+    if (!box || S.view !== 'import') return;
+    var body = [step1, step2, step3, step4, step5, step6, step7, step8, step9][IM.step - 1]();
+    box.innerHTML = '<section class="card section import"><div class="section-head row"><div><h2>' + icon('upload') + ' Import courses</h2>' +
+      '<p>Bring courses in from Canvas, Google Classroom, or TalentLMS as <b>unpublished drafts</b>. Nothing is changed in the source system, and no students, grades, submissions, or discussion replies are imported.</p></div>' +
+      (IM.step > 1 && IM.step < 8 ? '<button class="btn btn-ghost" type="button" data-act="im-restart">' + icon('undo') + ' Start over</button>' : '') + '</div>' +
+      '<ol class="im-steps">' + STEPS.map(function (s, i) { return '<li class="' + (i + 1 === IM.step ? 'on' : i + 1 < IM.step ? 'done' : '') + '"><span>' + (i + 1) + '</span> ' + s + '</li>'; }).join('') + '</ol>' +
+      (IM.error ? '<p class="form-error" role="alert">' + esc(IM.error) + '</p>' : '') +
+      (IM.busy ? '<div class="loading"><div class="spinner"></div><p>' + esc(IM.busy) + '</p></div>' : body) + '</section>';
+    wire(box);
+  }
+
+  function step1() {
+    if (!IM.jobs) { IM.jobs = []; api('listImportJobs').then(function (j) { IM.jobs = j; draw(); }, function () {}); }
+    return '<h3 class="sub-h">1. Where is the course coming from?</h3><div class="im-sources">' + Object.keys(SOURCES).map(function (k) {
+      var s = SOURCES[k];
+      return '<button type="button" class="im-source" data-act="im-source" data-source="' + k + '"><b>' + esc(s.label) + '</b><small>' + esc(s.what) + '</small></button>';
+    }).join('') + '</div>' +
+      '<p class="muted small">Want to practice first? <button class="linkish" type="button" data-act="im-sample">Try the synthetic sample export</button> (a made-up Canvas course; nothing real).</p>' +
+      (IM.jobs && IM.jobs.length ? '<h3 class="sub-h">Earlier imports</h3><div class="table-wrap"><table class="data"><thead><tr><th>Started</th><th>Source</th><th>Courses</th><th>Status</th><th></th></tr></thead><tbody>' +
+        IM.jobs.map(function (j) { return '<tr><td>' + esc(j.created) + '<br><small class="muted">' + esc(j.createdBy) + '</small></td><td>' + esc(j.source) + '<br><small class="muted">' + esc(j.sourceName) + '</small></td><td class="small">' + esc(j.courses).replace(/\n/g, '<br>') + '</td><td>' + esc(j.status) + (j.total ? ' <small class="muted">(' + j.done + '/' + j.total + ')</small>' : '') + '</td><td><button class="btn btn-ghost btn-sm" type="button" data-act="im-job" data-id="' + esc(j.id) + '">Open</button></td></tr>'; }).join('') +
+        '</tbody></table></div>' : '');
+  }
+
+  function step2() {
+    var s = SOURCES[IM.source];
+    return '<h3 class="sub-h">2. Upload the ' + esc(s.label) + ' export</h3><ol class="im-how">' + s.steps.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' +
+      '<p class="muted small">' + esc(s.note) + '</p>' +
+      '<label class="im-field"><span>' + esc(s.what) + ' Up to 100 MB; files inside can be up to 10 MB each.</span><input type="file" id="imFile" accept="' + s.accept + '"' + (s.multiple ? ' multiple' : '') + '></label>' +
+      (IM.files.length ? '<p class="small">' + IM.files.map(function (f) { return esc(f.name) + ' (' + mb(f.size) + ')'; }).join(', ') + '</p>' : '') +
+      '<p><button class="btn btn-primary" type="button" data-act="im-analyze"' + (IM.files.length ? '' : ' disabled') + '>' + icon('check') + ' Check this export</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+  }
+
+  function warnList(ws) {
+    if (!ws || !ws.length) return '';
+    var order = { error: 0, warn: 1, info: 2 }, label = { error: 'Not imported — rebuild', warn: 'Needs attention', info: 'Note' };
+    return '<ul class="im-warn">' + ws.slice().sort(function (a, b) { return order[a.level] - order[b.level]; }).map(function (w) {
+      return '<li class="' + esc(w.level) + '"><b>' + label[w.level] + ':</b> ' + esc(w.message) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  function step3() {
+    var P = IM.plan;
+    if (!P.courses.length) return '<h3 class="sub-h">3. What we found</h3>' + warnList(P.warnings) + '<p class="muted">Nothing in this upload can be imported.</p><p><button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+    return '<h3 class="sub-h">3. What we found in ' + esc(P.sourceName || 'the export') + '</h3>' + warnList(P.warnings) +
+      '<div class="table-wrap"><table class="data"><thead><tr><th>Course</th><th class="num">Modules</th><th class="num">Items</th><th class="num">Questions</th><th class="num">Announcements</th><th class="num">Files</th><th>Needs attention</th></tr></thead><tbody>' +
+      P.courses.map(function (c) {
+        var bad = c.warnings.filter(function (w) { return w.level !== 'info'; }).length;
+        return '<tr><td><b>' + esc(c.title) + '</b>' + (c.alreadyImported ? '<br><small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + '</td><td class="num">' + c.counts.modules + '</td><td class="num">' + c.counts.items + '</td><td class="num">' + c.counts.questions + '</td><td class="num">' + c.counts.announcements + '</td><td class="num">' + c.counts.files + '</td><td>' + (bad ? bad + ' item(s)' : '—') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p><button class="btn btn-primary" type="button" data-act="im-next">Choose what to import</button></p>';
+  }
+
+  function step4() {
+    return '<h3 class="sub-h">4. Choose courses and items</h3><p class="muted small">Unchecked items are left out. Everything comes in unpublished, so you can still review it before anyone sees it.</p>' +
+      IM.plan.courses.map(function (c) {
+        var sel = IM.sel[c.key];
+        var mods = c.modules.map(function (m) {
+          var its = c.items.filter(function (it) { return it.moduleKey === m.key; });
+          if (!its.length) return '';
+          return '<div class="im-mod"><b>' + esc(m.title) + '</b>' + its.map(function (it) {
+            return '<label class="check"><input type="checkbox" data-im-item="' + esc(c.key) + '" value="' + esc(it.key) + '"' + (sel.items[it.key] ? ' checked' : '') + (sel.on ? '' : ' disabled') + '> ' +
+              '<span class="chip">' + esc(it.type) + '</span> ' + esc(it.title) + (it.needsFile ? ' <small class="muted">(Drive file)</small>' : '') + '</label>';
+          }).join('') + '</div>';
+        }).join('');
+        return '<div class="im-course"><label class="check big"><input type="checkbox" data-im-course="' + esc(c.key) + '"' + (sel.on ? ' checked' : '') + '> <b>' + esc(c.title) + '</b>' +
+          (c.alreadyImported ? ' <small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + '</label>' + (mods || '<p class="muted small">No content items in the export.</p>') +
+          (c.announcements.length ? '<p class="small muted">' + c.announcements.length + ' announcement(s) come in unpublished, and nobody is emailed.</p>' : '') + '</div>';
+      }).join('') +
+      '<p><button class="btn btn-primary" type="button" data-act="im-next">Review warnings and Roadmap details</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+  }
+
+  function chosen() { return IM.plan.courses.filter(function (c) { return IM.sel[c.key].on; }); }
+
+  function step5() {
+    var opts = function (list, v) { return '<option value="">Leave blank</option>' + list.map(function (o) { return '<option value="' + o[0] + '"' + (String(v) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); };
+    return '<h3 class="sub-h">5. Review each course</h3><p class="muted small">Give each course a Roadmap code. Phase, hours, DESE standard, competencies, and instructors stay blank unless you fill them in: nothing is guessed from the source, and source roles never become Roadmap access.</p>' +
+      chosen().map(function (c) {
+        var m = IM.sel[c.key].map, k = esc(c.key);
+        var files = c.files.filter(function (f) { return f.drive || f.status !== 'ok'; });
+        return '<div class="im-course"><h4>' + esc(c.title) + '</h4>' +
+          '<div class="im-grid">' +
+            '<label class="im-field"><span>Roadmap code (required, like LDR 301)</span><input data-im-map="' + k + '" name="code" value="' + esc(m.code) + '" placeholder="ABC 123" required></label>' +
+            '<label class="im-field"><span>Title</span><input data-im-map="' + k + '" name="title" value="' + esc(m.title) + '"></label>' +
+            '<label class="im-field"><span>Phase</span><select data-im-map="' + k + '" name="phase">' + opts(phases(), m.phase) + '</select></label>' +
+            '<label class="im-field"><span>Hours</span><input data-im-map="' + k + '" name="hours" type="number" min="0" max="200" step="0.5" value="' + esc(m.hours) + '"></label>' +
+            '<label class="im-field"><span>DESE standard</span><select data-im-map="' + k + '" name="standard">' + opts([[1, '1 Visionary'], [2, '2 Instructional'], [3, '3 Managerial'], [4, '4 Relationships'], [5, '5 Growth']], m.standard) + '</select></label>' +
+            '<label class="im-field"><span>Competencies (like LC 4, 9)</span><input data-im-map="' + k + '" name="competencies" value="' + esc(m.competencies) + '"></label>' +
+            '<label class="im-field wide"><span>Instructor emails (optional)</span><input data-im-map="' + k + '" name="instructors" value="' + esc(m.instructors) + '" placeholder="name@district.org"></label>' +
+          '</div>' + warnList(c.warnings) +
+          (files.length ? '<h5>Files</h5><ul class="im-files">' + files.map(function (f) {
+            var p = esc(f.path);
+            if (f.drive) {
+              var got = IM.provided[f.path];
+              return '<li>' + icon('file') + ' <b>' + esc(f.name) + '</b> <small class="muted">Google Drive file used by “' + esc(f.usedBy) + '”, not in the upload.</small><br>' +
+                (got ? '<span class="chip st ok">Will upload ' + esc(got.name) + '</span> ' : '') +
+                '<label class="btn btn-ghost btn-sm">Add the downloaded file<input type="file" hidden data-im-provide="' + p + '"></label> ' +
+                (f.link ? '<label class="check"><input type="checkbox" data-im-drivelink="' + p + '"' + (IM.driveLink[f.path] ? ' checked' : '') + '> Keep the Drive link instead (viewers need access in Drive; sharing isn’t changed)</label>' : '') + '</li>';
+            }
+            return '<li>' + icon('file') + ' ' + esc(f.name) + ' — <span class="' + (f.status === 'ok' ? '' : 'form-error') + '">' + esc(f.status) + '</span></li>';
+          }).join('') + '</ul>' : '') +
+          (IM.source === 'talentlms' ? extraHtml(c) : '') + '</div>';
+      }).join('') +
+      '<p><button class="btn btn-primary" type="button" data-act="im-preview">Preview the drafts</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+  }
+
+  function extraHtml(c) {
+    var list = IM.extra[c.key] || [], k = esc(c.key);
+    return '<h5>Course files and links</h5><p class="muted small">Add the PDFs, slides, and documents you downloaded from this TalentLMS course (up to 10 MB each), and links to videos. Each becomes an item in the module you name. SCORM, xAPI, and cmi5 .zip packages can’t be played here.</p>' +
+      (list.length ? '<ul class="im-files">' + list.map(function (x, i) { return '<li><span class="chip">' + esc(x.type) + '</span> ' + esc(x.title) + ' <small class="muted">→ ' + esc(x.module) + '</small> <button class="linkish" type="button" data-act="im-extra-del" data-key="' + k + '" data-i="' + i + '">Remove</button></li>'; }).join('') + '</ul>' : '') +
+      '<div class="im-grid"><label class="im-field"><span>Module</span><input id="imExMod-' + k + '" value="Course materials"></label>' +
+      '<label class="im-field"><span>Add files</span><input type="file" multiple data-im-extra="' + k + '" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.gif,.zip"></label>' +
+      '<label class="im-field"><span>Or a link (https://)</span><input id="imExLink-' + k + '" placeholder="https://www.youtube.com/watch?v=…"></label>' +
+      '<p><button class="btn btn-ghost btn-sm" type="button" data-act="im-extra-link" data-key="' + k + '">Add link</button></p></div>';
+  }
+
+  /** The courses as they will be sent: chosen items only, Drive and TalentLMS additions applied. */
+  function request() {
+    var files = [], courses = chosen().map(function (c) {
+      var sel = IM.sel[c.key], cc = JSON.parse(JSON.stringify(c));
+      cc.items = cc.items.filter(function (it) { return sel.items[it.key]; }).map(function (it) {
+        if (it.needsFile && IM.driveLink[it.needsFile] && !IM.provided[it.needsFile]) { it.link = c.files.filter(function (f) { return f.path === it.needsFile; })[0].link; delete it.needsFile; }
+        return it;
+      });
+      (IM.extra[c.key] || []).forEach(function (x, i) {
+        if (!cc.modules.some(function (m) { return m.title === x.module; })) cc.modules.push({ key: 'module:' + x.module, title: x.module });
+        var mk = cc.modules.filter(function (m) { return m.title === x.module; })[0].key;
+        var it = { key: 'extra:' + i + ':' + x.title, type: x.type, title: x.title, moduleKey: mk, requirement: 'view' };
+        if (x.file) { it.fileRef = 'extra/' + i + '/' + x.file.name; files.push({ path: it.fileRef, name: x.file.name, provided: true }); IM.provided[it.fileRef] = x.file; }
+        else it.link = x.link;
+        cc.items.push(it);
+      });
+      Object.keys(IM.provided).forEach(function (p) { if (p.indexOf('drive:') === 0 && cc.items.some(function (it) { return it.needsFile === p; })) files.push({ path: p, name: IM.provided[p].name, provided: true }); });
+      return cc;
+    });
+    var mapping = {};
+    chosen().forEach(function (c) { mapping[c.key] = IM.sel[c.key].map; });
+    return { source: IM.source, sourceName: IM.plan.sourceName, courses: courses, mapping: mapping, files: files };
+  }
+
+  function step6() {
+    var R = request();
+    return '<h3 class="sub-h">6. Preview</h3><p class="muted small">This is what will be created. Every course, module, and item starts unpublished.</p>' +
+      R.courses.map(function (c) {
+        var m = R.mapping[c.key];
+        return '<div class="im-course"><h4><span class="chip chip-mono">' + esc(m.code || '???') + '</span> ' + esc(m.title || c.title) + ' <small class="chip">Draft</small></h4>' +
+          '<p class="small muted">' + [m.phase ? 'Phase: ' + esc((phases().filter(function (p) { return String(p[0]) === String(m.phase); })[0] || [0, m.phase])[1]) : 'No phase', m.hours ? m.hours + ' hours' : 'No hours', m.standard ? 'Standard ' + esc(m.standard) : 'No standard', m.instructors ? 'Instructors: ' + esc(m.instructors) : 'No instructors'].join(' · ') + '</p>' +
+          '<ul class="im-tree">' + c.modules.map(function (md) {
+            var its = c.items.filter(function (it) { return it.moduleKey === md.key; });
+            return its.length ? '<li><b>' + esc(md.title) + '</b><ul>' + its.map(function (it) { return '<li><span class="chip">' + esc(it.type) + '</span> ' + esc(it.title) + (it.questions && it.questions.length ? ' <small class="muted">(' + it.questions.length + ' questions)</small>' : '') + '</li>'; }).join('') + '</ul></li>' : '';
+          }).join('') + '</ul>' + (c.announcements.length ? '<p class="small">' + c.announcements.length + ' unpublished announcement(s)</p>' : '') + '</div>';
+      }).join('') +
+      '<p><button class="btn btn-primary" type="button" data-act="im-next">Continue</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+  }
+
+  function step7() {
+    var R = request(), n = R.courses.length, items = R.courses.reduce(function (s, c) { return s + c.items.length; }, 0);
+    return '<h3 class="sub-h">7. Confirm</h3><p>Create <b>' + n + ' draft course' + (n === 1 ? '' : 's') + '</b> with <b>' + items + ' item' + (items === 1 ? '' : 's') + '</b>. Existing courses are never overwritten. You can cancel while it runs, and “Remove imported drafts” undoes it later (anything you edit afterwards is kept).</p>' +
+      '<p><button class="btn btn-primary" type="button" data-act="im-start">' + icon('upload') + ' Import as drafts</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
+  }
+
+  function step8() {
+    var J = IM.job || {}, up = IM.uploads;
+    var pct = J.total ? Math.round(J.done / J.total * 100) : 0;
+    return '<h3 class="sub-h">8. Building the drafts</h3>' +
+      (up ? '<p>Files: ' + up.done + ' of ' + up.total + ' uploaded' + (up.failed.length ? ', ' + up.failed.length + ' failed' : '') + '.</p>' : '') +
+      '<div class="im-bar" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></div>' +
+      '<p>' + esc(J.status || 'Starting') + (J.total ? ' · ' + J.done + ' of ' + J.total + ' steps' : '') + (J.failures ? ' · ' + J.failures + ' failure(s)' : '') + '</p>' +
+      (J.message ? '<p class="form-error">' + esc(J.message) + '</p>' : '') +
+      (up && up.failed.length ? warnList(up.failed.map(function (f) { return { level: 'warn', message: f }; })) : '') +
+      '<p>' + (J.status === 'Paused' ? '<button class="btn btn-primary" type="button" data-act="im-resume">Retry</button> ' : '') +
+      (/^(Running|Paused|Ready|Uploading files)$/.test(J.status || 'Running') ? '<button class="btn btn-ghost" type="button" data-act="im-cancel">Cancel import</button>' : '') + '</p>';
+  }
+
+  function step9() {
+    var J = IM.job;
+    return '<h3 class="sub-h">9. Import report</h3><p><b>' + esc(J.status) + '</b> · ' + esc(J.sourceLabel) + (J.sourceName ? ' · ' + esc(J.sourceName) : '') + ' · started ' + esc(J.created) + ' by ' + esc(J.createdBy) +
+      (J.filesNeeded ? ' · files ' + J.filesUploaded + ' of ' + J.filesNeeded : '') + '</p>' + (J.message ? '<p class="muted">' + esc(J.message) + '</p>' : '') +
+      J.courses.map(function (c) {
+        return '<div class="im-course"><h4><span class="chip chip-mono">' + esc(c.code) + '</span> ' + esc(c.title) + ' <small class="chip">Draft</small></h4>' +
+          '<p class="small">' + c.modules + ' modules · ' + c.items + ' items · ' + c.questions + ' quiz questions · ' + c.announcements + ' announcements</p>' +
+          (c.exists ? '<p><button class="btn btn-primary btn-sm" type="button" data-act="im-open" data-code="' + esc(c.code) + '">Open the draft</button></p>' : '<p class="muted small">Not created (or removed).</p>') +
+          (c.attention.length ? '<h5>Needs attention</h5><ul class="im-warn">' + c.attention.map(function (a) { return '<li class="warn">' + esc(a) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nothing needs attention.</p>') +
+          (c.notes.length ? '<details><summary class="small">Notes (' + c.notes.length + ')</summary><ul class="im-warn">' + c.notes.map(function (a) { return '<li class="info">' + esc(a) + '</li>'; }).join('') + '</ul></details>' : '') + '</div>';
+      }).join('') +
+      '<p>' + (J.resumable ? '<button class="btn btn-primary" type="button" data-act="im-resume">Resume</button> ' : '') +
+      (!/^Cleaned up/.test(J.status) ? '<button class="btn btn-ghost" type="button" data-act="im-clean">Remove imported drafts</button> ' : '') +
+      '<button class="btn btn-ghost" type="button" data-act="im-restart">Import more</button></p>';
+  }
+
+  /* ---------------- Running a job ---------------- */
+  function fileData(path) {
+    if (IM.provided[path]) return readB64(IM.provided[path]);
+    var f = IM.zip && IM.zip.file(path);
+    if (!f) return Promise.reject(new Error('not found in the upload'));
+    if ((f._data && f._data.uncompressedSize) > LIM.file) return Promise.reject(new Error('larger than 10 MB'));
+    return f.async('base64');
+  }
+  function start(confirmDuplicate) {
+    var R = request();
+    var missing = R.courses.filter(function (c) { return !/^[A-Za-z]{2,5} \d{3}$/.test(String(R.mapping[c.key].code || '').trim()); });
+    if (missing.length) { IM.error = 'Give every course a Roadmap code like "LDR 301" (step 5).'; IM.step = 5; draw(); return; }
+    R.confirmDuplicate = !!confirmDuplicate;
+    IM.busy = 'Saving the import plan…'; IM.error = ''; draw();
+    api('startImport', R).then(function (r) {
+      if (r.duplicate) {
+        IM.busy = '';
+        if (confirm(r.duplicate.join('\n') + '\n\nImport another copy as a new draft anyway?')) start(true); else draw();
+        return;
+      }
+      IM.busy = ''; IM.job = r.job; IM.step = 8; IM.cancel = false;
+      IM.uploads = { total: r.files.length, done: 0, failed: [] };
+      draw();
+      return r.files.reduce(function (p, f) {
+        return p.then(function () {
+          if (IM.cancel) return;
+          return fileData(f.path).then(function (data) {
+            return api('uploadImportFile', r.jobId, f.path, { name: f.name, data: data });
+          }).then(function () { IM.uploads.done++; draw(); }, function (x) { IM.uploads.failed.push(f.name + ': ' + (x.message || x)); draw(); });
+        });
+      }, Promise.resolve()).then(function () { return api('finishImportUploads', r.jobId); }).then(function (j) { IM.job = j; run(); });
+    }, function (x) { IM.busy = ''; IM.error = x.message || String(x); draw(); });
+  }
+  function run() {
+    if (IM.cancel) return;
+    api('runImportBatch', IM.job.id).then(function (j) {
+      IM.job = j;
+      if (/^(Complete|Cancelled|Cleaned up)/.test(j.status) || j.status === 'Paused') { if (j.status !== 'Paused') IM.step = 9; draw(); if (/^Complete/.test(j.status)) refreshData(); return; }
+      draw(); run();
+    }, function (x) { IM.job.message = x.message || String(x); IM.job.status = 'Paused'; draw(); });
+  }
+  function refreshData() { api('getAppData').then(function (d) { T.load(d); if (S.view === 'import') draw(); }, function () {}); }
+
+  /* ---------------- Events ---------------- */
+  function wire(box) {
+    var f = box.querySelector('#imFile');
+    if (f) f.addEventListener('change', function () { IM.files = Array.prototype.slice.call(f.files || []); IM.error = ''; draw(); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-course]'), function (el) { el.addEventListener('change', function () { IM.sel[el.dataset.imCourse].on = el.checked; draw(); }); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-item]'), function (el) { el.addEventListener('change', function () { IM.sel[el.dataset.imItem].items[el.value] = el.checked; }); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-map]'), function (el) { el.addEventListener('input', function () { IM.sel[el.dataset.imMap].map[el.name] = el.value; }); el.addEventListener('change', function () { IM.sel[el.dataset.imMap].map[el.name] = el.value; }); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-provide]'), function (el) { el.addEventListener('change', function () {
+      var file = el.files && el.files[0];
+      if (!file) return;
+      if (file.size > LIM.file) { T.toast(file.name + ' is larger than 10 MB.'); return; }
+      IM.provided[el.dataset.imProvide] = file; draw();
+    }); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-drivelink]'), function (el) { el.addEventListener('change', function () { IM.driveLink[el.dataset.imDrivelink] = el.checked; }); });
+    Array.prototype.forEach.call(box.querySelectorAll('[data-im-extra]'), function (el) { el.addEventListener('change', function () {
+      var key = el.dataset.imExtra, mod = (document.getElementById('imExMod-' + key) || {}).value || 'Course materials';
+      Array.prototype.forEach.call(el.files || [], function (file) { addExtraFile(key, file, mod); });
+      draw();
+    }); });
+  }
+  function addExtraFile(key, file, mod) {
+    if (/\.zip$/i.test(file.name)) {
+      // A ZIP here is usually a SCORM/xAPI/cmi5 package: say so plainly instead of pretending it will work.
+      needZip().then(function (JSZip) { return JSZip.loadAsync(file); }).then(function (z) {
+        var kind = z.file(/(^|\/)cmi5\.xml$/i).length ? 'cmi5' : z.file(/(^|\/)tincan\.xml$/i).length ? 'xAPI (Tin Can)' : z.file(/(^|\/)imsmanifest\.xml$/i).length ? 'SCORM (or another IMS package)' : '';
+        T.toast(kind ? file.name + ' is a ' + kind + ' package. The Roadmap has no player for it, so it wasn’t added; link to where it plays, or rebuild it.' : file.name + ' is a ZIP file; add the files inside it instead.');
+      }, function () { T.toast(file.name + ' couldn’t be read.'); });
+      return;
+    }
+    if (file.size > LIM.file) { T.toast(file.name + ' is larger than 10 MB; link to it instead.'); return; }
+    if (!/\.(pdf|docx?|pptx?|xlsx?|txt|png|jpe?g|gif)$/i.test(file.name)) { T.toast(file.name + ': only PDF, Word, PowerPoint, Excel, text, and image files can be stored. Put videos on YouTube, Vimeo, or Drive and add the link.'); return; }
+    IM.extra[key].push({ type: /\.pptx?$/i.test(file.name) ? 'Resource' : 'Resource', title: file.name.replace(/\.[^.]+$/, ''), module: mod.trim() || 'Course materials', file: file });
+  }
+
+  function handle(act, el) {
+    switch (act) {
+      case 'im-source': IM.source = el.dataset.source; IM.step = 2; IM.files = []; IM.error = ''; draw(); return true;
+      case 'im-sample': IM.source = 'canvas'; IM.busy = 'Checking the synthetic sample export…'; draw(); api('analyzeImportSample').then(function (p) { IM.files = []; gotPlan(p); }, function (x) { IM.busy = ''; IM.error = x.message; draw(); }); return true;
+      case 'im-analyze': analyze(); return true;
+      case 'im-next': IM.error = ''; if (IM.step === 4 && !chosen().length) { IM.error = 'Choose at least one course.'; draw(); return true; } IM.step++; draw(); return true;
+      case 'im-back': IM.error = ''; IM.step = Math.max(1, IM.step - 1); draw(); return true;
+      case 'im-preview': IM.error = ''; IM.step = 6; draw(); return true;
+      case 'im-start': start(false); return true;
+      case 'im-restart': IM = fresh(); draw(); return true;
+      case 'im-resume': IM.step = 8; IM.cancel = false; draw(); run(); return true;
+      case 'im-cancel':
+        if (!confirm('Stop this import? What was already built stays as drafts until you remove it.')) return true;
+        IM.cancel = true;
+        api('cancelImport', IM.job.id).then(function (j) { IM.job = j; IM.step = 9; draw(); }, T.fail); return true;
+      case 'im-clean':
+        if (!confirm('Remove the drafts this import created? Anything changed since the import, and any course people have used, is kept. Removed files go to the Drive trash.')) return true;
+        IM.busy = 'Removing imported drafts…'; draw();
+        api('cleanUpImport', IM.job.id).then(function (r) { IM.busy = ''; IM.job = r; T.load(r.data); IM.step = 9; draw(); T.toast(r.removed + ' removed' + (r.kept.length ? '; ' + r.kept.length + ' kept' : '') + '.'); }, function (x) { IM.busy = ''; IM.error = x.message; draw(); }); return true;
+      case 'im-job': IM.busy = 'Opening the report…'; draw(); api('getImportJob', el.dataset.id).then(function (j) { IM.busy = ''; IM.job = j; IM.step = 9; draw(); }, function (x) { IM.busy = ''; IM.error = x.message; draw(); }); return true;
+      case 'im-open':
+        var code = el.dataset.code;
+        api('getAppData').then(function (d) { T.load(d); T.go({ view: 'teaching', teach: code, course: null, cwTab: 'modules', cwItem: '' }); }, T.fail); return true;
+      case 'im-extra-del': IM.extra[el.dataset.key].splice(Number(el.dataset.i), 1); draw(); return true;
+      case 'im-extra-link':
+        var key = el.dataset.key, url = ((document.getElementById('imExLink-' + key) || {}).value || '').trim(), mod = (document.getElementById('imExMod-' + key) || {}).value || 'Course materials';
+        if (!/^https:\/\/\S+$/i.test(url)) { T.toast('Links must start with https://'); return true; }
+        IM.extra[key].push({ type: /youtube\.com|youtu\.be|vimeo\.com|loom\.com|drive\.google\.com\/file/i.test(url) ? 'Video' : /docs\.google\.com\/presentation/i.test(url) ? 'Slides' : 'Resource', title: url.replace(/^https:\/\//, '').slice(0, 80), module: mod.trim() || 'Course materials', link: url });
+        draw(); return true;
+    }
+    return false;
+  }
+
+  window.TQC_IMPORT = { render: function () { draw(); }, handle: handle, reset: function () { IM = fresh(); } };
 })();
 </script>
 
