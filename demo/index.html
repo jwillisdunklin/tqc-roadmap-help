@@ -445,6 +445,10 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .toast.err { background: var(--danger); }
+  .net-status { position: fixed; left: 16px; bottom: 16px; z-index: 49; display: none; max-width: min(420px, calc(100vw - 32px));
+    background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: 0 8px 20px rgba(24, 33, 61, .25); }
+  .net-status.show { display: block; }
+  .net-status.slow { border-radius: 12px; }
 
   dialog { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; width: min(480px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(24,33,61,.25); }
   dialog::backdrop { background: rgba(24, 33, 61, .45); }
@@ -871,6 +875,7 @@ window.PUBLIC_DEMO = true;
   function Range(sheet, r, c, nr, nc) { this.s = sheet; this.r = r; this.c = c; this.nr = nr; this.nc = nc; }
   Range.prototype = {
     getValues: function () {
+      stats.read++;
       var out = [];
       for (var i = 0; i < this.nr; i++) {
         var row = this.s.data[this.r - 1 + i] || [];
@@ -881,6 +886,7 @@ window.PUBLIC_DEMO = true;
       return out;
     },
     setValues: function (vals) {
+      stats.write++;
       for (var i = 0; i < vals.length; i++) {
         var row = this.s.data[this.r - 1 + i] || (this.s.data[this.r - 1 + i] = []);
         for (var j = 0; j < vals[i].length; j++) {
@@ -906,7 +912,7 @@ window.PUBLIC_DEMO = true;
   function Spreadsheet(id) { this.id = id; this.sheets = []; }
   Spreadsheet.prototype = {
     getId: function () { return this.id; },
-    getSheetByName: function (n) { return this.sheets.filter(function (s) { return s.name === n; })[0] || null; },
+    getSheetByName: function (n) { stats.tab++; return this.sheets.filter(function (s) { return s.name === n; })[0] || null; },
     insertSheet: function (n) { var s = new Sheet(n); this.sheets.push(s); return s; },
     getSheets: function () { return this.sheets.slice(); },
     deleteSheet: function (s) { this.sheets = this.sheets.filter(function (x) { return x !== s; }); }
@@ -967,15 +973,21 @@ window.PUBLIC_DEMO = true;
     this.saveAndClose = function () { this.file.blob = new Blob(paras.map(function (p) { return p.text; }).join('\n'), 'text/plain', name); };
   }
 
+  // Service-call counters for dev/perf.js (each of these is a round trip to a Google service in Apps Script).
+  var stats = { read: 0, write: 0, tab: 0, prop: 0, cacheGet: 0, cachePut: 0 };
   var api = {
     SpreadsheetApp: { getActiveSpreadsheet: function () { return SS; }, openById: function () { return SS; }, getUi: function () { return ui; } },
     PropertiesService: { getScriptProperties: function () { return {
-      getProperty: function (k) { return Object.prototype.hasOwnProperty.call(props, k) ? props[k] : null; },
+      getProperty: function (k) { stats.prop++; return Object.prototype.hasOwnProperty.call(props, k) ? props[k] : null; },
+      getProperties: function () { stats.prop++; return Object.assign({}, props); },
       setProperty: function (k, v) { props[k] = String(v); return this; }, deleteProperty: function (k) { delete props[k]; return this; } }; } },
     CacheService: { getScriptCache: function () { return {
-      get: function (k) { var e = cache[k]; return e && e.exp > Date.now() ? e.v : null; },
-      put: function (k, v, sec) { cache[k] = { v: String(v), exp: Date.now() + (sec || 600) * 1000 }; },
-      remove: function (k) { delete cache[k]; } }; } },
+      get: function (k) { stats.cacheGet++; var e = cache[k]; return e && e.exp > Date.now() ? e.v : null; },
+      getAll: function (ks) { stats.cacheGet++; var o = {}; ks.forEach(function (k) { var e = cache[k]; if (e && e.exp > Date.now()) o[k] = e.v; }); return o; },
+      put: function (k, v, sec) { stats.cachePut++; if (String(v).length > 100000) throw new Error('Argument too large: value'); cache[k] = { v: String(v), exp: Date.now() + (sec || 600) * 1000 }; },
+      putAll: function (o, sec) { stats.cachePut++; Object.keys(o).forEach(function (k) { if (String(o[k]).length > 100000) throw new Error('Argument too large: value'); cache[k] = { v: String(o[k]), exp: Date.now() + (sec || 600) * 1000 }; }); },
+      remove: function (k) { stats.cachePut++; delete cache[k]; },
+      removeAll: function (ks) { stats.cachePut++; ks.forEach(function (k) { delete cache[k]; }); } }; } },
     LockService: { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } },
     Utilities: {
       getUuid: uid, computeHmacSha256Signature: hmac, base64Encode: b64enc, base64Decode: b64dec, sleep: function () {},
@@ -1034,7 +1046,7 @@ window.PUBLIC_DEMO = true;
     }
   };
   Object.keys(api).forEach(function (k) { root[k] = api[k]; });
-  root.__GAS = { triggers: triggers,
+  root.__GAS = { triggers: triggers, stats: stats, clearCache: function () { Object.keys(cache).forEach(function (k) { if (k.indexOf('tqc.tab') === 0) delete cache[k]; }); },
     ss: SS, mail: mail, uiLog: uiLog, drive: drive, props: props,
     /** Run fn as the Google account owner (Sheet menu context). */
     asOwner: function (fn) { var prev = activeUser; activeUser = owner; try { return fn(); } finally { activeUser = prev; } },
@@ -1574,11 +1586,23 @@ var FORMAT_MINUTES = { 'SuperSprint': 30, 'Super Sprint': 30, 'Leadership 90': 9
 function doGet(e) {
   if (e && e.parameter && e.parameter.page === 'flyer') return flyerPage_(); // public program flyer (Flyer.js)
   var settings = getSettings_();
-  return HtmlService.createTemplateFromFile('Index')
+  var page = HtmlService.createTemplateFromFile('Index');
+  page.boot = bootJson_(settings);
+  return page
     .evaluate()
     .setTitle(settings.PROGRAM_NAME || SITE_NAME)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * What the page needs to draw the sign-in screen at once, without waiting for a call back to the server: whether
+ * sign-in is required and the public settings (names, links, demo on/off). Nothing private; the same settings the
+ * sign-in page already received from getAppData. Escaped for an inline <script>.
+ */
+function bootJson_(settings) {
+  return JSON.stringify({ loginRequired: isTrue_(settings.LOGIN_REQUIRED), settings: publicSettings_(settings) })
+    .replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 
 /** Used by Index.html to pull in Styles.html and App.html. */
@@ -1597,7 +1621,7 @@ function include(name) {
 function getAppData() {
   // One-time sheet updates run first, even before anyone signs in: the stand-alone update creates the Accounts tab
   // that sign-in itself needs.
-  if (sheet_(SHEETS.COURSES)) ensurePathwayModel_();
+  ensureReady_();
   var settings = getSettings_();
   if (isTrue_(settings.LOGIN_REQUIRED) && !SESSION_) {
     return { needsLogin: true, settings: publicSettings_(settings) };
@@ -1958,7 +1982,8 @@ function updateSummaryColumns_(emails) {
 /* Readers                                                             */
 /* ------------------------------------------------------------------ */
 
-function getTiers_() {
+function getTiers_() { return memo_('tiers', getTiersFresh_); }
+function getTiersFresh_() {
   // The Pathway 2 phases (Phases sheet). "Tier"/"level" is the phase number used across the app: 1 Onboarding … 4 Year 3.
   return readTable_(SHEETS.TIERS).filter(function (t) { return t.Level !== ''; }).map(function (t) {
     var hours = t['Hours Required'];
@@ -1971,7 +1996,8 @@ function getTiers_() {
   }).sort(function (a, b) { return a.level - b.level; });
 }
 
-function getStandards_() {
+function getStandards_() { return memo_('standards', getStandardsFresh_); }
+function getStandardsFresh_() {
   return readTable_(SHEETS.STANDARDS).map(function (s) {
     return {
       num: Number(s['Standard #']), name: s['DESE Standard'] || s['MASA Standard'] || s['AASA Standard'],
@@ -2000,7 +2026,8 @@ function evalIndicatorsFor_(competencies) {
   return ids.sort().map(function (id) { return { id: id, name: SEED.evalIndicators[id] }; });
 }
 
-function getCourses_() {
+function getCourses_() { return memo_('courses', getCoursesFresh_); }
+function getCoursesFresh_() {
   return readTable_(SHEETS.COURSES)
     .filter(function (c) { return c.Code && isTrue_(c.Active, true); })
     .map(function (c) {
@@ -2193,14 +2220,125 @@ function assertCanView_(email) {
 var REQ_ = null;
 var LOCK_DEPTH_ = 0;
 
-function beginRequest_() { REQ_ = { ss: null, sheets: {}, actual: {}, tables: {}, settings: null }; }
+function beginRequest_() { REQ_ = { ss: null, sheets: {}, actual: {}, tables: {}, settings: null, derived: {}, props: null, shared: null }; }
 function endRequest_() { REQ_ = null; }
-/** Forget remembered tabs and values (after tabs are renamed, added, or edited directly). */
-function resetRequestMemo_() { if (REQ_) { REQ_.sheets = {}; REQ_.actual = {}; REQ_.tables = {}; REQ_.settings = null; } }
+/**
+ * Forget remembered tabs and values (after tabs are renamed, added, or edited directly). Migrations call this after
+ * reshaping tabs, so it also drops every shared cached tab.
+ */
+function resetRequestMemo_() {
+  if (REQ_) { REQ_.sheets = {}; REQ_.actual = {}; REQ_.tables = {}; REQ_.settings = null; REQ_.derived = {}; REQ_.props = null; }
+  invalidateSharedTabs_(SHARED_TABS_);
+}
+
+/**
+ * Values worked out from the tabs (courses, phases, pathway context, enrollments, …), remembered for the rest of one page
+ * call so a click that needs them several times parses the tabs once. Never inside a lock (read-change-write steps see
+ * fresh data), and forgotten after any write. Callers must treat the result as read-only.
+ */
+function memo_(key, fn) {
+  if (!REQ_ || LOCK_DEPTH_ > 0) return fn();
+  if (!REQ_.derived) REQ_.derived = {};
+  if (!Object.prototype.hasOwnProperty.call(REQ_.derived, key)) REQ_.derived[key] = fn();
+  return REQ_.derived[key];
+}
+
+/** Script properties, read in one call per page call (one-time update flags, SPREADSHEET_ID). */
+function scriptProps_() {
+  if (REQ_ && REQ_.props) return REQ_.props;
+  var all = PropertiesService.getScriptProperties().getProperties();
+  if (REQ_) REQ_.props = all;
+  return all;
+}
+
+/*
+ * Shared tab cache (across page calls). The program's catalog and course content change rarely but are read on almost
+ * every click, so their raw values are kept in the script cache (server-side only; nothing here is sent to a browser
+ * as-is: every reply is still filtered for the signed-in person on each call, including drafts, availability dates,
+ * quiz answers, and who may see what). People's records (accounts, progress, hours, submissions, enrollments, sharing,
+ * settings) are never cached here.
+ * Invalidation: each cached tab has a version key. writeTable_ to a cached tab, ensureSheet_, migrations
+ * (resetRequestMemo_), initialSetup, and edits typed into the sheet (onEdit) give it a new version, so older copies
+ * are never read again. A copy saved by a call that started before a write is stored under the old version and ignored.
+ * Copies also expire after TAB_CACHE_SECONDS, which bounds any change the triggers miss (for example an edit by another
+ * script). Reads inside withLock_ always go to the sheet.
+ */
+var SHARED_TABS_ = [SHEETS.COURSES, SHEETS.TIERS, SHEETS.OPTIONS, SHEETS.SERIES, SHEETS.STANDARDS, SHEETS.ALIGN,
+  SHEETS.COURSE_SETTINGS, SHEETS.MODULES, SHEETS.MATERIALS, SHEETS.RUBRICS, SHEETS.QUESTIONS, SHEETS.ANNOUNCEMENTS];
+var TAB_CACHE_SECONDS = 600;
+var TAB_CACHE_CHUNK = 30000;   // characters per cache value (values are limited to 100 KB)
+var TAB_CACHE_PREFETCH = 4;    // chunks per tab fetched in the first read; bigger tabs need one more call
+var TAB_CACHE_MAX_CHUNKS = 40; // larger tabs are simply read from the sheet
+
+function isSharedTab_(name) { return SHARED_TABS_.indexOf(name) > -1; }
+function tabVerKey_(name) { return 'tqc.tabv.' + name; }
+function tabDataKey_(name, ver) { return 'tqc.tab.' + name + '.' + ver; }
+
+/** Gives these tabs new cache versions (their cached copies are never read again). */
+function invalidateSharedTabs_(names) {
+  var put = {};
+  (names || []).forEach(function (n) {
+    if (!isSharedTab_(n)) return;
+    var v = Utilities.getUuid().slice(0, 8);
+    put[tabVerKey_(n)] = v;
+    if (REQ_ && REQ_.shared) { REQ_.shared.ver[n] = v; delete REQ_.shared.hit[n]; }
+  });
+  if (!Object.keys(put).length) return;
+  try { CacheService.getScriptCache().putAll(put, 21600); } catch (e) { /* the cache is an optimization; the TTL still applies */ }
+}
+
+/** Once per page call: the current version of each cached tab, and whatever copies the cache has (two cache calls). */
+function loadSharedTabs_() {
+  if (!REQ_ || REQ_.shared) return;
+  REQ_.shared = { ver: {}, hit: {} };
+  try {
+    var cache = CacheService.getScriptCache();
+    var vers = cache.getAll(SHARED_TABS_.map(tabVerKey_)), missing = {};
+    SHARED_TABS_.forEach(function (n) {
+      var v = vers[tabVerKey_(n)];
+      if (!v) { v = Utilities.getUuid().slice(0, 8); missing[tabVerKey_(n)] = v; }
+      REQ_.shared.ver[n] = v;
+    });
+    if (Object.keys(missing).length) { cache.putAll(missing, 21600); return; } // new versions: nothing cached under them yet
+    var keys = [];
+    SHARED_TABS_.forEach(function (n) {
+      var base = tabDataKey_(n, REQ_.shared.ver[n]);
+      keys.push(base + '.n');
+      for (var i = 0; i < TAB_CACHE_PREFETCH; i++) keys.push(base + '.' + i);
+    });
+    var got = cache.getAll(keys), more = [];
+    SHARED_TABS_.forEach(function (n) {
+      var base = tabDataKey_(n, REQ_.shared.ver[n]), count = Number(got[base + '.n'] || 0);
+      for (var i = TAB_CACHE_PREFETCH; i < count; i++) more.push(base + '.' + i);
+    });
+    if (more.length) { var extra = cache.getAll(more); Object.keys(extra).forEach(function (k) { got[k] = extra[k]; }); }
+    SHARED_TABS_.forEach(function (n) {
+      var base = tabDataKey_(n, REQ_.shared.ver[n]), count = Number(got[base + '.n'] || 0), parts = [];
+      if (!count) return;
+      for (var i = 0; i < count; i++) { if (got[base + '.' + i] === undefined || got[base + '.' + i] === null) return; parts.push(got[base + '.' + i]); }
+      try { REQ_.shared.hit[n] = JSON.parse(parts.join(''), function (k, v) { return v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, '$d') ? new Date(v.$d) : v; }); }
+      catch (e) { /* a damaged copy is ignored; the sheet is read instead */ }
+    });
+  } catch (e) { /* cache unavailable: read the sheets */ }
+}
+
+/** Saves a tab's values under the version this page call started with. */
+function saveSharedTab_(name, values) {
+  if (!REQ_ || !REQ_.shared || !REQ_.shared.ver[name]) return;
+  try {
+    var text = JSON.stringify(values, function (k, v) { return this[k] instanceof Date ? { $d: this[k].getTime() } : v; });
+    var count = Math.ceil(text.length / TAB_CACHE_CHUNK);
+    if (count > TAB_CACHE_MAX_CHUNKS) return;
+    var base = tabDataKey_(name, REQ_.shared.ver[name]), put = {};
+    for (var i = 0; i < count; i++) put[base + '.' + i] = text.slice(i * TAB_CACHE_CHUNK, (i + 1) * TAB_CACHE_CHUNK);
+    put[base + '.n'] = String(count);
+    CacheService.getScriptCache().putAll(put, TAB_CACHE_SECONDS);
+  } catch (e) { /* too large or cache unavailable: next call reads the sheet */ }
+}
 
 function ss_() {
   if (REQ_ && REQ_.ss) return REQ_.ss;
-  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  var id = scriptProps_().SPREADSHEET_ID;
   var ss = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
   if (REQ_) REQ_.ss = ss;
   return ss;
@@ -2228,10 +2366,17 @@ function sheet_(name) {
 /** A tab's raw values (header row first), or null if there is no tab. Remembered outside locks during a page call. */
 function rawValues_(name) {
   if (REQ_ && LOCK_DEPTH_ === 0 && REQ_.tables[name]) return REQ_.tables[name].values;
+  var shared = REQ_ && LOCK_DEPTH_ === 0 && isSharedTab_(name);
+  if (shared) {
+    loadSharedTabs_();
+    var hit = REQ_.shared.hit[name];
+    if (hit) { REQ_.tables[name] = { values: hit, sheet: name, locked: false, cached: true }; return hit; }
+  }
   var sheet = sheet_(name);
   if (!sheet) return null;
   var values = sheet.getDataRange().getValues();
   if (REQ_) REQ_.tables[name] = { values: values, sheet: REQ_.actual[name], locked: LOCK_DEPTH_ > 0 };
+  if (shared && REQ_.actual[name] === name) saveSharedTab_(name, values);
   return values;
 }
 
@@ -2310,7 +2455,8 @@ function writeTable_(name, headers, rows) {
     return headers.map(function (h) { return r[h] === undefined || r[h] === null ? '' : safeCell_(r[h]); });
   }));
   var known = REQ_ && LOCK_DEPTH_ > 0 && REQ_.tables[name] && REQ_.tables[name].locked && REQ_.tables[name].sheet === name ? REQ_.tables[name].values : null;
-  if (REQ_) delete REQ_.tables[name];
+  if (REQ_) { delete REQ_.tables[name]; REQ_.derived = {}; }
+  invalidateSharedTabs_([name]);
   if (known && known.length && known[0].length === headers.length && rowEq_(headers, known[0])) {
     var n = values.length, m = known.length, first = -1, last = -1;
     for (var i = 1; i < Math.min(n, m); i++) {
@@ -2382,7 +2528,8 @@ function fmtDateTime_(v) {
 
 var HOURS_CATEGORIES = ['Coaching', 'Mentoring', 'Conferences', 'Regional Meetings', 'Legislative Updates', 'Tight Times', 'Collaborative Cohort (PLC)', 'Other'];
 
-function getOptions_() {
+function getOptions_() { return memo_('options', getOptionsFresh_); }
+function getOptionsFresh_() {
   return readTable_(SHEETS.OPTIONS).filter(function (r) { return r['Option ID'] && isTrue_(r.Active, true); }).map(function (r) {
     return { id: String(r['Option ID']), name: String(r.Name), kind: String(r.Kind || 'Strand'), standard: Number(r['Standard #']) || '',
       phases: optionPhases_(r.Phases), forPay: isTrue_(r['For Pay']), provider: String(r.Provider || ''),
@@ -2409,7 +2556,8 @@ function rewriteOptionPhases_() {
     writeTable_(SHEETS.OPTIONS, HEADERS.OPTIONS, rows);
   });
 }
-function getSeries_() {
+function getSeries_() { return memo_('series', getSeriesFresh_); }
+function getSeriesFresh_() {
   return readTable_(SHEETS.SERIES).filter(function (r) { return r['Series ID'] && isTrue_(r.Active, true); }).map(function (r) {
     return { id: String(r['Series ID']), name: String(r.Name), standard: Number(r['Standard #']) || '', competencies: String(r['DESE Competencies'] || ''),
       badge: String(r.Badge || r.Name), description: String(r.Description || '') };
@@ -2470,7 +2618,8 @@ function substitutionsAll_() {
 }
 
 /** Everything that pathwayStatus_ needs, read once. */
-function pathwayContext_() {
+function pathwayContext_() { return memo_('pathwayContext', pathwayContextFresh_); }
+function pathwayContextFresh_() {
   return { tiers: getTiers_(), courses: getCourses_(), options: getOptions_(), series: getSeries_(), progress: progressByEmail_(),
     selections: selectionsAll_(), hours: hoursLogAll_(), subs: substitutionsAll_(), year1: year1Index_(), today: todayYmd_() };
 }
@@ -2877,7 +3026,8 @@ function addDaysYmd_(ymd, n) {
   return new Date(Date.UTC(p[0], p[1] - 1, p[2] + Number(n))).toISOString().slice(0, 10);
 }
 function toSheetDate_(ymd) { return Utilities.parseDate(ymd + ' 00:00', tz_(), 'yyyy-MM-dd HH:mm'); }
-function nameIndex_() {
+function nameIndex_() { return memo_('nameIndex', nameIndexFresh_); }
+function nameIndexFresh_() {
   var out = {};
   readTable_(SHEETS.SUPTS).forEach(function (r) { out[norm_(r.Email)] = String(r.Name || ''); });
   return out;
@@ -2960,7 +3110,23 @@ function seedSamplePathwayRows_() {
  * copies. Progress rows stay as they are (old course codes simply stop counting); sample people are reloaded.
  */
 var PATHWAY_MODEL_PROP = 'PATHWAY_MODEL';
+/** One read of every script property tells whether any one-time update is still due (the usual case: none). */
+function pathwayUpToDate_() {
+  var flags = scriptProps_();
+  return flags.SHARING_MODEL === '2026-11-people' && flags[PATHWAY_MODEL_PROP] === '2026-10' && flags.COURSE_FORMATS === '2026-10' && flags.OPTION_PHASES === '2026-11' && flags.CERT_COLUMN === '2026-11' &&
+    flags.ACCESS_MODEL === '2026-11' && flags[STANDALONE_PROP] === '2026-11' &&
+    flags[CLASS_PAGES_PROP] === '2026-11' && flags[ENROLLMENT_PROP] === '2026-11' && flags[TEACHING_PROP] === '2026-11' && flags[COURSES_V2_PROP] === '2026-11' && flags[CATALOG_PROP] === '2026-11-11' &&
+    flags.SITE_NAME === '2026-11';
+}
+
+/** Runs any one-time update that is due (before sign-in too: the sign-in page needs the Accounts tab). */
+function ensureReady_() {
+  if (pathwayUpToDate_()) return;
+  if (sheet_(SHEETS.COURSES)) ensurePathwayModel_();
+}
+
 function ensurePathwayModel_() {
+  if (pathwayUpToDate_()) return [];
   ensureSharingModel_();
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty(PATHWAY_MODEL_PROP) === '2026-10' && props.getProperty('COURSE_FORMATS') === '2026-10' && props.getProperty('OPTION_PHASES') === '2026-11' && props.getProperty('CERT_COLUMN') === '2026-11' &&
@@ -3336,7 +3502,7 @@ function callApp(token, fn, args) {
 /** Email + password. Returns { token } or { error } with a message for the sign-in page. */
 function signIn(email, password) {
   beginRequest_();
-  try { return signIn_(email, password); } finally { endRequest_(); }
+  try { ensureReady_(); return signIn_(email, password); } finally { endRequest_(); }
 }
 
 function signIn_(email, password) {
@@ -3369,6 +3535,7 @@ function signIn_(email, password) {
 function signInDemo(role) {
   beginRequest_();
   try {
+    ensureReady_(); // the page may not have loaded app data first (the sign-in form shows at once)
     if (!isTrue_(getSettings_().DEMO_MODE)) return { error: 'The demo is turned off.' };
     role = role || 'admin';
     if (['coach', 'mentor', 'board', 'sup', 'admin'].indexOf(role) < 0) return { error: 'Choose a demo role.' };
@@ -3383,6 +3550,7 @@ function signInDemo(role) {
 function requestPasswordReset(email) {
   beginRequest_();
   try {
+    ensureReady_(); // the page may not have loaded app data first (the sign-in form shows at once)
     email = norm_(email);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, message: 'Please enter the email address you use for the program.' };
     var reply = { ok: true, message: 'If ' + email + ' is part of the program, a link to set your password is on its way. It works once and expires in ' +
@@ -3412,6 +3580,7 @@ function requestPasswordReset(email) {
 function completeSetup(email, code, password) {
   beginRequest_();
   try {
+    ensureReady_(); // the page may not have loaded app data first (the sign-in form shows at once)
     email = norm_(email);
     if (failedSignIns_('setup_' + email) >= MAX_FAILED_SIGNINS) return { error: 'Too many attempts. Please wait 15 minutes and try again.' };
     var problem = passwordProblem_(password);
@@ -3765,6 +3934,14 @@ function clearFailedSignIns_(key) {
  * Setup.gs — spreadsheet menu and one-time setup.
  */
 
+/**
+ * Simple trigger: someone typed into the spreadsheet. Cached copies of that tab (see the shared tab cache in Code.js) are
+ * dropped so the site shows the edit on the next click. Any error is ignored; cached copies also expire on their own.
+ */
+function onEdit(e) {
+  try { invalidateSharedTabs_([e.range.getSheet().getName()]); } catch (err) {}
+}
+
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('Growth Roadmap')
     .addItem('1. Run initial setup', 'initialSetup')
@@ -3873,6 +4050,7 @@ function installCourseReminders() {
  */
 function initialSetup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  invalidateSharedTabs_(SHARED_TABS_); // setup may add or reshape tabs; start the site from fresh copies
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
   var created = [];
   var upgraded = [];
@@ -4199,6 +4377,7 @@ function ensureSheet_(name, headers, rows, created) {
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, headers.length);
   created.push(name);
+  invalidateSharedTabs_([name]);
   return sheet;
 }
 
@@ -4711,7 +4890,8 @@ function seedDemoSubmissionsRows_(email) {
 /* ---------------------------------------------------------------- */
 
 /** { email: { code: { on, by } } } for current enrollments. */
-function enrollmentsAll_() {
+function enrollmentsAll_() { return memo_('enrollments', enrollmentsAllFresh_); }
+function enrollmentsAllFresh_() {
   var out = {};
   readTable_(SHEETS.ENROLL).forEach(function (r) {
     var e = norm_(r.Email);
@@ -5072,18 +5252,27 @@ function participantsOf_(code, ctx) {
   ctx = ctx || pathwayContext_();
   var enrolls = enrollmentsAll_();
   return readTable_(SHEETS.SUPTS).filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
-    var email = norm_(s.Email), P = pathwayStatus_(email, ctx), e = P.events[code], c = ctx.courses.filter(function (x) { return x.code === code; })[0];
-    if (!e || !c) return null;
-    var open = c.status !== 'Required' && !c.option && c.kind !== 'support';
-    if (open && !(enrolls[email] || {})[code] && !e.done) return null; // open offerings: only people who enrolled (or finished)
-    return { email: email, name: String(s.Name || email), district: String(s.District || ''),
-      status: e.done ? 'Completed' : e.reported === 'Pending' ? 'Marked complete' : (enrolls[email] || {})[code] ? 'Enrolled' : 'On pathway' };
+    return participantRow_(s, code, ctx, enrolls);
   }).filter(Boolean).sort(function (a, b) { return a.name.localeCompare(b.name); });
 }
 
+/** One superintendent row's place in a class (or null when they aren't taking it). */
+function participantRow_(s, code, ctx, enrolls) {
+  var email = norm_(s.Email), P = pathwayStatus_(email, ctx), e = P.events[code], c = ctx.courses.filter(function (x) { return x.code === code; })[0];
+  if (!e || !c) return null;
+  var open = c.status !== 'Required' && !c.option && c.kind !== 'support';
+  if (open && !(enrolls[email] || {})[code] && !e.done) return null; // open offerings: only people who enrolled (or finished)
+  return { email: email, name: String(s.Name || email), district: String(s.District || ''),
+    status: e.done ? 'Completed' : e.reported === 'Pending' ? 'Marked complete' : (enrolls[email] || {})[code] ? 'Enrolled' : 'On pathway' };
+}
+
+/** Is this person taking the class? The same rule as participantsOf_, worked out for that one person only. */
 function isParticipant_(email, code) {
   email = norm_(email);
-  return participantsOf_(code).some(function (p) { return p.email === email; });
+  if (!email) return false;
+  var rows = readTable_(SHEETS.SUPTS).filter(function (s) { return s.Email && isTrue_(s.Active, true) && norm_(s.Email) === email; });
+  var ctx = pathwayContext_(), enrolls = enrollmentsAll_();
+  return rows.some(function (s) { return !!participantRow_(s, String(code), ctx, enrolls); });
 }
 
 /* ---------------- Editing a class ---------------- */
@@ -5659,11 +5848,28 @@ function learnerItem_(code, itemId) {
   return { a: a, item: item };
 }
 
+/**
+ * Records that the learner opened an item. Replies with only what a view can change (each item's requirement state,
+ * module locks and counts, and the course progress), not the whole course; the page merges it in.
+ */
 function markItemViewed(code, itemId) {
   var a = courseAccess_(code, '');
   if (!a.learner) return null; // instructors, observers, and visitors browse without recording views
   setItemProgress_(a.viewer.email, a.code, String(itemId), 'Viewed On');
-  return getCourse(code, '');
+  return courseProgressReply_(a);
+}
+
+/** The learner's progress in one course, in the shape getCourse uses for items[].state, modules[], and progress. */
+function courseProgressReply_(a) {
+  var settings = courseSettings_(a.code), mods = modulesOf_(a.code);
+  var p = progressFor_(a.viewer.email, a.code, itemsOf_(a.code), mods, settings);
+  var modules = {};
+  mods.forEach(function (m) {
+    var mp = p.modules[m.id];
+    if (mp) modules[m.id] = { locked: mp.locked, lockReason: mp.lockReason, done: mp.done, total: mp.total, complete: mp.complete };
+  });
+  return { code: a.code, partial: true, states: p.items, modules: modules,
+    progress: { done: p.done, total: p.total, complete: p.complete, countsForCredit: p.countsForCredit, credit: p.credit } };
 }
 
 function markItemDone(code, itemId) {
@@ -7041,7 +7247,9 @@ function sandboxSignIn_(role) {
   <dialog id="pwDialog"><div id="pwDialogBody"></div></dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="net-status" id="netStatus" role="status" aria-live="polite"></div>
 
+  <script>window.BOOT = null;</script>
   <script>
 /*
  * Help.html — the how-to guide (Help button, the sign-in page's "How-to guide" link, and the welcome card).
@@ -7075,7 +7283,8 @@ window.HELP_TOPICS = [
     show: { view: 'roadmap', target: '#adminNav', tip: 'Tabs open your pathway, calendar, catalog, phases, badges, hours, evaluation, and standards alignment.' },
     steps: ['The tabs under the title switch between **My Pathway**, **Calendar**, **Course Catalog**, **Phases**, **Badges**, **Hours**, **Evaluation**, and **Standards Alignment**. Evaluation is private to authorized roles; mentors do not see it. Admins also see **Roster Dashboard** and **People & sign-in**.',
       '**Back** (top right) goes back one screen, for example from a class page to the calendar.',
-      '**Help** opens this guide. **Sign out** ends your session; you stay signed in for up to 2 hours of no use otherwise.'] },
+      '**Help** opens this guide. **Sign out** ends your session; you stay signed in for up to 2 hours of no use otherwise. If you are still signed in when you come back, the site shows **Restoring your sign-in…** while it checks.',
+      'While the site is working, a small note in the lower left says **Saving…** or **Loading…** (after 8 seconds, **Still saving…**). Keep the page open until it disappears; a change counts as saved only when its own message (for example **Saved.** or **Turned in.**) appears. Clicking a button twice sends it once.'] },
   { id: 'hours-tab', video: 'hours', roles: ['all'], title: 'Read the Hours tab', fig: 'hours', requires: ['getHoursLog'],
     show: { view: 'hours', target: '.hours-cats', tip: 'Totals by category; the log appears below.' },
     steps: ['Open **Hours** to see category totals and the log of dates, phases, hours, and approval status.',
@@ -7128,7 +7337,8 @@ window.HELP_TOPICS = [
     steps: ['Click any class title (on My Pathway, Coming up, the Calendar, or the Course Catalog). The course opens with **Home**, **Modules**, **Assignments**, **Discussions**, **Resources**, and **People** on the left.',
       '**Home** has announcements, the welcome, what you’ll learn, the syllabus, the session time and join link, and your instructor.',
       '**Modules** lists the course by week or topic. Each item shows what it takes to finish (for example **Turn it in** or **Score at least 60%**) and a check when you’re done. A locked module opens when you finish the one before it or on its date.',
-      'The bar at the top shows your requirements done. Videos and pages play right in the course; opening one counts only toward “View it” requirements, never as finishing the course by itself.'] },
+      'The bar at the top shows your requirements done. Videos and pages play right in the course; opening one counts only toward “View it” requirements, never as finishing the course by itself.',
+      'A course you opened a moment ago reopens at once and then updates itself from the program’s records in the background, so dates, new items, and grades are always current.'] },
   { id: 'mark-complete', video: 'course-learner', roles: ['sup'], title: 'Get pathway credit for a course', fig: 'eventrow', requires: ['reportCompletion', 'checkCourseCredit_'],
     show: { view: 'roadmap', target: '[data-act="report"]', tip: 'Mark complete, with the date and a short reflection.' },
     steps: ['When you finish every requirement in a course that includes real work (an assignment, a passing quiz, or a discussion post), it’s sent to your program administrator to approve for your pathway hours automatically.',
@@ -7212,7 +7422,8 @@ window.HELP_TOPICS = [
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
     steps: ['New courses and anything you uncheck **Published** on are drafts: only instructors and administrators see them. Click **Publish course** when it’s ready.',
       'Give any item **Available from** and **Available until** dates, and a **Due date** (or days after the session). Modules can have an **Unlocks on** date.',
-      'Click **Learner preview** to see exactly what someone taking the course sees. Click **Exit learner preview** to go back to editing.'] },
+      'Click **Learner preview** to see exactly what someone taking the course sees. Click **Exit learner preview** to go back to editing.',
+      'Changes you save here show to learners on their next click. Edits typed straight into the spreadsheet show on the next click too (allow up to 10 minutes if another tool or script made the change).'] },
   { id: 'course-requirements', video: 'course-building', roles: ['coach', 'sup'], title: 'Completion requirements, prerequisites, and credit', requires: ['progressFor_', 'checkCourseCredit_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Set requirements when you add or edit an item.' },
     steps: ['Each item can have a **Completion requirement**: View it, Mark it done, Post in the discussion, Turn it in, or Score at least a percent.',
@@ -7398,18 +7609,57 @@ window.HELP_TOPICS = [
   // window.MOCK_API is only defined in the local preview build; in Apps Script this uses google.script.run.
   // Sign-in calls go straight to the server; everything else goes through callApp with the session token.
   var DIRECT = { signIn: 1, signOut: 1, redeemHandoff: 1, signInDemo: 1, requestPasswordReset: 1, completeSetup: 1 };
+  /*
+   * Every call is numbered when it starts. Replies that are objects carry that number (__seq, not enumerable), so load()
+   * can ignore a full-data reply that started before the data already on screen (a stale reply never overwrites newer
+   * work). A save identical to one still on its way (same person, action, and values: a double click) shares that
+   * first call instead of sending it twice.
+   */
+  var API_SEQ = 0, INFLIGHT = {};
+  var READS = /^(get|list)/, QUIET = { markItemViewed: 1, setEvaluationSystem: 1, signOut: 1 }; // the evaluation has its own banner
   function api(fn) {
     var args = Array.prototype.slice.call(arguments, 1);
     var token = store.get(TOKEN_KEY) || '';
-    return new Promise(function (resolve, reject) {
+    var seq = ++API_SEQ, save = !READS.test(fn);
+    var key = '';
+    if (save) { try { key = token + '\u0001' + fn + '\u0001' + JSON.stringify(args); } catch (e) { key = ''; } }
+    if (key && INFLIGHT[key]) return INFLIGHT[key];
+    var p = new Promise(function (resolve, reject) {
+      var ok = function (r) { if (r && typeof r === 'object') { try { Object.defineProperty(r, '__seq', { value: seq }); } catch (e) {} } resolve(r); };
       if (window.MOCK_API) {
         window.MOCK_API._token = token;
-        return window.MOCK_API[fn].apply(null, args).then(resolve, reject);
+        return window.MOCK_API[fn].apply(null, args).then(ok, reject);
       }
-      var runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+      var runner = google.script.run.withSuccessHandler(ok).withFailureHandler(reject);
       if (DIRECT[fn]) runner[fn].apply(runner, args);
       else runner.callApp(token, fn, args);
     });
+    if (!QUIET[fn] && !DIRECT[fn]) netTrack(save, p);
+    if (key) { INFLIGHT[key] = p; var done = function () { delete INFLIGHT[key]; }; p.then(done, done); }
+    return p;
+  }
+
+  /*
+   * Waiting feedback: "Saving…" as soon as a change is sent, "Loading…" when a read takes more than half a second, and
+   * "Still …" after 8 seconds. It only reports work in progress; "Saved" messages come from each action after the server
+   * confirms, and failures are shown by the action that failed.
+   */
+  var NET = { save: 0, load: 0, t: null, slow: null };
+  function netTrack(save, p) {
+    NET[save ? 'save' : 'load']++;
+    netDraw();
+    var end = function () { NET[save ? 'save' : 'load']--; netDraw(); };
+    p.then(end, end);
+  }
+  function netDraw() {
+    var el = document.getElementById('netStatus');
+    if (!el) return;
+    clearTimeout(NET.t); clearTimeout(NET.slow);
+    if (!NET.save && !NET.load) { el.className = 'net-status'; el.textContent = ''; return; }
+    var word = NET.save ? 'Saving' : 'Loading';
+    var show = function (slow) { el.textContent = (slow ? 'Still ' + word.toLowerCase() + '… the spreadsheet is busy; please keep this page open.' : word + '…'); el.className = 'net-status show' + (slow ? ' slow' : ''); };
+    if (NET.save) show(false); else NET.t = setTimeout(function () { show(false); }, 500);
+    NET.slow = setTimeout(function () { show(true); }, 8000);
   }
 
   /* ---------------- State ---------------- */
@@ -9086,6 +9336,9 @@ window.HELP_TOPICS = [
 
   /* ---------------- Actions ---------------- */
   function load(data) {
+    // Ignore a full-data reply from a call that started before the data now on screen (it may predate a later save).
+    if (data && data.__seq && S.dataSeq && data.__seq < S.dataSeq) return;
+    S.dataSeq = (data && data.__seq) || S.dataSeq || 0;
     S.data = data;
     if (!data.viewer || !(data.viewer.isAdmin || data.viewer.isVisitor)) S.preview = false;
     if (!S.email) {
@@ -9347,6 +9600,7 @@ window.HELP_TOPICS = [
     store.set(TOKEN_KEY, token);
     return api('getAppData').then(function (data) {
       if (data.needsLogin) { onError('Your sign-in expired. Please try again.'); return; }
+      if (window.TQC_COURSE) window.TQC_COURSE.reset();
       showPortal();
       load(data);
     });
@@ -9403,6 +9657,7 @@ window.HELP_TOPICS = [
       store.set(TOKEN_KEY, res.token);
       return api('getAppData').then(function (data) {
         if (data.needsLogin || (data.notEnrolled && !window.PUBLIC_DEMO)) throw new Error('The sample demo is unavailable.');
+        if (window.TQC_COURSE) window.TQC_COURSE.reset(); // a different identity: forget recent courses
         S.email = null; S.people = null; S.preview = false; S.course = null; S.stack = []; S.evalTry = {}; S.evalPending = {}; S.evalErrors = {}; S.sharing = {}; S.phaseOpen = null; S.calMonth = '';
         load(data); showPortal();
         if (previous) api('signOut', previous).catch(function () {});
@@ -9495,12 +9750,31 @@ window.HELP_TOPICS = [
   function courseSubject() { var sup = current(); return !sup || canActFor(sup) ? '' : sup.email; }
 
   var PARAMS = {};
+  /*
+   * Startup. The server put the public sign-in settings in the page (window.BOOT), so with nothing remembered on this
+   * device the sign-in form appears at once, with no call back to the server first. With a remembered sign-in, the page
+   * shows "Restoring your sign-in…" while it checks it (the server re-checks the account and role on every call).
+   */
+  var BOOT = window.BOOT || null;
+  function bootScreen(text) {
+    showPortal();
+    $app.innerHTML = '<div class="loading" id="loading"><div class="spinner"></div><p>' + esc(text) + '</p></div>';
+  }
+  function bootFailed(err) {
+    showPortal();
+    $app.innerHTML = '<div class="card notice"><h2>Something went wrong</h2><p class="muted">' + esc(err && err.message || err) + '</p>' +
+      '<p><button class="btn btn-primary" type="button" id="bootRetry">Try again</button></p></div>';
+    document.getElementById('bootRetry').addEventListener('click', function () { location.reload(); });
+  }
   pageParams().then(function (p) {
     PARAMS = p || {};
     if (!PARAMS.handoff) return;
+    bootScreen('Opening the full window…');
     return api('redeemHandoff', PARAMS.handoff).then(function (res) { if (res && res.token) store.set(TOKEN_KEY, res.token); });
   }).catch(function () {}).then(function () {
     if (PARAMS.setup) return { needsLogin: true, setup: true };
+    if (BOOT && BOOT.loginRequired && !store.get(TOKEN_KEY)) return { needsLogin: true, settings: BOOT.settings, fromBoot: true };
+    if (store.get(TOKEN_KEY)) bootScreen('Restoring your sign-in…');
     return api('getAppData');
   }).then(function (data) {
     if (data.setup) {
@@ -9509,17 +9783,15 @@ window.HELP_TOPICS = [
       SETUP.email = String(PARAMS.email || '');
       SETUP.code = String(PARAMS.setup || '');
       document.getElementById('setupEmail').textContent = SETUP.email;
-      api('getAppData').then(function (d) { setLoginHelp(d.settings); }, function () {});
+      if (BOOT) setLoginHelp(BOOT.settings);
+      else api('getAppData').then(function (d) { setLoginHelp(d.settings); }, function () {});
       showLogin('setup');
       return;
     }
     if (data.needsLogin) { store.del(TOKEN_KEY); setLoginHelp(data.settings); showLogin(); return; }
     showPortal();
     load(data);
-  }, function (err) {
-    showPortal();
-    $app.innerHTML = '<div class="card notice"><h2>Something went wrong</h2><p class="muted">' + esc(err && err.message || err) + '</p></div>';
-  });
+  }, bootFailed);
 })();
 </script>
 
@@ -9539,21 +9811,57 @@ window.HELP_TOPICS = [
   var app = function () { return T.app(); };
   var ed = function () { return CW.data && CW.data.canEdit && !CW.preview; };
 
+  /*
+   * Recently opened courses, kept in this page's memory only (never in localStorage), so going back to a course draws at
+   * once. Each entry is for one signed-in identity (email, role, demo role), course, person being viewed, and preview
+   * mode, so one person's copy is never shown to another. A copy is only a head start: the course is always re-read from
+   * the server right away, and the server's reply replaces it. Cleared on sign-out and identity changes (reset), and
+   * replaced by the server's reply after every change made here.
+   */
+  var RECENT = [], RECENT_MAX = 6;
+  function who() { var v = (S.data && S.data.viewer) || {}; return [v.email || '', v.isAdmin ? 'admin' : '', v.isVisitor ? 'visitor' : '', v.demoRole || '', v.isBoard ? 'board' : ''].join('|'); }
+  function recentKey(code, subject) { return who() + '#' + code + '#' + (subject || '') + '#' + (S.preview ? 'preview' : ''); }
+  function recentGet(k) { var e = RECENT.filter(function (x) { return x.k === k; })[0]; return e ? e.d : null; }
+  function recentPut(k, d) { RECENT = RECENT.filter(function (x) { return x.k !== k; }); if (d) { RECENT.unshift({ k: k, d: d }); RECENT = RECENT.slice(0, RECENT_MAX); } }
+  function recentDropCourse(code) { RECENT = RECENT.filter(function (x) { return x.k.split('#')[1] !== code; }); }
+
   /* ---------------- Opening and drawing ---------------- */
   function open(code, subject) {
-    var key = code + '|' + subject;
-    if (CW.key !== key) { CW = { key: key, code: code, subject: subject, data: null, preview: false, review: null, people: null, quiz: null, templates: CW.templates }; }
+    var key = recentKey(code, subject);
+    if (CW.key !== key) {
+      CW = { key: key, code: code, subject: subject, data: recentGet(key), version: 0, preview: false, review: null, people: null, quiz: null, templates: CW.templates };
+      if (CW.data) { draw(); fetch(); return; } // a recent copy now, the server's copy as soon as it arrives
+    }
     if (!CW.data) { app().innerHTML = '<div class="loading"><div class="spinner"></div><p>Opening the course…</p></div>'; fetch(); return; }
     draw();
   }
+  /** Re-read the course. A reply is used only if nothing newer was applied while it was on its way. */
   function fetch() {
-    var key = CW.key;
-    api('getCourse', CW.code, CW.subject).then(function (d) { if (CW.key !== key) return; CW.data = d; draw(); }, function (e) {
-      app().innerHTML = '<section class="card section"><button class="linkish back" data-act="go-back">' + icon('chevron') + ' Back</button><h2>This course isn’t available</h2><p class="muted">' + esc(e.message || e) + '</p></section>';
+    var key = CW.key, version = CW.version;
+    api('getCourse', CW.code, CW.subject).then(function (d) {
+      if (CW.key !== key || CW.version !== version) return;
+      CW.data = d; CW.version++; recentPut(key, d); draw();
+    }, function (e) {
+      if (CW.key !== key) return;
+      if (CW.data) { T.toast('Couldn’t refresh this course: ' + (e.message || e) + ' What you see may be out of date.', true); return; }
+      app().innerHTML = '<section class="card section"><button class="linkish back" data-act="go-back">' + icon('chevron') + ' Back</button><h2>This course isn’t available</h2><p class="muted">' + esc(e.message || e) + '</p>' +
+        '<p><button class="btn btn-primary btn-sm" type="button" data-act="cw-retry">Try again</button></p></section>';
     });
   }
   /** Use a fresh copy of the course from a save, then redraw. */
-  function took(d) { if (d && d.code === CW.code) { CW.data = d; CW.review = null; draw(); } else fetch(); }
+  function took(d) {
+    if (d && d.code === CW.code) { CW.data = d; CW.version++; CW.review = null; recentDropCourse(CW.code); recentPut(CW.key, d); draw(); }
+    else { recentDropCourse(CW.code); CW.data = null; fetch(); }
+  }
+  /** Merge a progress-only reply (markItemViewed) into the course on screen. */
+  function tookProgress(r) {
+    if (!r || !r.partial || r.code !== CW.code || !CW.data) return;
+    CW.version++;
+    CW.data.items.forEach(function (it) { if (r.states[it.id]) it.state = r.states[it.id]; });
+    CW.data.modules.forEach(function (m) { var mp = r.modules[m.id]; if (mp) Object.assign(m, mp); });
+    if (CW.data.progress) CW.data.progress = r.progress;
+    recentPut(CW.key, CW.data);
+  }
   function go(tab, item) { T.go({ cwTab: tab, cwItem: item || '' }); }
   function tab() { return S.cwTab || 'home'; }
 
@@ -10053,7 +10361,7 @@ window.HELP_TOPICS = [
     });
     if (item) document.getElementById('itemRemove').addEventListener('click', function () {
       if (!confirm('Remove “' + it.title + '” from the course? Work already turned in is kept.')) return;
-      api('removeMaterial', CW.code, it.id).then(function () { T.closeDlg(); go('modules'); CW.data = null; fetch(); T.toast('Removed.'); }, T.fail);
+      api('removeMaterial', CW.code, it.id).then(function () { T.closeDlg(); go('modules'); recentDropCourse(CW.code); CW.data = null; CW.version++; fetch(); T.toast('Removed.'); }, T.fail);
     });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -10152,7 +10460,12 @@ window.HELP_TOPICS = [
     var it = S.cwItem ? itemById(S.cwItem) : null;
     if (it && d.isLearner && it.state && !it.state.viewed && ['Page', 'Video', 'Slides', 'Resource', 'Discussion'].indexOf(it.type) > -1 && !it.state.locked && !it.state.lockedBySequence) {
       it.state.viewed = true;
-      api('markItemViewed', d.code, it.id).then(function (nd) { if (nd && CW.code === nd.code) { CW.data = nd; } }, function () {});
+      api('markItemViewed', d.code, it.id).then(function (r) {
+        var wasLocked = CW.data.modules.filter(function (m) { return m.locked; }).length;
+        tookProgress(r);
+        // A view can finish a module and unlock the next one: redraw so the unlocked items appear.
+        if (r && CW.data && CW.data.modules.filter(function (m) { return m.locked; }).length !== wasLocked) draw();
+      }, function () { it.state.viewed = false; });
     }
     Array.prototype.forEach.call(root.querySelectorAll('.disc'), function (box) {
       api('getDiscussion', box.dataset.code, box.dataset.board).then(function (dd) { T.renderDiscussion(box, dd); if (CW.data.unread[box.dataset.board]) { delete CW.data.unread[box.dataset.board]; } },
@@ -10198,6 +10511,7 @@ window.HELP_TOPICS = [
     var x = list[i]; list[i] = list[j]; list[j] = x; return list;
   }
   function handle(act, el) {
+    if (act === 'cw-retry') { app().innerHTML = '<div class="loading"><div class="spinner"></div><p>Opening the course…</p></div>'; fetch(); return true; }
     var d = CW.data;
     if (!d) return false;
     var id = el.dataset.id;
@@ -10294,7 +10608,7 @@ window.HELP_TOPICS = [
     api('listTemplates').then(draw2, function () { draw2([]); });
   }
 
-  window.TQC_COURSE = { open: open, handle: handle, createCourse: openCreateCourse, reset: function () { CW = { key: '' }; } };
+  window.TQC_COURSE = { open: open, handle: handle, createCourse: openCreateCourse, reset: function () { CW = { key: '' }; RECENT = []; } };
 })();
 </script>
 
