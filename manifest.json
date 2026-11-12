@@ -84,7 +84,7 @@
       {
         "file": "shots/getting-around-04.png",
         "title": "Course Catalog",
-        "text": "Sign up for workshops and events, and choose your strand or academy."
+        "text": "Sign up for standalone sessions and events, and choose your Years 2 and 3 path."
       },
       {
         "file": "shots/getting-around-05.png",
@@ -194,7 +194,7 @@
       {
         "file": "shots/phases-02.png",
         "title": "Phase details",
-        "text": "Select a phase to see required events, your strand or academy, and progress toward its badge."
+        "text": "Select a phase to see its ALEs, required events, your Years 2 and 3 path, and progress toward its badge."
       },
       {
         "file": "shots/phases-03.png",
@@ -216,12 +216,12 @@
       "sup"
     ],
     "video": "videos/badges.mp4",
-    "seconds": 23,
+    "seconds": 28,
     "shots": [
       {
         "file": "shots/badges-01.png",
         "title": "Badges",
-        "text": "Open Badges to review phase badges, Competency Series, and the MASA/TQC Pathway Certificate."
+        "text": "Open Badges to review the yearly completion badges, Competency Series, and the MASA/TQC Pathway Certificate of Completion."
       },
       {
         "file": "shots/badges-02.png",
@@ -237,6 +237,11 @@
         "file": "shots/badges-04.png",
         "title": "Back to badges",
         "text": "Back returns to Badges. The certificate recognizes professional learning, not Missouri educator certification."
+      },
+      {
+        "file": "shots/badges-05.png",
+        "title": "Proof of growth",
+        "text": "Each earned badge opens a printable page of the sessions, dates, evidence, and indicators covered, to share with your board president."
       }
     ]
   },
@@ -249,7 +254,7 @@
       "coach"
     ],
     "video": "videos/hours.mp4",
-    "seconds": 23,
+    "seconds": 28,
     "shots": [
       {
         "file": "shots/hours-01.png",
@@ -263,11 +268,16 @@
       },
       {
         "file": "shots/hours-03.png",
-        "title": "Log hours",
-        "text": "Choose the category, hours, date, and phase, and add a short note. Do not enter student names."
+        "title": "ALEs coming up",
+        "text": "The next Authentic Learning Experiences, so coaching and mentoring connect to them."
       },
       {
         "file": "shots/hours-04.png",
+        "title": "Log hours",
+        "text": "Choose the category, hours, date, and phase; for coaching or mentoring, check the ALEs it connected to. Log each regional meeting or conference on its own line."
+      },
+      {
+        "file": "shots/hours-05.png",
         "title": "Approval and counting",
         "text": "Member entries wait for administrator approval before they count toward phase badges. Mentors log Mentoring hours only."
       }
@@ -371,12 +381,12 @@
       {
         "file": "shots/your-pathway-04.png",
         "title": "The four phases",
-        "text": "Each phase earns a badge. Click a phase to see its events."
+        "text": "Each phase earns a completion badge. Click a phase to see its events."
       },
       {
         "file": "shots/your-pathway-05.png",
         "title": "Phase details",
-        "text": "Required events, your strand or academy, and the hours you have toward the badge."
+        "text": "The ALEs and other required events, your Years 2 and 3 path, and the hours you have toward the badge."
       },
       {
         "file": "shots/your-pathway-06.png",
@@ -530,8 +540,8 @@
       },
       {
         "file": "shots/enrolling-03.png",
-        "title": "An offering",
-        "text": "Date, format, hours, and the DESE standard it is aligned to."
+        "title": "A standalone session",
+        "text": "Date, format, hours, and the DESE standard. On the Core Learning Path, standalone sessions add hours until the path reaches 33."
       },
       {
         "file": "shots/enrolling-04.png",
@@ -573,7 +583,7 @@
       {
         "file": "shots/hours-and-badges-04.png",
         "title": "Badges",
-        "text": "Phase and Competency Series badges, and the MASA/TQC Pathway Certificate when all four phases are done."
+        "text": "Yearly completion and Competency Series badges, and the MASA/TQC Pathway Certificate of Completion when all four yearly badges are earned."
       },
       {
         "file": "shots/hours-and-badges-05.png",
@@ -760,12 +770,12 @@
   {
     "id": "admin-roster",
     "title": "Administrators: roster and approvals",
-    "summary": "Approve work, record attendance, and add superintendents.",
+    "summary": "Approve work, record attendance, add superintendents or a whole cohort, and review engagement.",
     "roles": [
       "admin"
     ],
     "video": "videos/admin-roster.mp4",
-    "seconds": 43,
+    "seconds": 53,
     "shots": [
       {
         "file": "shots/admin-roster-01.png",
@@ -806,6 +816,16 @@
         "file": "shots/admin-roster-08.png",
         "title": "Add superintendent",
         "text": "Adds them to the roster and emails a link to set a password."
+      },
+      {
+        "file": "shots/admin-roster-09.png",
+        "title": "Add a cohort",
+        "text": "Paste a whole cohort from a spreadsheet and email everyone a sign-in link in one step."
+      },
+      {
+        "file": "shots/admin-roster-10.png",
+        "title": "Engagement report",
+        "text": "Sign-ins, sessions, and course activity for each superintendent (counts only), plus participant feedback, for the pilot review."
       }
     ]
   },
