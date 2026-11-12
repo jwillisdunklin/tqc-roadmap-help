@@ -781,7 +781,7 @@
 </style>
 
 <script>/* demo mode */
-window.PUBLIC_DEMO = true;
+window.PUBLIC_DEMO = true; window.PUBLIC_DEMO_LIVE_URL = "https://script.google.com/macros/s/AKfycbxq5TcmSJWIA7vH7dFimyQmKU2gZvEKY9v_n3bxtK6taguy08SIAteQfAf4Kj5JdA2XZA/exec";
 </script>
 <script>/* gas-shim */
 /**
@@ -7476,6 +7476,7 @@ function brandSettings_(s) {
 function catalogPage_() {
   beginRequest_();
   try {
+    ensureReady_(); // any one-time catalog update that is due, so the public page never shows the old program
     return HtmlService.createHtmlOutput(renderCatalog_())
       .setTitle('Course catalog and PD calendar · ' + (getSettings_().PROGRAM_NAME || SITE_NAME))
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -7755,6 +7756,7 @@ function sandboxSignIn_(role) {
           <button class="btn btn-block" type="button" data-demo-role="sup">View as a superintendent</button>
           <button class="btn btn-block" type="button" data-demo-role="admin">View as a site administrator</button>
         </div>
+        <p class="fine demo-live" id="demoLive" hidden>This is the public demo; it has no sign-in. Program members and staff: <a id="demoLiveLink" href="#" target="_top">sign in on the program site</a>.</p>
         <p class="fine" id="demoNote" hidden>The demo shows sample people only. The board president view shows only what the superintendent chooses to share.</p>
         <p class="fine">Passwords are stored only as salted, scrambled hashes, never as text.</p>
         <p class="fine policy-links" id="loginPolicies"></p>
@@ -10551,7 +10553,11 @@ window.HELP_TOPICS = [
       if (k !== mode && k !== 'setup') f.reset();
     });
     ['loginError', 'setupError', 'resetMsg'].forEach(function (id) { document.getElementById(id).textContent = ''; });
-    if (window.PUBLIC_DEMO) { Object.keys(forms).forEach(function(k){document.getElementById(forms[k]).hidden=true;}); document.getElementById('demoRoles').hidden=false; }
+    if (window.PUBLIC_DEMO) {
+      Object.keys(forms).forEach(function(k){document.getElementById(forms[k]).hidden=true;}); document.getElementById('demoRoles').hidden=false;
+      // The public demo copy can't sign anyone in; point real members to the program site.
+      if (window.PUBLIC_DEMO_LIVE_URL) { document.getElementById('demoLiveLink').href = window.PUBLIC_DEMO_LIVE_URL; document.getElementById('demoLive').hidden = false; }
+    }
     var focus = { signin: 'loginUser', reset: 'resetEmail', setup: 'setupPass' }[mode];
     setTimeout(function () { var el = document.getElementById(focus); if (el) el.focus(); }, 50);
   }
