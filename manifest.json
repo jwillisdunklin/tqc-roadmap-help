@@ -104,7 +104,7 @@
       {
         "file": "shots/getting-around-08.png",
         "title": "Evaluation",
-        "text": "Choose MSBA, MARE, a local tool, or standards only. This tab is hidden from mentors."
+        "text": "Choose MSBA, MCE Policy 1720, a local tool, or standards only. This tab is hidden from mentors."
       },
       {
         "file": "shots/getting-around-09.png",
@@ -296,7 +296,7 @@
       {
         "file": "shots/evaluation-01.png",
         "title": "Evaluation",
-        "text": "Open Evaluation and choose MSBA, MARE, a local tool, or standards only. Mentors cannot see this tab."
+        "text": "Open Evaluation and choose MSBA, MCE Policy 1720, a local tool, or standards only. Mentors cannot see this tab."
       },
       {
         "file": "shots/evaluation-02.png",
@@ -361,37 +361,42 @@
       "sup"
     ],
     "video": "videos/your-pathway.mp4",
-    "seconds": 33,
+    "seconds": 38,
     "shots": [
       {
         "file": "shots/your-pathway-01.png",
+        "title": "Your next step",
+        "text": "The one thing to do now, with a button that does it, and your progress toward this year’s completion badge."
+      },
+      {
+        "file": "shots/your-pathway-02.png",
         "title": "Where you are",
         "text": "Your phase (Onboarding, Year 1, Year 2, or Year 3), your coach, and your mentor."
       },
       {
-        "file": "shots/your-pathway-02.png",
+        "file": "shots/your-pathway-03.png",
         "title": "Leadership pipeline",
         "text": "Your total hours, phases completed, and what is left for the current phase badge."
       },
       {
-        "file": "shots/your-pathway-03.png",
+        "file": "shots/your-pathway-04.png",
         "title": "Coming up",
         "text": "Your next sessions, coaching calls, and assignments due. Click one to open the class."
       },
       {
-        "file": "shots/your-pathway-04.png",
-        "title": "The four phases",
-        "text": "Each phase earns a completion badge. Click a phase to see its events."
-      },
-      {
         "file": "shots/your-pathway-05.png",
-        "title": "Phase details",
-        "text": "The ALEs and other required events, your Years 2 and 3 path, and the hours you have toward the badge."
+        "title": "The four phases",
+        "text": "Each phase earns a completion badge. Click a phase to see its events below."
       },
       {
         "file": "shots/your-pathway-06.png",
-        "title": "Class titles",
-        "text": "Click any class title to open its class page."
+        "title": "An event",
+        "text": "Title first, then format, hours, and date. Details shows the ALE, standard, and evaluation indicators."
+      },
+      {
+        "file": "shots/your-pathway-07.png",
+        "title": "Badges, Hours, Evaluation, Standards",
+        "text": "Short summaries. Each card opens its own tab."
       }
     ]
   },
@@ -558,7 +563,7 @@
   {
     "id": "hours-and-badges",
     "title": "Hours, badges, and your evaluation",
-    "summary": "Log hours, request a substitution, and use your badges with your board.",
+    "summary": "Log hours, count other learning, and use your badges with your board.",
     "roles": [
       "sup"
     ],
@@ -577,8 +582,8 @@
       },
       {
         "file": "shots/hours-and-badges-03.png",
-        "title": "Request substitution",
-        "text": "Count equivalent learning (prior experience, district training) in place of an event."
+        "title": "Count other learning",
+        "text": "More › Count other learning asks to count equivalent learning (prior experience, district training) in place of an event."
       },
       {
         "file": "shots/hours-and-badges-04.png",
@@ -588,12 +593,12 @@
       {
         "file": "shots/hours-and-badges-05.png",
         "title": "Evaluation",
-        "text": "Choose MSBA, MARE, your district’s own tool, or standards only."
+        "text": "Choose MSBA, MCE Policy 1720, your district’s own tool, or standards only, on the Evaluation tab."
       },
       {
         "file": "shots/hours-and-badges-06.png",
         "title": "Print report",
-        "text": "Prints the Standards Alignment Report to bring to your board."
+        "text": "Standards Alignment prints the report to bring to your board."
       }
     ]
   },
@@ -648,7 +653,7 @@
       {
         "file": "shots/course-building-02.png",
         "title": "Instructor tools",
-        "text": "Learner preview and Publish. Review submissions is on Assignments."
+        "text": "Learner preview on the left; Publish or Unpublish on the right asks on the page first. Review submissions is on Assignments."
       },
       {
         "file": "shots/course-building-03.png",
@@ -768,6 +773,78 @@
     ]
   },
   {
+    "id": "admin-import",
+    "title": "Administrators: import courses",
+    "summary": "Bring courses in from Canvas, Google Classroom, or TalentLMS as unpublished drafts, using the synthetic sample export.",
+    "roles": [
+      "admin"
+    ],
+    "video": "videos/admin-import.mp4",
+    "seconds": 63,
+    "shots": [
+      {
+        "file": "shots/admin-import-01.png",
+        "title": "Import courses",
+        "text": "Under Program, open Import courses. Classes also has an Import courses button."
+      },
+      {
+        "file": "shots/admin-import-02.png",
+        "title": "Choose the source",
+        "text": "Canvas (.imscc), Google Classroom (Google Takeout), or TalentLMS (CSV or XLSX plus course files)."
+      },
+      {
+        "file": "shots/admin-import-03.png",
+        "title": "How to export",
+        "text": "Each source shows its export steps. Canvas: Settings, Export Course Content, Course."
+      },
+      {
+        "file": "shots/admin-import-04.png",
+        "title": "Practice safely",
+        "text": "The synthetic sample export is a made-up Canvas course."
+      },
+      {
+        "file": "shots/admin-import-05.png",
+        "title": "Four stages",
+        "text": "Source and upload, Check and choose, Preview and confirm, then Build and report."
+      },
+      {
+        "file": "shots/admin-import-06.png",
+        "title": "What we found",
+        "text": "Courses, modules, items, questions, and files found, with how many need attention."
+      },
+      {
+        "file": "shots/admin-import-07.png",
+        "title": "Choose",
+        "text": "On the same screen, pick the courses to bring in (Items to bring in lists each one). Everything arrives unpublished."
+      },
+      {
+        "file": "shots/admin-import-08.png",
+        "title": "Roadmap details",
+        "text": "Give each course a code. Phase, hours, standard, competencies, and instructors stay blank unless you set them."
+      },
+      {
+        "file": "shots/admin-import-09.png",
+        "title": "Warnings",
+        "text": "What can’t come across is listed first: rebuild, then needs attention. Notes fold away."
+      },
+      {
+        "file": "shots/admin-import-10.png",
+        "title": "Preview",
+        "text": "The modules and items that will be created, all as drafts."
+      },
+      {
+        "file": "shots/admin-import-11.png",
+        "title": "Confirm",
+        "text": "On the same screen. Existing courses are never overwritten. You can cancel while it runs."
+      },
+      {
+        "file": "shots/admin-import-12.png",
+        "title": "Import report",
+        "text": "Open each draft, fix what needs attention, or remove the imported drafts."
+      }
+    ]
+  },
+  {
     "id": "admin-roster",
     "title": "Administrators: roster and approvals",
     "summary": "Approve work, record attendance, add superintendents or a whole cohort, and review engagement.",
@@ -785,7 +862,7 @@
       {
         "file": "shots/admin-roster-02.png",
         "title": "Waiting for approval",
-        "text": "Sessions marked complete, hours logged, and substitution requests."
+        "text": "Sessions marked complete, hours logged, and requests to count other learning."
       },
       {
         "file": "shots/admin-roster-03.png",
@@ -851,8 +928,8 @@
       },
       {
         "file": "shots/admin-people-03.png",
-        "title": "Copy link",
-        "text": "Makes a link you can send yourself."
+        "title": "More",
+        "text": "Edit name, Copy link (a link you can send yourself), and Turn off."
       },
       {
         "file": "shots/admin-people-04.png",
