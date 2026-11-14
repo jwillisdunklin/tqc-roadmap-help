@@ -847,7 +847,10 @@
   .im-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; margin: 8px 0; }
   .im-field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
   .im-field.wide { grid-column: 1 / -1; }
-  .im-field input, .im-field select { width: 100%; box-sizing: border-box; }
+  .im-field input, .im-field select, .im-field textarea { width: 100%; box-sizing: border-box; }
+  .im-field textarea { font: inherit; resize: vertical; }
+  .im-find { margin: 8px 0 12px; max-width: 520px; }
+  .im-find p { margin: 6px 0 0; }
   .im-warn { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; font-size: 13.5px; }
   .im-warn li { padding: 6px 10px; border-radius: 8px; border-left: 4px solid var(--line); background: var(--surface-2, rgba(0,0,0,.02)); }
   .im-warn li.error { border-left-color: var(--danger, #a32929); }
@@ -2014,6 +2017,7 @@ var FORMAT_MINUTES = { 'SuperSprint': 30, 'Super Sprint': 30, 'Leadership 90': 9
 function doGet(e) {
   if (e && e.parameter && e.parameter.page === 'flyer') return flyerPage_(); // public program flyer (Flyer.js)
   if (e && e.parameter && e.parameter.page === 'catalog') return catalogPage_(); // public catalog and PD calendar (Catalog.js)
+  if (e && e.parameter && e.parameter.page === 'health') return healthPage_(); // public pass/fail health check, no data (Health.js)
   var settings = getSettings_();
   var page = HtmlService.createTemplateFromFile('Index');
   page.boot = bootJson_(settings);
@@ -9091,14 +9095,19 @@ function parseTalent_(texts, files) {
   if (unmapped.length) warn('info', 'Columns not used (no matching Roadmap field): ' + unmapped.slice(0, 12).join(', ') + (unmapped.length > 12 ? ', …' : '') + '.');
   var courses = [], seen = {};
   rows.slice(1).forEach(function (r, i) {
+    // TalentLMS reports show an empty field as "-".
+    var cell = function (name) { var v = col[name] !== undefined ? String(r[col[name]] || '').trim() : ''; return /^[-–—]$/.test(v) ? '' : v; };
     var t = String(r[col.title] || '').trim();
     if (!t) { warn('warn', 'Row ' + (i + 2) + ' has no course name and was skipped.'); return; }
-    var key = 'talentlms:' + (col.id !== undefined && r[col.id] ? r[col.id] : t);
-    if (seen[key]) { warn('warn', 'Row ' + (i + 2) + ' repeats “' + t + '” and was skipped.'); return; }
+    // TalentLMS reports have no ID column and often hold several client copies of one course with the same name, so
+    // rows are told apart by ID, then code, then name. Only a row that repeats all of them is skipped.
+    var id = cell('id'), code = cell('code');
+    var key = 'talentlms:' + (id || (code ? 'code:' + code : t));
+    if (seen[key]) { warn('warn', 'Row ' + (i + 2) + ' repeats “' + t + '”' + (code ? ' (' + code + ')' : '') + ' and was skipped.'); return; }
     seen[key] = true;
-    var d = col.description !== undefined ? String(r[col.description] || '') : '';
+    var d = cell('description');
     courses.push({ key: key, title: t.slice(0, 200), description: d ? '<p>' + escAttr_(d).replace(/\n/g, '<br>') + '</p>' : '', syllabus: '', welcome: '',
-      meta: { sourceCode: col.code !== undefined ? String(r[col.code] || '') : '', category: col.category !== undefined ? String(r[col.category] || '') : '' },
+      meta: { sourceCode: cell('code'), category: cell('category') },
       modules: [{ key: 'module:materials', title: 'Course materials' }], items: [], rubrics: [], announcements: [], refs: [], files: [],
       warnings: [{ level: 'warn', message: 'TalentLMS exports course details only. Units built in the TalentLMS editor (content, tests, surveys, assignments) are not in the export and must be rebuilt; add any files you downloaded from the course in the review step.' }] });
   });
@@ -9168,7 +9177,53 @@ function analyzeImport(payload) {
   plan.limits = { fileMB: UPLOAD_MAX_BYTES / 1048576, items: IMPORT_LIMITS.items, courses: IMPORT_LIMITS.courses };
   var keys = importedKeys_();
   plan.courses.forEach(function (c) { if (keys[c.key]) c.alreadyImported = keys[c.key]; });
+  // A course whose name is the same as (or nearly the same as) one already in the Roadmap: say so, so it isn't
+  // imported as a second copy by mistake. Imports never merge into or overwrite an existing course.
+  var existing = getCourses_();
+  plan.courses.forEach(function (c) {
+    var hit = similarCourse_(c.title, existing);
+    if (hit) {
+      c.similar = { code: hit.code, title: hit.title };
+      c.warnings.unshift({ level: 'warn', message: 'Looks like ' + hit.code + ' “' + hit.title + '”, already in the Roadmap. Importing makes a separate draft; it does not add to or replace ' + hit.code + '.' });
+    }
+  });
   return plan;
+}
+
+/** Words that don't help tell two course names apart. */
+var SIMILAR_STOP_ = { a: 1, an: 1, and: 1, the: 1, of: 1, for: 1, to: 1, in: 1, on: 1, with: 1, your: 1, session: 1, course: 1 };
+
+/** Lowercase words of a course name, without punctuation or filler words. */
+function titleWords_(t) {
+  return String(t || '').toLowerCase().replace(/&/g, ' and ')
+    // Format labels and course numbers aren't part of the topic: "Supersprint: School Board Relations" and
+    // "School Board Relations 101" are the same course.
+    .replace(/\b(super\s*sprints?|leadership\s*90s?|l90\+?|micro-?learning)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ').trim().split(' ')
+    .filter(function (w) { return w && !SIMILAR_STOP_[w] && !/^\d+$/.test(w); }).map(function (w) { return w.replace(/s$/, ''); });
+}
+
+/**
+ * The existing course whose name matches this one: the same words (ignoring case, punctuation, plurals, and words
+ * like "for" and "the"), or at least 80% of the words in common when both names have three or more. Null if none.
+ */
+function similarCourse_(title, courses) {
+  var a = titleWords_(title);
+  if (!a.length) return null;
+  var best = null, bestScore = 0;
+  var setA = {};
+  a.forEach(function (w) { setA[w] = true; });
+  courses.forEach(function (c) {
+    var b = titleWords_(c.title);
+    if (!b.length) return;
+    var setB = {}, all = {}, common = 0;
+    b.forEach(function (w) { setB[w] = true; all[w] = true; });
+    Object.keys(setA).forEach(function (w) { all[w] = true; if (setB[w]) common++; });
+    var same = common === Object.keys(all).length; // the same words, in any order
+    var score = same ? 2 : common / Object.keys(all).length;
+    if ((same || (a.length >= 3 && b.length >= 3 && score >= 0.8)) && score > bestScore) { best = c; bestScore = score; }
+  });
+  return best;
 }
 
 /** Source keys already imported by jobs that weren't cleaned up: { key: 'CODE (job id)' }. */
@@ -9286,7 +9341,7 @@ function cleanImportCourse_(c, m, taken) {
   var announcements = [].concat(c.announcements || []).slice(0, 200).map(function (a, i) { return { key: String(a.key || 'ann:' + i), title: String(a.title || 'Announcement').slice(0, 200), body: html(a.body, 'Announcement “' + a.title + '”') }; });
   return { key: String(c.key || '').slice(0, 300), sourceTitle: String(c.title || '').slice(0, 200), code: code, title: title, phase: phase, hours: hours, standard: std, competencies: comps.toUpperCase().replace(/\bLC\s*/g, 'LC ').replace(/,\s*(\d)/g, ', LC $1'),
     instructors: instructors, format: String(m.format || 'Course').slice(0, 60), modality: String(m.modality || 'Virtual').slice(0, 120), provider: String(m.provider || '').slice(0, 120),
-    description: html(c.description, 'The course description'), syllabus: html(c.syllabus, 'The syllabus'), welcome: html(c.welcome, 'The welcome page'),
+    description: String(m.description || '').trim() ? '<p>' + escAttr_(String(m.description).trim().slice(0, 5000)).replace(/\r?\n/g, '<br>') + '</p>' : html(c.description, 'The course description'), syllabus: html(c.syllabus, 'The syllabus'), welcome: html(c.welcome, 'The welcome page'),
     modules: modules, items: items, rubrics: rubrics, announcements: announcements, refs: refs, warnings: warnings };
 }
 
@@ -10114,7 +10169,7 @@ window.HELP_TOPICS = [
       '**SuperSprint** (30 minutes), **Leadership 90** (90 minutes), and **L90+** (an in-person session longer than 90 minutes, usually 2.5 hours) are session formats.',
       '**Standard 4** is a Missouri DESE Superintendent Standard; **LC 24** is one of its 32 Leadership Competencies.',
       '**Evaluation 4d** is a performance indicator in the MSBA/DESE/MASA Superintendent Evaluation Manual that the session supports.',
-      'Point to a dotted-underlined label to see it spelled out. **Target met** next to an hours bar means the hours went past what the phase needs; the bar stops at full.'] },
+      'Point to a dotted-underlined label to see it spelled out. **Target met** next to an hours bar means the hours reached or went past what the phase needs; the bar stops at full.'] },
   { id: 'hours-tab', video: 'hours', roles: ['all'], title: 'Read the Hours tab', fig: 'hours', requires: ['getHoursLog'],
     show: { view: 'hours', target: '.hours-cats', tip: 'Totals by category; the log appears below.' },
     steps: ['Open **Hours** to see category totals and the log of dates, phases, hours, and approval status.',
@@ -10275,7 +10330,7 @@ window.HELP_TOPICS = [
       'In a module, click **Add to this module** and choose **Page**, **Video**, **Slide show**, **Resource**, **Assignment**, **Quiz**, or **Discussion**.',
       'Pages use the editor: bold, italic, headings, lists, links, **Image** (an https image link), **Video** (YouTube, Vimeo, Loom, or Google Drive), and **Document** links. To attach a file, use **Attach a document** on a resource or assignment (PDF, Word, PowerPoint, Excel; up to 10 MB).',
       'Use **↑ ↓** to reorder modules and items, **Edit** to change them, and **Duplicate** to copy a module here or into another course you teach.',
-      '**All classes** (or **My classes**) at the top of a course goes back to your class list. Clicking the **Classes** tab always opens the list, too.'] },
+      '**All classes** (or **My classes**) at the top of a course goes back to your class list. Clicking the **Classes** tab always opens the list, too. Switching between a course’s tabs (Home, Modules, Assignments, and so on) keeps your place on the page.'] },
   { id: 'course-publish', video: 'course-building', roles: ['coach'], title: 'Drafts, publishing, dates, and learner preview', requires: ['saveCourseSettings', 'itemOpen_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
     steps: ['New courses and anything you uncheck **Published** on are drafts: only instructors and administrators see them. Click **Publish course** (top right of the course) when it’s ready. The page asks you to confirm before it publishes; **Unpublish course** asks too, and hides the course from learners until you publish it again.',
@@ -10373,7 +10428,9 @@ window.HELP_TOPICS = [
     show: { view: 'teaching', target: '[data-act="import-open"]', tip: 'Import courses here.' },
     steps: ['Open **Program › Import courses** (or **Classes**, then **Import courses**; administrators only). Four stages run across the top: **Source & upload**, **Check & choose**, **Preview & confirm**, and **Build & report**.',
       '**Source & upload**: choose the source, then upload its export. To practice, click **Try the synthetic sample export** (a made-up Canvas course).',
-      '**Check & choose** is one screen: what the export holds (courses, modules, items, quiz questions, announcements, files), then for each course a checkbox, its Roadmap code (like LDR 301), and its warnings. **Items to bring in** lists each item. Phase, hours, DESE standard, competencies, and instructors stay blank unless you fill them in: nothing is guessed, and source roles never become Roadmap access.',
+      '**Check & choose** is one screen: what the export holds (courses, modules, items, quiz questions, announcements, files), then for each course a checkbox, its Roadmap code (like LDR 301), a **Description** box, and its warnings. **Items to bring in** lists each item. Phase, hours, DESE standard, competencies, and instructors stay blank unless you fill them in: nothing is guessed, and source roles never become Roadmap access.',
+      'An export with more than 20 courses (a whole TalentLMS report, say) starts with **nothing ticked**. Type in **Find courses by name, code, or category** to narrow the list (each course shows its source code and category, so copies with the same name can be told apart), tick the ones you want (up to 20 per import; the count turns red past 20), and use **Untick all** to start over. Import the rest in another round.',
+      'A course marked **Looks like** a Roadmap code (for example **Looks like BRD 101**) has the same topic as a course already in the Roadmap, ignoring labels like SuperSprint and numbers like 101. Importing it still makes a **separate draft**; it never adds to or replaces that course. Untick it if the Roadmap course is already what you want.',
       '**Preview & confirm**: check the drafts, then click **Import as drafts**. Progress shows files uploaded and steps done; you can **Cancel**, and a stopped import can **Retry** or **Resume** without repeating finished parts.',
       'The report links to each draft and lists what needs attention. Every course, module, item, and announcement starts **unpublished**, and nobody is emailed. No students, grades, submissions, discussion replies, or completion histories are imported.'] },
   { id: 'import-canvas', video: 'admin-import', roles: ['admin'], title: 'Importing from Canvas (.imscc)', requires: ['analyzeImport'],
@@ -10389,8 +10446,9 @@ window.HELP_TOPICS = [
       'Google Forms quizzes, practice sets, video questions, and add-on activities are not converted; they are listed so you can rebuild them (a Form can be kept as a link). Student submissions and comments in the export are never imported.',
       'A direct “Connect Google Classroom” option needs Google Cloud setup and approval first; see the import guide (docs/course-import.md).'] },
   { id: 'import-talentlms', video: 'admin-import', roles: ['admin'], title: 'Importing from TalentLMS (CSV/XLSX and course files)', requires: ['analyzeImport'],
-    steps: ['In TalentLMS, export the course list as **CSV or XLSX** (from **Courses**, or **Account & Settings → Import - Export**), and download the files you uploaded to each course.',
-      'Name, code, description, and category come across (columns that don’t match a Roadmap field are listed). TalentLMS doesn’t export units built in its editor (content, tests, surveys, assignments), so those must be rebuilt.',
+    steps: ['In TalentLMS, open **Reports → Courses** and click **Save as CSV** (the icon below the table). Upload that file. An XLSX course list works too.',
+      'The course name, code, and category come across; empty cells (shown as “-” in TalentLMS) stay blank, and learner counts are listed as unused and never imported. The course report has **no description**, so copy it from the course page in TalentLMS and paste it into the **Description** box.',
+      'TalentLMS doesn’t export units built in its editor (content, TalentCraft, tests, surveys, assignments), so those must be rebuilt. PDFs and slides inside **document units** aren’t course files in TalentLMS: open each unit and download its file. Course videos are usually over 10 MB, so add them as a YouTube, Vimeo, Loom, or Drive link instead.',
       'In the review step, use **Course files and links** to add each course’s PDFs, slides, and documents (up to 10 MB each) and links to videos, and name the module each goes in.',
       'TalentLibrary courses are licensed inside TalentLMS and can’t be downloaded or transferred. SCORM, xAPI, and cmi5 packages are recognized but not played or tracked here, so they are never added as working content.'] },
   { id: 'import-warnings', video: 'admin-import', roles: ['admin'], title: 'Fix import warnings and undo an import', requires: ['cleanUpImport', 'cancelImport', 'listImportJobs'],
@@ -10398,7 +10456,7 @@ window.HELP_TOPICS = [
       'Items whose file didn’t come across say so in their details: open the item, click **Edit**, and upload the file, or paste a link. Rebuild unsupported questions in the quiz’s question bank.',
       'Errors you may see: an unsafe file path, a file that “looks like a ZIP bomb”, more than 3,000 files, over 300 MB expanded, over 100 MB uploaded, or over 8 MB of pages. Export a smaller course or split it.',
       '**Remove imported drafts** (on the report, or from **Earlier imports**) removes only what that import created and nobody changed since. Edited items, courses with added content or learner activity, and files still in use are kept and listed. Removed files go to the Drive trash.',
-      'Importing the same course twice asks first and always makes a new draft with a new code; nothing is overwritten.'] },
+      'Importing the same course twice asks first and always makes a new draft with a new code; nothing is overwritten. **Looks like** a Roadmap code means a course with the same topic is already in the Roadmap; the import still makes a separate draft.'] },
   { id: 'admin-preview', video: 'admin-roster', roles: ['admin'], title: 'See exactly what a superintendent sees',
     show: { view: 'roadmap', target: '#previewBtn', tip: 'Superintendent View.' },
     steps: ['Pick a superintendent and click **Superintendent View**. Click **Exit preview** in the yellow bar to return.'] },
@@ -10408,7 +10466,8 @@ window.HELP_TOPICS = [
       '**Settings**: BRAND_NAME, BRAND_LOGO_URL, BRAND_PRIMARY, and BRAND_ACCENT brand the public catalog and PD calendar.',
       '**Course Materials**: each class’s materials and assignment (Type Resource or Assignment).',
       '**Settings**: PROGRAM_NAME (site name), DEMO_MODE, DEMO_LOGINS and DEMO_LOGIN_PASSWORD, COMPLETION_APPROVAL, SUPPORT_EMAIL, TERMS_URL and PRIVACY_URL.',
-      'Sheet menu **Growth Roadmap**: add a sign-in account, back up the spreadsheet, and mark courses complete.'] }
+      'Sheet menu **Growth Roadmap**: add a sign-in account, back up the spreadsheet, and mark courses complete. These menu items run only for the spreadsheet’s owner.',
+      '**Health check**: add **?page=health** to the end of the web app link to see whether everything is working (tabs, administrators, catalog, last backup, scheduled jobs, Drive folders, emails left today). It needs no sign-in and shows OK / Check / Problem only, never names or data.'] }
 ];
 </script>
 
@@ -10463,7 +10522,7 @@ window.HELP_TOPICS = [
   /** Bar width in percent, capped at 100 (hours can go past a target). */
   function pct(a, b) { return b ? Math.min(100, Math.round((a / b) * 100)) : 0; }
   /** A small note when hours go past the target, since the bar stops at full. */
-  function metNote(a, b) { return b && a > b ? ' <span class="target-met">' + icon('check') + ' Target met</span>' : ''; }
+  function metNote(a, b) { return b && a >= b ? ' <span class="target-met">' + icon('check') + ' Target met</span>' : ''; }
   function initials(name) {
     var parts = String(name || '').replace(/^(dr|mr|mrs|ms)\.?\s+/i, '').split(/\s+/).filter(Boolean);
     return ((parts[0] || '?')[0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
@@ -12030,7 +12089,10 @@ window.HELP_TOPICS = [
     if (changes.view === 'sharing') delete S.sharing[S.email];
     closeDlg();
     render();
-    window.scrollTo(0, 0);
+    // Switching tabs inside a course keeps the course's tab bar in view instead of jumping to the page header.
+    var keys = Object.keys(changes), tabs = keys.length && keys.every(function (k) { return k === 'cwTab' || k === 'cwItem'; }) && document.querySelector('.cw-tab');
+    if (tabs) { var top = tabs.getBoundingClientRect().top; if (top < 0 || top > window.innerHeight) tabs.scrollIntoView({ block: 'start' }); }
+    else window.scrollTo(0, 0);
   }
   function goBack() {
     var prev = S.stack.pop();
@@ -14356,11 +14418,13 @@ window.HELP_TOPICS = [
     chain.then(function () { return api('analyzeImport', out); }).then(gotPlan, function (x) { IM.busy = ''; IM.error = x.message || String(x); draw(); });
   }
   function gotPlan(plan) {
-    IM.busy = ''; IM.plan = plan; IM.sel = {}; IM.provided = {}; IM.driveLink = {}; IM.extra = {};
+    IM.busy = ''; IM.plan = plan; IM.sel = {}; IM.provided = {}; IM.driveLink = {}; IM.extra = {}; IM.filter = '';
+    // A long course list (a whole TalentLMS report, say) starts with nothing ticked: pick the few to bring in.
+    var many = plan.courses.length > ((plan.limits && plan.limits.courses) || 20);
     plan.courses.forEach(function (c) {
       var items = {};
       c.items.forEach(function (it) { items[it.key] = true; });
-      IM.sel[c.key] = { on: !c.alreadyImported, items: items, map: { code: '', title: c.title, phase: '', hours: '', standard: '', competencies: '', instructors: '' } };
+      IM.sel[c.key] = { on: !c.alreadyImported && !many, items: items, map: { code: '', title: c.title, description: '', phase: '', hours: '', standard: '', competencies: '', instructors: '' } };
       IM.extra[c.key] = [];
     });
     IM.step = 3; draw();
@@ -14416,19 +14480,27 @@ window.HELP_TOPICS = [
   }
 
   /** Check & choose: what was found, then one block per course (include it, its items, its Roadmap fields and warnings). */
+  /** Courses whose name matches the search box (all of them when it's empty). */
+  function shown() {
+    var q = String(IM.filter || '').trim().toLowerCase();
+    return IM.plan.courses.filter(function (c) { var m = c.meta || {}; return !q || [c.title, m.sourceCode, m.category].join(' ').toLowerCase().indexOf(q) > -1 || IM.sel[c.key].on; });
+  }
   function step3() {
-    var P = IM.plan;
+    var P = IM.plan, limit = (P.limits && P.limits.courses) || 20, list = shown(), ticked = chosen().length, big = P.courses.length > 8;
     if (!P.courses.length) return '<h3 class="sub-h">What we found</h3>' + warnList(P.warnings) + '<p class="muted">Nothing in this upload can be imported.</p><p><button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
     var anyBad = P.courses.some(function (c) { return c.warnings.some(function (w) { return w.level !== 'info'; }); });
     var opts = function (list, v) { return '<option value="">Leave blank</option>' + list.map(function (o) { return '<option value="' + o[0] + '"' + (String(v) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); };
     return '<h3 class="sub-h">What we found in ' + esc(P.sourceName || 'the export') + '</h3>' + warnList(P.warnings) +
+      (big ? '<div class="im-find"><label class="im-field"><span>Find courses by name, code, or category</span><input id="imFilter" type="search" value="' + esc(IM.filter || '') + '" placeholder="e.g. Listening" autocomplete="off"></label>' +
+        '<p class="small ' + (ticked > limit ? 'form-error' : 'muted') + '" role="status">' + ticked + ' of ' + P.courses.length + ' courses ticked · up to ' + limit + ' per import' + (list.length < P.courses.length ? ' · showing ' + list.length : '') +
+        (ticked ? ' <button class="linkish" type="button" data-act="im-none">Untick all</button>' : '') + '</p></div>' : '') +
       '<div class="table-wrap"><table class="data"><thead><tr><th>Course</th><th class="num">Modules</th><th class="num">Items</th><th class="num">Questions</th><th class="num">Announcements</th><th class="num">Files</th>' + (anyBad ? '<th>Needs attention</th>' : '') + '</tr></thead><tbody>' +
-      P.courses.map(function (c) {
+      list.map(function (c) {
         var bad = c.warnings.filter(function (w) { return w.level !== 'info'; }).length;
-        return '<tr><td><b>' + esc(c.title) + '</b>' + (c.alreadyImported ? '<br><small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + '</td><td class="num">' + c.counts.modules + '</td><td class="num">' + c.counts.items + '</td><td class="num">' + c.counts.questions + '</td><td class="num">' + c.counts.announcements + '</td><td class="num">' + c.counts.files + '</td>' + (anyBad ? '<td>' + (bad ? bad + ' item(s)' : '—') + '</td>' : '') + '</tr>';
+        return '<tr><td><b>' + esc(c.title) + '</b>' + sourceInfo(c) + (c.alreadyImported ? '<br><small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + similarChip(c, '<br>') + '</td><td class="num">' + c.counts.modules + '</td><td class="num">' + c.counts.items + '</td><td class="num">' + c.counts.questions + '</td><td class="num">' + c.counts.announcements + '</td><td class="num">' + c.counts.files + '</td>' + (anyBad ? '<td>' + (bad ? bad + ' item(s)' : '—') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div>' +
       '<h3 class="sub-h">Choose and describe each course</h3><p class="muted small">Unchecked items are left out, and everything comes in unpublished. Give each course a Roadmap code. Phase, hours, DESE standard, competencies, and instructors stay blank unless you fill them in: nothing is guessed from the source, and source roles never become Roadmap access.</p>' +
-      P.courses.map(function (c) {
+      list.map(function (c) {
         var sel = IM.sel[c.key], m = sel.map, k = esc(c.key);
         var mods = c.modules.map(function (md) {
           var its = c.items.filter(function (it) { return it.moduleKey === md.key; });
@@ -14448,6 +14520,7 @@ window.HELP_TOPICS = [
             '<label class="im-field"><span>Hours</span><input data-im-map="' + k + '" name="hours" type="number" min="0" max="200" step="0.5" value="' + esc(m.hours) + '"></label>' +
             '<label class="im-field"><span>DESE standard</span><select data-im-map="' + k + '" name="standard">' + opts([[1, '1 Visionary'], [2, '2 Instructional'], [3, '3 Managerial'], [4, '4 Relationships'], [5, '5 Growth']], m.standard) + '</select></label>' +
             '<label class="im-field"><span>Competencies (like LC 4, 9)</span><input data-im-map="' + k + '" name="competencies" value="' + esc(m.competencies) + '"></label>' +
+            '<label class="im-field wide"><span>' + (c.description ? 'Description (optional: replaces the one from the export)' : 'Description (the export had none; paste it from the course page)') + '</span><textarea data-im-map="' + k + '" name="description" rows="3" maxlength="5000">' + esc(m.description || '') + '</textarea></label>' +
             '<label class="im-field wide"><span>Instructor emails (optional)</span><input data-im-map="' + k + '" name="instructors" value="' + esc(m.instructors) + '" placeholder="name@district.org"></label>' +
           '</div>' + warnList(c.warnings) +
           (files.length ? '<h5>Files</h5><ul class="im-files">' + files.map(function (f) {
@@ -14462,14 +14535,17 @@ window.HELP_TOPICS = [
             return '<li>' + icon('file') + ' ' + esc(f.name) + ' — <span class="' + (f.status === 'ok' ? '' : 'form-error') + '">' + esc(f.status) + '</span></li>';
           }).join('') + '</ul>' : '') +
           (IM.source === 'talentlms' ? extraHtml(c) : '');
-        return '<div class="im-course' + (sel.on ? '' : ' off') + '"><label class="check big"><input type="checkbox" data-im-course="' + esc(c.key) + '"' + (sel.on ? ' checked' : '') + '> <b>' + esc(c.title) + '</b>' +
-          (c.alreadyImported ? ' <small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + '</label>' +
+        return '<div class="im-course' + (sel.on ? '' : ' off') + '"><label class="check big"><input type="checkbox" data-im-course="' + esc(c.key) + '"' + (sel.on ? ' checked' : '') + '> <b>' + esc(c.title) + '</b>' + sourceInfo(c) +
+          (c.alreadyImported ? ' <small class="chip st warn">Imported before as ' + esc(c.alreadyImported) + '</small>' : '') + similarChip(c, ' ') + '</label>' +
           (sel.on ? review + (mods ? '<details class="im-items"><summary class="small">Items to bring in: ' + on + ' of ' + n + '</summary>' + mods + '</details>' : '<p class="muted small">No content items in the export.</p>') +
             (c.announcements.length ? '<p class="small muted">' + c.announcements.length + ' announcement(s) come in unpublished, and nobody is emailed.</p>' : '') : '<p class="muted small">Left out.</p>') + '</div>';
       }).join('') +
       '<p><button class="btn btn-primary" type="button" data-act="im-preview">Preview the drafts</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
   }
 
+  /** The source's own code and category, so courses with the same name can be told apart. */
+  function sourceInfo(c) { var m = c.meta || {}, bits = [m.sourceCode, m.category].filter(Boolean); return bits.length ? ' <small class="muted">' + esc(bits.join(' · ')) + '</small>' : ''; }
+  function similarChip(c, sep) { return c.similar ? sep + '<small class="chip st warn" title="Importing makes a separate draft; it never adds to or replaces an existing course.">Looks like ' + esc(c.similar.code) + ' · ' + esc(c.similar.title) + '</small>' : ''; }
   function chosen() { return IM.plan.courses.filter(function (c) { return IM.sel[c.key].on; }); }
 
   function extraHtml(c) {
@@ -14598,6 +14674,11 @@ window.HELP_TOPICS = [
   function wire(box) {
     var f = box.querySelector('#imFile');
     if (f) f.addEventListener('change', function () { IM.files = Array.prototype.slice.call(f.files || []); IM.error = ''; draw(); });
+    var flt = box.querySelector('#imFilter');
+    if (flt) flt.addEventListener('input', function () {
+      var at = flt.selectionStart; IM.filter = flt.value; draw();
+      var again = document.getElementById('imFilter'); if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) {} }
+    });
     Array.prototype.forEach.call(box.querySelectorAll('[data-im-course]'), function (el) { el.addEventListener('change', function () { IM.sel[el.dataset.imCourse].on = el.checked; draw(); }); });
     Array.prototype.forEach.call(box.querySelectorAll('[data-im-item]'), function (el) { el.addEventListener('change', function () { IM.sel[el.dataset.imItem].items[el.value] = el.checked; }); });
     Array.prototype.forEach.call(box.querySelectorAll('[data-im-map]'), function (el) { el.addEventListener('input', function () { IM.sel[el.dataset.imMap].map[el.name] = el.value; }); el.addEventListener('change', function () { IM.sel[el.dataset.imMap].map[el.name] = el.value; }); });
@@ -14635,7 +14716,9 @@ window.HELP_TOPICS = [
       case 'im-analyze': analyze(); return true;
       case 'im-next': IM.error = ''; if (IM.step >= 3 && IM.step <= 5) return handle('im-preview', el); IM.step++; draw(); return true;
       case 'im-back': IM.error = ''; IM.step = IM.step >= 6 && IM.step <= 7 ? 3 : Math.max(1, Math.min(IM.step, 3) - 1); draw(); return true;
-      case 'im-preview': IM.error = ''; if (!chosen().length) { IM.error = 'Choose at least one course.'; draw(); return true; } IM.step = 6; draw(); return true;
+      case 'im-none': Object.keys(IM.sel).forEach(function (k) { IM.sel[k].on = false; }); draw(); return true;
+      case 'im-preview': IM.error = ''; if (!chosen().length) { IM.error = 'Choose at least one course.'; draw(); return true; }
+        if (chosen().length > ((IM.plan.limits && IM.plan.limits.courses) || 20)) { IM.error = 'Tick up to ' + ((IM.plan.limits && IM.plan.limits.courses) || 20) + ' courses for one import; bring in the rest in another.'; draw(); return true; } IM.step = 6; draw(); return true;
       case 'im-start': start(false); return true;
       case 'im-restart': IM = fresh(); draw(); return true;
       case 'im-resume': IM.step = 8; IM.cancel = false; draw(); run(); return true;

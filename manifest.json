@@ -815,12 +815,12 @@
       {
         "file": "shots/admin-import-07.png",
         "title": "Choose",
-        "text": "On the same screen, pick the courses to bring in (Items to bring in lists each one). Everything arrives unpublished."
+        "text": "On the same screen, pick the courses to bring in (Items to bring in lists each one). A long list starts unticked with a search box; up to 20 per import. Everything arrives unpublished."
       },
       {
         "file": "shots/admin-import-08.png",
         "title": "Roadmap details",
-        "text": "Give each course a code. Phase, hours, standard, competencies, and instructors stay blank unless you set them."
+        "text": "Give each course a code. Paste a description if the export has none. Phase, hours, standard, competencies, and instructors stay blank unless you set them."
       },
       {
         "file": "shots/admin-import-09.png",
