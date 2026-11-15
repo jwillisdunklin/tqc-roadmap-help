@@ -142,6 +142,12 @@
   .sub-box { background: var(--bg); } .fb-box { background: var(--dev-tint); }
   .sub-box small, .fb-box small { color: var(--muted); font-size: 12px; } .sub-box p, .fb-box p { margin: 4px 0 0; }
   .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .area-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .area-card { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left; padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  .area-card:hover, .area-card:focus-visible { border-color: var(--dev); box-shadow: inset 4px 0 0 var(--dev); }
+  .area-card b { font-size: 18px; } .area-card span { color: var(--muted); }
+  .biz-group { border-top: 1px solid var(--line); padding: 8px 0; } .biz-group summary { cursor: pointer; padding: 4px 0; }
+  .biz-list { list-style: none; margin: 6px 0 4px; padding: 0; } .biz-list li { padding: 5px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
   .cat-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
   .cat-card.on { border-color: var(--dev); box-shadow: inset 4px 0 0 var(--dev); }
   .cat-card h4 { margin: 6px 0 0; font-size: 16px; } .cat-card p { margin: 0; }
@@ -1258,7 +1264,11 @@ window.PUBLIC_DEMO = true; window.PUBLIC_DEMO_LIVE_URL = "https://script.google.
     appendRow: function (row) { this.data.push(row.map(sheetText)); return this; },
     setFrozenRows: function () { return this; }, autoResizeColumns: function () { return this; },
     getDataRange: function () { return this.getRange(1, 1, Math.max(this.data.length, 1), Math.max(this.getLastColumn(), 1)); },
-    getRange: function (r, c, nr, nc) { return new Range(this, r, c, nr || 1, nc || 1); },
+    getRange: function (r, c, nr, nc) {
+      var a1 = typeof r === 'string' ? r.match(/^(\d+):(\d+)$/) : null; // whole rows, e.g. '1:1'
+      if (a1) return new Range(this, Number(a1[1]), 1, Number(a1[2]) - Number(a1[1]) + 1, Math.max(this.getLastColumn(), 26));
+      return new Range(this, r, c, nr || 1, nc || 1);
+    },
     copyTo: function (ss) { var s = ss.insertSheet('Copy of ' + this.name); s.data = this.data.map(function (r) { return r.slice(); }); return s; }
   };
   /** Like Google Sheets: a leading apostrophe marks plain text (and isn't part of the value); other text starting with "=" becomes a formula. */
@@ -1780,7 +1790,7 @@ var SEED = {
   },
 
   // Obviously-fake sample people for Demo Mode (Hall of Fame football and WNBA names, fictional districts).
-  // All sample emails end in @example.org so "Clear demo data" can remove them.
+  // All sample emails end in @example.org so "Go live" (sheet menu) can remove them.
   // `completed` = finished course codes; `inProgress` = [course code, percent complete].
   // Sample people across the pipeline. cohort = sample cohort id; done = completed events; hours = [category, phase, hours];
   // choices = { phase: option }.
@@ -1943,7 +1953,7 @@ var HEADERS = {
   HOURS: ['Entry ID', 'Email', 'Date', 'Category', 'Phase', 'Hours', 'Description', 'Status', 'Logged By', 'Decided By', 'Decided On', 'ALEs'],
   SUBS: ['Request ID', 'Email', 'Course Code', 'Evidence', 'Status', 'Requested On', 'Decided By', 'Decided On', 'Note'],
   COURSES: ['Code', 'Link', 'Course Title', 'Phase', 'Status', 'Format', 'Hours', 'Window', 'Option', 'Series', 'Kind', 'Category',
-    'Standard #', 'DESE Competencies', 'Level', 'Indicator', 'Evidence', 'Modality', 'Provider', 'Minutes', 'Active', 'Session Date', 'Session Time', 'Instructor Emails', 'ALE', 'Eval Indicators', 'Count Required'],
+    'Standard #', 'DESE Competencies', 'Level', 'Indicator', 'Evidence', 'Modality', 'Provider', 'Minutes', 'Active', 'Session Date', 'Session Time', 'Instructor Emails', 'ALE', 'Eval Indicators', 'Count Required', 'Area', 'Source Code'],
   SUPTS: ['Name', 'Email', 'District', 'Title', 'Start Date', 'Year 1 Starts', 'Coach', 'Mentor', 'Current Level', 'Courses Completed', 'Active',
     'Evaluation System', 'Local Evaluation Name', 'Evaluation File', 'Certificate Awarded', 'Coach Email', 'Mentor Email'],
   PROGRESS: ['Email', 'Course Code', 'Status', 'Completion %', 'Completed On', 'Source', 'Updated', 'Note'],
@@ -2100,7 +2110,7 @@ function buildAppData_() {
   var me = supts.filter(function (s) { return norm_(s.Email) === viewer.email; })[0];
 
   return {
-    viewer: { email: viewer.email, isAdmin: viewer.isAdmin, isVisitor: isVisitor, name: (me && me.Name) || viewer.name || '', isDemoLogin: !!(SESSION_ && SESSION_.demoFor),
+    viewer: { email: viewer.email, isAdmin: viewer.isAdmin, isVisitor: isVisitor, name: (me && me.Name) || viewer.name || '', isDemoLogin: !!(SESSION_ && SESSION_.demoFor), business: businessViewer_(viewer),
       isSandbox: !!viewer.sandboxRole, demoRole: viewer.sandboxRole || (isVisitor ? (viewer.demoRole || 'admin') : ''),
       canBrowse: viewer.isAdmin || (isVisitor ? viewer.demoRole !== 'sup' : supts.some(function (s) { return vis.rel[norm_(s.Email)] !== 'self'; })) },
     settings: publicSettings_(settings),
@@ -2313,7 +2323,7 @@ function creditManagerData() {
     tiers: getTiers_().map(function (t) { return { level: t.level, name: t.name }; }),
     courses: getCourses_(),
     progress: progressByEmail_(),
-    superintendents: readTable_(SHEETS.SUPTS)
+    superintendents: rosterRows_()
       .filter(function (s) { return isTrue_(s.Active, true) && s.Email; })
       .map(function (s) { return { name: s.Name, email: norm_(s.Email), district: s.District }; })
       .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); })
@@ -2570,7 +2580,14 @@ function evalIndicatorList_(text) {
   return ids.sort().map(function (id) { return { id: id, name: SEED.evalIndicators[id] }; });
 }
 
-function getCourses_() { return memo_('courses', getCoursesFresh_); }
+/**
+ * The program's courses: everything the pathway, catalog, roster, and reports use. Business-area courses (Courses "Area" =
+ * Business: the corporate courses brought over from TalentLMS) are never in this list, so nothing built for the
+ * superintendent pathway sees them. They come from getBusinessCourses_ and only for a business login (businessViewer_).
+ */
+function getCourses_() { return memo_('courses', function () { return allCourses_().filter(function (c) { return !c.area; }); }); }
+function getBusinessCourses_() { return memo_('coursesBusiness', function () { return allCourses_().filter(function (c) { return c.area === 'Business'; }); }); }
+function allCourses_() { return memo_('coursesAll', getCoursesFresh_); }
 function getCoursesFresh_() {
   return readTable_(SHEETS.COURSES)
     .filter(function (c) { return c.Code && isTrue_(c.Active, true); })
@@ -2588,7 +2605,8 @@ function getCoursesFresh_() {
         phase: Number(c.Phase) || 0, hours: c.Hours === '' || c.Hours === null || c.Hours === undefined ? null : Number(c.Hours),
         status: String(c.Status || 'Required'), window: String(c.Window || ''), option: String(c.Option || ''), series: String(c.Series || ''),
         kind: String(c.Kind || 'session'), category: String(c.Category || ''), modality: String(c.Modality || ''), provider: String(c.Provider || ''),
-        sessionDate: ymd_(c['Session Date']), sessionTime: String(c['Session Time'] || ''), instructors: emailList_(c['Instructor Emails'])
+        sessionDate: ymd_(c['Session Date']), sessionTime: String(c['Session Time'] || ''), instructors: emailList_(c['Instructor Emails']),
+        area: /^business$/i.test(String(c.Area || '').trim()) ? 'Business' : '', sourceCode: String(c['Source Code'] || '')
       };
     });
 }
@@ -2703,9 +2721,21 @@ function relation_(v, row, demo) {
   return v.isVisitor && demo && isSampleEmail_(email) ? 'visitor-candidate' : '';
 }
 
+/**
+ * The roster this call may see. On a live site (DEMO_MODE FALSE) the demo is housed under the demo logins only: a demo
+ * login sees sample (@example.org) people and never a real one; everyone else, administrators included, sees real people
+ * and never a sample one. While DEMO_MODE is on, nothing is hidden here (the demo rules in visibleSupts_ apply).
+ */
+function rosterRows_() {
+  var rows = readTable_(SHEETS.SUPTS);
+  if (SESSION_ && SESSION_.demoFor) return rows.filter(function (s) { return isSampleEmail_(s.Email); });
+  if (isTrue_(getSettings_().DEMO_MODE)) return rows;
+  return rows.filter(function (s) { return !isSampleEmail_(s.Email); });
+}
+
 function visibleSupts_(v) {
   var demo = isTrue_(getSettings_().DEMO_MODE);
-  var records = readTable_(SHEETS.SUPTS).filter(function(s){return s.Email;});
+  var records = rosterRows_().filter(function(s){return s.Email;});
   var registeredSelf = records.some(function(s){return norm_(s.Email)===v.email;});
   var all = records.filter(function(s){return v.isAdmin || isTrue_(s.Active,true);});
   var self = all.filter(function(s){return norm_(s.Email) === v.email;});
@@ -3144,6 +3174,89 @@ function fmtDateTime_(v) {
   if (!v) return '';
   var d = v instanceof Date ? v : new Date(v);
   return isNaN(d) ? String(v) : Utilities.formatDate(d, Session.getScriptTimeZone(), 'MMM d, yyyy h:mm a');
+}
+
+/* ---------------- Business area ---------------- */
+
+/**
+ * Business courses (the corporate courses from TalentLMS) live on the Courses tab with Area = Business. Only the logins in
+ * Settings BUSINESS_EMAILS see them: after signing in they choose Education (the superintendent pathway) or Business.
+ * Nobody else, administrators included, is told these courses exist: getCourses_ leaves them out and courseByCode_ answers
+ * "Unknown course" for them.
+ */
+var BUSINESS_DEFAULT_EMAILS = 'joe@thequalitycoach.com';
+var BUSINESS_MAX_COURSES = 1000;
+function businessEmails_() {
+  var s = getSettings_();
+  return emailList_(Object.prototype.hasOwnProperty.call(s, 'BUSINESS_EMAILS') ? s.BUSINESS_EMAILS : BUSINESS_DEFAULT_EMAILS);
+}
+/** True for a real signed-in account listed in BUSINESS_EMAILS (never a demo visitor or a demo login). */
+function businessViewer_(v) {
+  return !!(v && v.email && !v.isVisitor && !v.isDemoLogin && !v.sandboxRole && businessEmails_().indexOf(norm_(v.email)) > -1);
+}
+function assertBusiness_() {
+  var v = viewer_();
+  if (!businessViewer_(v)) throw new Error('This area is not available for your sign-in.');
+  return v;
+}
+function businessReply_() {
+  var settings = {};
+  if (tabByName_(SHEETS.COURSE_SETTINGS)) readTable_(SHEETS.COURSE_SETTINGS).forEach(function (r) { settings[String(r.Code)] = r; });
+  var items = {};
+  if (tabByName_(SHEETS.MATERIALS)) readTable_(SHEETS.MATERIALS).forEach(function (r) { if (isTrue_(r.Active, true)) items[String(r.Code)] = (items[String(r.Code)] || 0) + 1; });
+  return { courses: getBusinessCourses_().map(function (c) {
+    return { code: c.code, title: String(c.title || ''), category: c.category || 'No category', sourceCode: c.sourceCode, items: items[c.code] || 0 };
+  }) };
+}
+/** Business login: the business courses, with their TalentLMS category and code. */
+function getBusinessCourses() {
+  assertBusiness_();
+  return businessReply_();
+}
+/**
+ * Business login: add the courses in a TalentLMS course report (CSV text) as business courses. Brings the course name,
+ * code, category, and description only; TalentLMS does not export a course's units. A course already here (same
+ * TalentLMS code, or same name and category when it has no code) is skipped, so the same report can be loaded again.
+ */
+function importBusinessCourses(csvText) {
+  var v = assertBusiness_();
+  csvText = String(csvText || '');
+  if (!csvText.trim()) throw new Error('Choose the course report you saved from TalentLMS (a CSV file).');
+  if (csvText.length > 2 * 1024 * 1024) throw new Error('That file is larger than 2 MB. Save the course report as CSV and try again.');
+  var plan = parseTalent_({ 'courses.csv': csvText }, []);
+  var keyOf = function (code, title, category) { return code ? 'c:' + code.toLowerCase() : 't:' + String(title).trim().toLowerCase() + '|' + String(category).trim().toLowerCase(); };
+  var added = 0, skipped = 0;
+  ensureSettingRow_('BUSINESS_EMAILS', BUSINESS_DEFAULT_EMAILS, 'Comma-separated emails of the logins that choose Education or Business after signing in. Business courses (Courses tab, Area = Business) are shown to these logins only.');
+  withLock_(function () {
+    var rows = readTable_(SHEETS.COURSES), taken = {}, have = {}, n = 0;
+    rows.forEach(function (r) {
+      taken[String(r.Code)] = true;
+      if (/^business$/i.test(String(r.Area || '').trim())) { have[keyOf(String(r['Source Code'] || '').trim(), r['Course Title'], r.Category)] = true; n++; }
+    });
+    var next = 1;
+    var newCode = function () {
+      for (;;) {
+        var i = next++, code = (i < 1000 ? 'BIZ ' : 'BZ' + String.fromCharCode(64 + Math.floor(i / 1000)) + ' ') + ('00' + (i % 1000)).slice(-3);
+        if (!taken[code]) { taken[code] = true; return code; }
+      }
+    };
+    plan.courses.forEach(function (c) {
+      var src = String((c.meta && c.meta.sourceCode) || '').trim().slice(0, 80), cat = String((c.meta && c.meta.category) || '').trim().slice(0, 80);
+      var k = keyOf(src, c.title, cat);
+      if (have[k]) { skipped++; return; }
+      if (n + added >= BUSINESS_MAX_COURSES) throw new Error('The business area holds up to ' + BUSINESS_MAX_COURSES + ' courses.');
+      have[k] = true;
+      rows.push({ 'Code': newCode(), 'Course Title': c.title, 'Status': 'Open', 'Kind': 'session', 'Category': cat, 'Indicator': htmlToText_(c.description || '').slice(0, 600),
+        'Provider': 'The Quality Coach', 'Active': true, 'Area': 'Business', 'Source Code': src });
+      added++;
+    });
+    if (added) writeTable_(SHEETS.COURSES, HEADERS.COURSES, rows);
+  });
+  resetRequestMemo_();
+  log_(v.email, '', 'Business courses added', added + ' added, ' + skipped + ' already here');
+  var reply = businessReply_();
+  reply.added = added; reply.skipped = skipped;
+  return reply;
 }
 
 </script>
@@ -3784,6 +3897,7 @@ function nameIndexFresh_() {
 }
 function courseByCode_(code) {
   var c = getCourses_().filter(function (x) { return x.code === String(code); })[0];
+  if (!c && SESSION_ && businessViewer_(viewer_())) c = getBusinessCourses_().filter(function (x) { return x.code === String(code); })[0]; // business logins only
   if (!c) throw new Error('Unknown course: ' + code);
   return c;
 }
@@ -4340,6 +4454,8 @@ function appFunctions_() {
     setConferenceRecognition: setConferenceRecognition,
     submitFeedback: submitFeedback,
     getEngagementReport: getEngagementReport,
+    getBusinessCourses: getBusinessCourses,
+    importBusinessCourses: importBusinessCourses,
     addSuperintendents: addSuperintendents,
     analyzeImport: analyzeImport,
     analyzeImportSample: analyzeImportSample,
@@ -4901,8 +5017,9 @@ function onOpen() {
     .addItem('Turn on weekly backup', 'installWeeklyBackup')
     .addItem('Turn on course due-date reminders', 'installCourseReminders')
     .addSeparator()
+    .addItem('Go live: remove sample people and turn off the demo…', 'menuGoLive')
+    .addItem('Remove sample course content…', 'menuRemoveSampleContent')
     .addItem('Reload demo superintendents', 'reloadDemoData')
-    .addItem('Clear demo data', 'clearDemoData')
     .addItem('Show web app link', 'showWebAppUrl')
     .addToUi();
 }
@@ -4926,6 +5043,7 @@ function settingsDefaults_() {
 function settingsAdded_() {
   return [
     ['MASA_EMAILS', '', 'Comma-separated emails of MASA staff. They can get a sign-in link and see the roster and progress read-only, never coaching notes or evaluation details.'],
+    ['BUSINESS_EMAILS', BUSINESS_DEFAULT_EMAILS, 'Comma-separated emails of the logins that choose Education or Business after signing in. Business courses (Courses tab, Area = Business) are shown to these logins only.'],
     ['TERMS_URL', '', 'Link (https://) to the Terms of Use, shown on the sign-in page and in the footer.'],
     ['PRIVACY_URL', '', 'Link (https://) to the Privacy Notice, shown on the sign-in page and in the footer.'],
     ['DEMO_LOGINS', 'Jordan Rivera <jordan.rivera@example.org>',
@@ -5376,16 +5494,197 @@ function menuAddAccount() {
   ui.showModalDialog(html, 'Sign-in link');
 }
 
-function clearDemoData() {
+/* ---------------- Going live ---------------- */
+
+/** Every tab that holds rows about a person, and the column(s) that say who. */
+var GO_LIVE_PEOPLE_TABS = {
+  SUPTS: ['Email'], PROGRESS: ['Email'], SELECTIONS: ['Email'], HOURS: ['Email'], SUBS: ['Email'], SUBMISSIONS: ['Email'], ENROLL: ['Email'],
+  CONNECTIONS: ['Email', 'Viewer Email'], SHARING: ['Email', 'Viewer Email'], GOALS: ['Email'], ITEM_PROGRESS: ['Email'], NOTIFY_PREFS: ['Email'],
+  DISC_READS: ['Email'], QUIZ_ATTEMPTS: ['Email'], DISCUSSIONS: ['Email'], RECOGNITION: ['Email'], FEEDBACK: ['Email'], ALIGN: ['Superintendent Email'],
+  ACCOUNTS: ['Email'], ANNOUNCEMENTS: ['Posted By']
+};
+
+/**
+ * What going live would change, as counts only. Reads the sheet and changes nothing.
+ * { people, rows: { tab: n }, total, links, instructors, settings: [text], real, content }
+ */
+function goLivePlan_() {
+  var plan = { people: 0, rows: {}, total: 0, links: 0, instructors: 0, settings: [], real: 0, content: 0 };
+  Object.keys(GO_LIVE_PEOPLE_TABS).forEach(function (k) {
+    if (!tabByName_(SHEETS[k])) return;
+    var cols = GO_LIVE_PEOPLE_TABS[k];
+    var n = readTable_(SHEETS[k]).filter(function (r) { return cols.some(function (c) { return isSampleEmail_(r[c]); }); }).length;
+    if (n) { plan.rows[SHEETS[k]] = n; plan.total += n; }
+  });
+  readTable_(SHEETS.SUPTS).forEach(function (r) {
+    if (isSampleEmail_(r.Email)) { plan.people++; return; }
+    if (String(r.Email || '').trim()) plan.real++;
+    if (isSampleEmail_(r['Coach Email']) || isSampleEmail_(r['Mentor Email'])) plan.links++;
+  });
+  readTable_(SHEETS.COURSES).forEach(function (r) { if (emailList_(r['Instructor Emails']).some(isSampleEmail_)) plan.instructors++; });
+  var s = getSettings_();
+  if (isTrue_(s.DEMO_MODE)) plan.settings.push('DEMO_MODE to FALSE (removes "Explore the demo" from the sign-in page)');
+  if (!isTrue_(s.LOGIN_REQUIRED)) plan.settings.push('LOGIN_REQUIRED to TRUE');
+  plan.content = sampleContentPlan_().remove;
+  return plan;
+}
+
+/**
+ * Removes every sample (@example.org) person and their records from every tab and turns the public demo off. Real people
+ * are never touched. The demo logins (DEMO_LOGINS + DEMO_LOGIN_PASSWORD) keep working: each one's own sample superintendent
+ * is rebuilt the next time they sign in, and rosterRows_ keeps those sample people out of every real person's view.
+ */
+function goLiveApply_() {
+  var plan = goLivePlan_(), changed = [];
+  withLock_(function () {
+    Object.keys(GO_LIVE_PEOPLE_TABS).forEach(function (k) {
+      if (!tabByName_(SHEETS[k])) return;
+      var cols = GO_LIVE_PEOPLE_TABS[k], rows = readTable_(SHEETS[k]);
+      var keep = rows.filter(function (r) { return !cols.some(function (c) { return isSampleEmail_(r[c]); }); });
+      if (k === 'SUPTS') keep.forEach(function (r) {
+        if (isSampleEmail_(r['Coach Email'])) r['Coach Email'] = '';
+        if (isSampleEmail_(r['Mentor Email'])) r['Mentor Email'] = '';
+      });
+      if (keep.length !== rows.length || (k === 'SUPTS' && plan.links)) { writeTable_(SHEETS[k], HEADERS[k], keep); changed.push(SHEETS[k]); }
+    });
+    if (plan.instructors) {
+      var courses = readTable_(SHEETS.COURSES);
+      courses.forEach(function (r) {
+        var list = emailList_(r['Instructor Emails']);
+        if (list.some(isSampleEmail_)) r['Instructor Emails'] = list.filter(function (e) { return !isSampleEmail_(e); }).join(', ');
+      });
+      writeTable_(SHEETS.COURSES, HEADERS.COURSES, courses);
+      changed.push(SHEETS.COURSES);
+    }
+    var settings = readTable_(SHEETS.SETTINGS), touched = false;
+    var set = function (key, value) {
+      var row = settings.filter(function (r) { return String(r.Key).trim() === key; })[0];
+      if (row && String(row.Value) !== String(value)) { row.Value = value; touched = true; }
+    };
+    set('DEMO_MODE', false); set('LOGIN_REQUIRED', true); // DEMO_LOGIN_PASSWORD stays: the demo lives on under the demo logins
+    if (touched) { writeTable_(SHEETS.SETTINGS, HEADERS.SETTINGS, settings); changed.push(SHEETS.SETTINGS); }
+  });
+  if (changed.length) invalidateSharedTabs_(changed);
+  resetRequestMemo_();
+  PropertiesService.getScriptProperties().setProperty('LIVE_SINCE', new Date().toISOString());
+  log_('Go live', '', 'Site is live', plan.people + ' sample people and ' + plan.total + ' sample rows removed; public demo turned off');
+  return plan;
+}
+
+/** The sample course content the demo added (INS 203 sample course, the sample discussion boards), found by its fixed ids. */
+function sampleContentPlan_() {
+  var ids = {};
+  (SEED.sampleContent || []).forEach(function (c) { ids[c.id] = true; });
+  var isItem = function (id) { id = String(id || ''); return !!ids[id] || /^smp(page|quiz)\d+$/.test(id); };
+  var used = {}; // sample items a real person has work in are kept
+  [[SHEETS.SUBMISSIONS, 'Item ID'], [SHEETS.QUIZ_ATTEMPTS, 'Item ID'], [SHEETS.DISCUSSIONS, 'Board ID']].forEach(function (p) {
+    if (!tabByName_(p[0])) return;
+    readTable_(p[0]).forEach(function (r) { if (isItem(r[p[1]]) && !isSampleEmail_(r.Email)) used[String(r[p[1]])] = true; });
+  });
+  var items = tabByName_(SHEETS.MATERIALS) ? readTable_(SHEETS.MATERIALS).filter(function (r) { return isItem(r['Material ID']); }) : [];
+  var removeItems = items.filter(function (r) { return !used[String(r['Material ID'])]; });
+  var quizKept = items.some(function (r) { return String(r.Type) === 'Quiz' && used[String(r['Material ID'])]; });
+  var rubricKept = tabByName_(SHEETS.SUBMISSIONS) && readTable_(SHEETS.SUBMISSIONS).some(function (r) { return !isSampleEmail_(r.Email) && /c1/.test(String(r['Rubric Scores'] || '')) && String(r.Code) === 'INS 203'; });
+  var count = function (tab, test) { return tabByName_(tab) ? readTable_(tab).filter(test).length : 0; };
+  var questions = quizKept ? 0 : count(SHEETS.QUESTIONS, function (q) { return /^qsample\d+$/.test(String(q['Question ID'])); });
+  var rubrics = rubricKept ? 0 : count(SHEETS.RUBRICS, function (r) { return String(r['Rubric ID']) === 'rsample001'; });
+  var notices = count(SHEETS.ANNOUNCEMENTS, function (r) { return String(r['Announcement ID']) === 'asample001'; });
+  var modules = count(SHEETS.MODULES, function (m) { return /^msample\d+$/.test(String(m['Module ID'])) && / \(sample\)$/.test(String(m.Title)); });
+  var pages = count(SHEETS.COURSE_SETTINGS, function (r) { return /\(Sample\)/.test(String(r.Welcome || '')) || /Sample Coach/.test(String(r['Instructor Info'] || '')); });
+  return { isItem: isItem, used: used, items: removeItems.length, kept: Object.keys(used).length, questions: questions, rubrics: rubrics, notices: notices, modules: modules, pages: pages,
+    quizKept: quizKept, rubricKept: !!rubricKept, remove: removeItems.length + questions + rubrics + notices + modules + pages };
+}
+
+/** Removes the sample course content. Courses, real content, and anything a real person has work in stay. */
+function removeSampleContent_() {
+  var plan = sampleContentPlan_(), changed = [];
+  var rewrite = function (key, fn) {
+    if (!tabByName_(SHEETS[key])) return;
+    var rows = readTable_(SHEETS[key]), out = fn(rows);
+    if (out) { writeTable_(SHEETS[key], HEADERS[key], out); changed.push(SHEETS[key]); }
+  };
+  var gone = function (id) { return plan.isItem(id) && !plan.used[String(id)]; };
+  withLock_(function () {
+    rewrite('MATERIALS', function (rows) {
+      var out = rows.filter(function (r) { return !gone(r['Material ID']); });
+      if (!plan.rubricKept) out.forEach(function (r) { if (String(r['Rubric ID']) === 'rsample001') { r['Rubric ID'] = ''; if (String(r.Grading) === 'rubric') r.Grading = 'points'; } });
+      return out;
+    });
+    if (!plan.quizKept) rewrite('QUESTIONS', function (rows) { return rows.filter(function (q) { return !/^qsample\d+$/.test(String(q['Question ID'])); }); });
+    if (!plan.rubricKept) rewrite('RUBRICS', function (rows) { return rows.filter(function (r) { return String(r['Rubric ID']) !== 'rsample001'; }); });
+    rewrite('ANNOUNCEMENTS', function (rows) { return rows.filter(function (r) { return String(r['Announcement ID']) !== 'asample001'; }); });
+    rewrite('MODULES', function (rows) {
+      rows.forEach(function (m) { if (/^msample\d+$/.test(String(m['Module ID']))) m.Title = String(m.Title).replace(/ \(sample\)$/, ''); });
+      return rows;
+    });
+    rewrite('COURSE_SETTINGS', function (rows) {
+      rows.forEach(function (r) {
+        if (!/\(Sample\)/.test(String(r.Welcome || '')) && !/Sample Coach/.test(String(r['Instructor Info'] || ''))) return;
+        r.Welcome = ''; r.Syllabus = ''; r.Objectives = ''; r['Instructor Info'] = '';
+      });
+      return rows;
+    });
+    // Leftover marks on items that no longer exist.
+    [['ITEM_PROGRESS', 'Item ID'], ['DISC_READS', 'Board ID'], ['DISCUSSIONS', 'Board ID'], ['SUBMISSIONS', 'Item ID'], ['QUIZ_ATTEMPTS', 'Item ID']].forEach(function (p) {
+      rewrite(p[0], function (rows) {
+        var out = rows.filter(function (r) { return !gone(r[p[1]]); });
+        return out.length === rows.length ? null : out;
+      });
+    });
+  });
+  if (changed.length) invalidateSharedTabs_(changed);
+  resetRequestMemo_();
+  log_('Go live', '', 'Sample course content removed', plan.remove + ' sample items removed' + (plan.kept ? '; ' + plan.kept + ' kept (a real person has work in them)' : ''));
+  return plan;
+}
+
+/** Sheet menu: go live. Shows what will change, saves a backup first, then removes the sample people and turns the demo off. */
+function menuGoLive() {
   assertSheetOrTrigger_();
   var ui = SpreadsheetApp.getUi();
-  if (ui.alert('Clear demo data?', 'Removes every sample superintendent (any @example.org email) and their demo progress, hours, choices, and substitution requests.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
-  writeTable_(SHEETS.SUPTS, HEADERS.SUPTS, readTable_(SHEETS.SUPTS).filter(function (r) { return !isSampleEmail_(r.Email); }));
-  writeTable_(SHEETS.PROGRESS, HEADERS.PROGRESS, readTable_(SHEETS.PROGRESS).filter(function (r) { return r.Source !== 'Demo' && !isSampleEmail_(r.Email); }));
-  [SHEETS.SELECTIONS, SHEETS.HOURS, SHEETS.SUBS].forEach(function (n) {
-    writeTable_(n, HEADERS[keyOfSheet_(n)], readTable_(n).filter(function (r) { return !isSampleEmail_(r.Email); }));
-  });
-  ui.alert('Demo data cleared.');
+  var plan = goLivePlan_();
+  var tabs = Object.keys(plan.rows).map(function (t) { return '   ' + t + ': ' + plan.rows[t]; }).join('\n');
+  var lines = ['Going live does this, in order:', '',
+    '1. Saves a backup of the whole spreadsheet (in the "Growth Roadmap - Backups" folder).',
+    '2. Removes the ' + plan.people + ' sample people (every @example.org address) and their ' + plan.total + ' sample rows:' + (tabs ? '\n' + tabs : ' none found'),
+    '3. Clears the sample coach or mentor from ' + plan.links + ' real people and the sample instructor from ' + plan.instructors + ' courses.',
+    '4. Settings: ' + (plan.settings.length ? plan.settings.join('; ') : 'already set for a live site') + '.',
+    '5. Turns on the weekly backup and the daily course reminders.', '',
+    'The demo logins on Settings (DEMO_LOGINS) keep working. Each one gets a fresh sample superintendent at their next sign-in, seen only by that login. To turn them off, clear DEMO_LOGIN_PASSWORD.', '',
+    'Not changed: the ' + plan.real + ' real people on the Superintendents tab, accounts, courses, phases, and course content.', '',
+    'Go live now?'];
+  if (ui.alert('Go live?', lines.join('\n'), ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  var backup;
+  try { backup = backupNow_(); } catch (e) { ui.alert('Nothing was changed', 'The backup could not be saved, so going live was stopped.\n\n' + String((e && e.message) || e), ui.ButtonSet.OK); return; }
+  goLiveApply_();
+  var jobs = { scheduledBackup: function () { ScriptApp.newTrigger('scheduledBackup').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create(); },
+    sendCourseReminders: function () { ScriptApp.newTrigger('sendCourseReminders').timeBased().everyDays(1).atHour(7).create(); } };
+  var have = {};
+  ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = true; });
+  Object.keys(jobs).forEach(function (h) { if (!have[h]) jobs[h](); });
+  var after = goLivePlan_();
+  var msg = 'The site is live.\n\nBackup saved first: ' + backup.name + '\nSample people left: ' + after.people + '\nSample rows left: ' + after.total +
+    '\nWeekly backup and daily course reminders are on.';
+  if (after.content) {
+    msg += '\n\nThe demo also added ' + after.content + ' pieces of sample course content (the INS 203 sample course and sample discussion boards). Remove them now? Anything a real person has work in is kept.';
+    if (ui.alert('Live', msg, ui.ButtonSet.YES_NO) === ui.Button.YES) {
+      var c = removeSampleContent_();
+      ui.alert('Sample course content removed', c.remove + ' sample items removed.' + (c.kept ? ' ' + c.kept + ' kept because a real person has work in them.' : ''), ui.ButtonSet.OK);
+    }
+  } else ui.alert('Live', msg, ui.ButtonSet.OK);
+}
+
+/** Sheet menu: remove the sample course content on its own (also offered at the end of Go live). */
+function menuRemoveSampleContent() {
+  assertSheetOrTrigger_();
+  var ui = SpreadsheetApp.getUi();
+  var plan = sampleContentPlan_();
+  if (!plan.remove) { ui.alert('No sample course content was found.'); return; }
+  if (ui.alert('Remove sample course content?', 'Removes ' + plan.remove + ' pieces of sample content the demo added: ' + plan.items + ' sample items, ' + plan.questions + ' sample quiz questions, ' +
+      plan.rubrics + ' sample rubric, ' + plan.notices + ' sample announcement, and the sample welcome text on ' + plan.pages + ' course. ' + plan.modules + ' sample modules lose "(sample)" from their names.' +
+      (plan.kept ? '\n\n' + plan.kept + ' sample items are kept because a real person has work in them.' : '') + '\n\nCourses and real content are not changed.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  var r = removeSampleContent_();
+  ui.alert(r.remove + ' sample items removed.');
 }
 
 function showWebAppUrl() {
@@ -6232,7 +6531,7 @@ function assertCanTeach_(code) {
 function participantsOf_(code, ctx) {
   ctx = ctx || pathwayContext_();
   var enrolls = enrollmentsAll_();
-  return readTable_(SHEETS.SUPTS).filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
+  return rosterRows_().filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
     return participantRow_(s, code, ctx, enrolls);
   }).filter(Boolean).sort(function (a, b) { return a.name.localeCompare(b.name); });
 }
@@ -6568,7 +6867,7 @@ var COURSE_FILE_TYPES = /^(application\/pdf|application\/msword|application\/vnd
 function courseAccess_(code, subjectEmail) {
   var v = viewer_();
   var c = courseByCode_(code);
-  var edit = !v.isVisitor && !!v.email && (v.isAdmin || c.instructors.indexOf(v.email) > -1);
+  var edit = !v.isVisitor && !!v.email && (v.isAdmin || c.instructors.indexOf(v.email) > -1 || (c.area === 'Business' && businessViewer_(v)));
   var subject = norm_(subjectEmail || '') || (v.isVisitor ? '' : v.email);
   var a = { viewer: v, course: c, code: c.code, edit: edit, subject: '', learner: false, observer: false, visitor: !!v.isVisitor, notes: false };
   if (v.isVisitor) {
@@ -6591,7 +6890,7 @@ function courseAccess_(code, subjectEmail) {
 function assertCourseEdit_(code) {
   var v = viewer_(), c = courseByCode_(code);
   if (v.isVisitor) throw new Error('The demo is view-only.');
-  if (!v.email || !(v.isAdmin || c.instructors.indexOf(v.email) > -1)) throw new Error('Only this class’s instructors or a program administrator can do that.');
+  if (!v.email || !(v.isAdmin || c.instructors.indexOf(v.email) > -1 || (c.area === 'Business' && businessViewer_(v)))) throw new Error('Only this class’s instructors or a program administrator can do that.');
   return { viewer: v, course: c, code: c.code, edit: true, subject: '', learner: false, observer: false, visitor: false, notes: false };
 }
 
@@ -8175,7 +8474,7 @@ function getEngagementReport() {
     if (d >= since) signIns[e] = (signIns[e] || 0) + 1;
   });
   readTable_(SHEETS.ACCOUNTS).forEach(function (u) { if (u.Email && u['Last Sign-in']) lastIn[norm_(u.Email)] = ymd_(u['Last Sign-in']); });
-  var people = readTable_(SHEETS.SUPTS).filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
+  var people = rosterRows_().filter(function (s) { return s.Email && isTrue_(s.Active, true); }).map(function (s) {
     var e = norm_(s.Email), P = pathwayStatus_(e, ctx);
     var done = Object.keys(P.events).filter(function (c) { return P.events[c].done; }).length;
     var last = [lastIn[e] || '', (views[e] || {}).last || '', (work[e] || {}).last || '', (posts[e] || {}).last || '', (quizzes[e] || {}).last || '', (hours[e] || {}).last || '']
@@ -9100,9 +9399,9 @@ function parseTalent_(texts, files) {
     var t = String(r[col.title] || '').trim();
     if (!t) { warn('warn', 'Row ' + (i + 2) + ' has no course name and was skipped.'); return; }
     // TalentLMS reports have no ID column and often hold several client copies of one course with the same name, so
-    // rows are told apart by ID, then code, then name. Only a row that repeats all of them is skipped.
+    // rows are told apart by ID, then code, then name and category. Only a row that repeats all of them is skipped.
     var id = cell('id'), code = cell('code');
-    var key = 'talentlms:' + (id || (code ? 'code:' + code : t));
+    var key = 'talentlms:' + (id || (code ? 'code:' + code : t + (cell('category') ? '|' + cell('category') : '')));
     if (seen[key]) { warn('warn', 'Row ' + (i + 2) + ' repeats “' + t + '”' + (code ? ' (' + code + ')' : '') + ' and was skipped.'); return; }
     seen[key] = true;
     var d = cell('description');
@@ -9858,7 +10157,7 @@ function sandboxSignIn_(role) {
     var as = (location.search.match(/[?&]as=(\w+)/) || [])[1] || (window.PUBLIC_DEMO ? 'login' : 'admin');
     if (as === 'masa') __GAS.asOwner(function () { ensureSettingRow_('MASA_EMAILS', 'staff@masa.example', ''); var sh = ss_().getSheetByName('Settings'); sh.data.forEach(function (r) { if (r[0] === 'MASA_EMAILS') r[1] = 'staff@masa.example'; }); });
     var who = { login: ['', 'none', ''], setup: ['', 'none', ''], admin: ['owner@example.com', 'admin', 'Owner'], sup: ['wpayton.sample@example.org', 'superintendent', 'Walter Payton'], visitor: ['visitor@example.com', 'visitor', 'Visitor'], board: ['board.president@example.org','member','Sample Board President'],
-      coach: ['demo.coach@example.org', 'none', 'Demo Coach'], mentor: ['mentor.a@example.org', 'none', 'Dr. Sample Mentor A'], masa: ['staff@masa.example', 'none', 'MASA Staff'] }[as];
+      coach: ['demo.coach@example.org', 'none', 'Demo Coach'], mentor: ['mentor.a@example.org', 'none', 'Dr. Sample Mentor A'], masa: ['staff@masa.example', 'none', 'MASA Staff'], business: ['joe@thequalitycoach.com', 'admin', 'Joe (business)'] }[as];
     // Preview accounts: the owner gets a password so the sign-in page can be tried; links are logged, not emailed.
     __GAS.asOwner(function () {
       var salt = 'preview-salt';
@@ -10003,6 +10302,7 @@ function sandboxSignIn_(role) {
           <div class="top-actions">
             <button class="btn btn-on-band" id="backBtn" type="button" title="Go back one screen" aria-label="Back" hidden></button>
             <button class="btn btn-on-band" id="helpBtn" type="button" title="How-to guide" aria-label="Help"></button>
+            <button class="btn btn-on-band" id="areaBtn" type="button" data-act="area-choose" title="Switch between Education and Business" hidden></button>
             <button class="btn btn-on-band top-extra" id="feedbackBtn" type="button" title="Tell us what’s working and what to change" hidden></button>
             <span class="demo-flag" id="demoFlag" hidden>Demo Mode</span>
             <button class="btn btn-on-band top-extra" id="fullBtn" type="button" hidden></button>
@@ -10467,6 +10767,7 @@ window.HELP_TOPICS = [
       '**Course Materials**: each class’s materials and assignment (Type Resource or Assignment).',
       '**Settings**: PROGRAM_NAME (site name), DEMO_MODE, DEMO_LOGINS and DEMO_LOGIN_PASSWORD, COMPLETION_APPROVAL, SUPPORT_EMAIL, TERMS_URL and PRIVACY_URL.',
       'Sheet menu **Growth Roadmap**: add a sign-in account, back up the spreadsheet, and mark courses complete. These menu items run only for the spreadsheet’s owner.',
+      '**Going live**: when the demo is over, the owner picks **Growth Roadmap → Go live**. It lists what will change, saves a backup first, removes every sample person (the @example.org addresses) and their sample records from every tab, turns off **Explore the demo**, and turns on the weekly backup and daily course reminders. Real people, accounts, and courses are not changed. The demo logins (DEMO_LOGINS on Settings) keep working: each one sees only its own sample superintendent, and no real person ever sees a sample one. Clear DEMO_LOGIN_PASSWORD to turn them off. It then offers to remove the sample course content the demo added; anything a real person has work in is kept.',
       '**Health check**: add **?page=health** to the end of the web app link to see whether everything is working (tabs, administrators, catalog, last backup, scheduled jobs, Drive folders, emails left today). It needs no sign-in and shows OK / Check / Problem only, never names or data.'] }
 ];
 </script>
@@ -10640,6 +10941,7 @@ window.HELP_TOPICS = [
 
   /* ---------------- State ---------------- */
   var S = { data: null, view: 'roadmap', email: null, closed: {}, busy: false, preview: false, evalTry: {}, evalPending: {}, evalErrors: {}, sharing: {}, people: null, course: null, stack: [], calMonth: '' };
+  try { S.area = sessionStorage.getItem('tqc.area') || null; } catch (e) { S.area = null; } // a business login's Education / Business choice
 
   /** Who the page is rendering for. In admin preview, the admin sees exactly what that superintendent sees. */
   function viewer() {
@@ -10765,6 +11067,7 @@ window.HELP_TOPICS = [
     document.getElementById('programName').textContent = st.programName;
     document.title = st.programName;
     document.getElementById('demoFlag').hidden = !st.demoMode;
+    HELP_DEMO = !!st.demoMode || !!window.PUBLIC_DEMO;
     var V = viewer();
     var acct = document.getElementById('accountBtn');
     acct.hidden = !st.loginRequired || !!D.viewer.isVisitor || !!D.viewer.isDemoLogin || !!D.viewer.isSandbox;
@@ -10802,6 +11105,11 @@ window.HELP_TOPICS = [
     back.innerHTML = icon('undo') + ' <span class="btn-label">Back</span>';
     renderTopMenu();
     var nav = document.getElementById('adminNav');
+    // A business login (Settings BUSINESS_EMAILS) chooses Education or Business; the pathway's tabs belong to Education.
+    var areaBtn = document.getElementById('areaBtn');
+    areaBtn.hidden = !D.viewer.business || !S.area;
+    areaBtn.innerHTML = icon('grid') + ' <span class="btn-label">' + (S.area === 'business' ? 'Business' : 'Education') + ' · Switch</span>';
+    if (D.viewer.business && S.area !== 'education') { nav.hidden = true; bar.hidden = true; back.hidden = !S.area || (!S.biz && S.view !== 'help'); return; }
     if (D.viewer.isBoard) { nav.hidden=true; help.hidden=true; back.hidden=true; bar.hidden=true; return; }
     help.hidden=false;
     var hasSup = !!(D.superintendents || []).length;
@@ -10917,6 +11225,11 @@ window.HELP_TOPICS = [
     renderChrome();
     var D = S.data;
     if (D.viewer.isBoard) { $app.innerHTML=sharedReportHtml(D.boardReport,true); return; }
+    if (D.viewer.business && S.area !== 'education') {
+      if (!S.area) { $app.innerHTML = areaChooserHtml(); return; }
+      if (S.view === 'help') { renderHelp(); return; }
+      renderBusiness(); return;
+    }
     if (D.notEnrolled) {
       $app.innerHTML = '<div class="card notice"><h2>Welcome</h2><p class="muted">' + esc(D.viewer.email || 'Your account') +
         ' is not on the superintendent roster yet. Please contact ' + esc(D.settings.supportEmail || 'your program administrator') + ' to be enrolled.</p></div>';
@@ -12009,8 +12322,9 @@ window.HELP_TOPICS = [
       (fig ? '<figure class="help-fig" aria-hidden="true"><div class="help-fig-inner">' + stripIds(fig) + '</div><figcaption>What it looks like now</figcaption></figure>' : '') + '</article>';
   }
   /** The guide. signedIn = false on the sign-in page (only the sign-in topics, no Show me). */
+  var HELP_DEMO = true; // false on a live site (DEMO_MODE off): the guide leaves out the "Explore the demo" topics
   function helpHtml(signedIn) {
-    var topics = window.HELP_TOPICS || [];
+    var topics = (window.HELP_TOPICS || []).filter(function (t) { return HELP_DEMO || !/^demo(-|$)/.test(t.id); });
     var mine = signedIn ? helpRoles() : ['all'];
     var groups = HELP_GROUPS.filter(function (g) { return mine.indexOf(g[0]) > -1; });
     var toc = groups.map(function (g) {
@@ -12079,7 +12393,7 @@ window.HELP_TOPICS = [
   }
 
   /* ---------------- Screen history (the Back button) ---------------- */
-  function snap() { return { view: S.view, course: S.course, email: S.email, phaseOpen: S.phaseOpen, preview: S.preview, calMonth: S.calMonth, teach: S.teach, cwTab: S.cwTab, cwItem: S.cwItem }; }
+  function snap() { return { view: S.view, course: S.course, email: S.email, phaseOpen: S.phaseOpen, preview: S.preview, calMonth: S.calMonth, teach: S.teach, cwTab: S.cwTab, cwItem: S.cwItem, biz: S.biz }; }
   /** Move to another screen, remembering this one for Back. */
   function go(changes) {
     S.stack.push(snap());
@@ -12403,6 +12717,70 @@ window.HELP_TOPICS = [
     var m = ((S.data.materials || {})[code] || []).filter(function (x) { return x.id === id; })[0];
     if (!m || !confirm('Remove “' + m.title + '” from this class?' + (m.type === 'Discussion' ? ' Its posts are kept but no longer shown.' : ''))) return;
     api('removeMaterial', code, id).then(function (data) { applyReply(data); toast('Removed.'); }, fail);
+  }
+
+  /* Business area: a business login (Settings BUSINESS_EMAILS) picks Education or Business after signing in. */
+  function setArea(a) { S.area = a || null; try { if (a) sessionStorage.setItem('tqc.area', a); else sessionStorage.removeItem('tqc.area'); } catch (e) { /* not remembered */ } }
+  function areaChooserHtml() {
+    var card = function (area, ic, title, text) {
+      return '<button type="button" class="area-card" data-act="area-pick" data-area="' + area + '">' + icon(ic) + '<b>' + title + '</b><span>' + text + '</span></button>';
+    };
+    return '<section class="card section area-pick"><div class="section-head"><h2>Where would you like to go?</h2><p>You can switch any time with the button at the top of the page.</p></div>' +
+      '<div class="area-grid">' + card('education', 'map', 'Education', 'The superintendent pathway: roster, classes, calendar, and reports.') +
+      card('business', 'grid', 'Business', 'Corporate leadership and apprenticeship courses brought over from TalentLMS.') + '</div></section>';
+  }
+  function businessListHtml() {
+    var B = S.business, q = (S.bizFilter || '').trim().toLowerCase();
+    if (!B) return '<div class="loading"><div class="spinner"></div><p>Opening the business courses…</p></div>';
+    var shown = B.courses.filter(function (c) { return !q || (c.title + ' ' + c.sourceCode + ' ' + c.category + ' ' + c.code).toLowerCase().indexOf(q) > -1; });
+    var cats = {}, order = [];
+    shown.forEach(function (c) { if (!cats[c.category]) { cats[c.category] = []; order.push(c.category); } cats[c.category].push(c); });
+    order.sort(function (a, b) { return a.localeCompare(b); });
+    var groups = order.map(function (cat) {
+      var list = cats[cat].slice().sort(function (a, b) { return a.title.localeCompare(b.title); });
+      return '<details class="biz-group"' + (q || order.length <= 3 ? ' open' : '') + '><summary><b>' + esc(cat) + '</b> <span class="muted">' + list.length + ' course' + (list.length === 1 ? '' : 's') + '</span></summary>' +
+        '<ul class="biz-list">' + list.map(function (c) {
+          return '<li><button type="button" class="title-link" data-act="biz-open" data-code="' + esc(c.code) + '">' + esc(c.title) + '</button> ' +
+            (c.sourceCode ? '<span class="chip chip-mono">' + esc(c.sourceCode) + '</span> ' : '') +
+            '<span class="muted small">' + (c.items ? c.items + ' item' + (c.items === 1 ? '' : 's') : 'No content yet') + '</span></li>';
+        }).join('') + '</ul></details>';
+    }).join('');
+    return '<section class="card section"><div class="section-head"><h2>Business courses</h2>' +
+      '<p>Only the sign-ins listed under BUSINESS_EMAILS on the Settings tab see this area. These courses are separate from the superintendent pathway and never appear in it, in its catalog, or in its reports.</p></div>' +
+      '<div class="roster-tools"><label class="search">' + icon('search') + '<input id="bizFilter" placeholder="Course name, code, or client" aria-label="Find a business course" value="' + esc(S.bizFilter || '') + '"></label>' +
+        '<label class="btn btn-ghost" for="bizFile">' + icon('upload') + ' Add courses from a TalentLMS report</label><input id="bizFile" type="file" accept=".csv,text/csv" hidden></div>' +
+      '<p class="muted small" id="bizStatus" role="status">' + (B.courses.length ? shown.length + ' of ' + B.courses.length + ' courses' + (q ? ' match' : '') + '.' :
+        'No business courses yet. In TalentLMS open Reports → Courses → Save as CSV, then add that file here.') + ' A report brings each course’s name, code, and category. Course content is built or added inside each course.</p>' +
+      (S.bizNote ? '<p role="status"><b>' + esc(S.bizNote) + '</b></p>' : '') + groups + '</section>';
+  }
+  function renderBusiness() {
+    if (S.biz) { if (window.TQC_COURSE) window.TQC_COURSE.open(S.biz, ''); return; }
+    $app.innerHTML = businessListHtml();
+    if (!S.business && !S.bizLoading) {
+      S.bizLoading = true;
+      api('getBusinessCourses').then(function (r) { S.bizLoading = false; S.business = r; if (S.area === 'business' && !S.biz) renderBusiness(); }, function (x) { S.bizLoading = false; fail(x); });
+      return;
+    }
+    var box = document.getElementById('bizFilter'), file = document.getElementById('bizFile');
+    if (box) box.addEventListener('input', function () {
+      S.bizFilter = box.value; var at = box.selectionStart;
+      renderBusiness();
+      var again = document.getElementById('bizFilter'); if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) { /* ignore */ } }
+    });
+    if (file) file.addEventListener('change', function () {
+      var f = file.files && file.files[0], status = document.getElementById('bizStatus');
+      if (!f) return;
+      if (f.size > 2 * 1024 * 1024) { toast('That file is larger than 2 MB. Save the course report as CSV and try again.'); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        if (status) status.textContent = 'Adding courses…';
+        api('importBusinessCourses', String(reader.result || '')).then(function (r) {
+          S.business = r; S.bizNote = r.added + ' course' + (r.added === 1 ? '' : 's') + ' added' + (r.skipped ? '; ' + r.skipped + ' were already here' : '') + '.';
+          renderBusiness();
+        }, function (x) { if (status) status.textContent = x.message || String(x); });
+      };
+      reader.readAsText(f);
+    });
   }
 
   /* My classes (instructors) and one class's teaching page */
@@ -13011,12 +13389,16 @@ window.HELP_TOPICS = [
     if (act && act.indexOf('cw-') === 0 && window.TQC_COURSE && window.TQC_COURSE.handle(act, el)) return;
     if (act === 'course-create') { window.TQC_COURSE.createCourse(); return; }
     if (act === 'import-open') { go({ view: 'import', course: null }); return; }
+    if (act === 'area-pick') { setArea(el.dataset.area); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
+    if (act === 'area-choose') { setArea(null); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; render(); window.scrollTo(0, 0); return; }
+    if (act === 'biz-open') { go({ biz: code, cwTab: 'home', cwItem: '' }); return; }
     if (act && act.indexOf('im-') === 0 && window.TQC_IMPORT && window.TQC_IMPORT.handle(act, el)) return;
     if (act === 'catalog') { go({ view: 'catalog', course: null }); return; }
     if (act === 'class-edit') { openClassEditor(code); return; }
     if (act === 'mat-add') { openMaterialEditor(code, ''); return; }
     if (act === 'mat-edit') { openMaterialEditor(code, el.dataset.id); return; }
     if (act === 'mat-remove') { removeMaterial(code, el.dataset.id); return; }
+    if (act === 'classes-all' && S.biz) { go({ biz: null }); return; } // inside a business course: back to the business list
     if (act === 'classes-all') { go({ view: 'teaching', teach: null, course: null, cwTab: 'home', cwItem: '' }); return; }
     if (act === 'teach-open') { go({ view: 'teaching', teach: code, course: null, cwTab: 'home', cwItem: '' }); return; }
     if (act === 'cal-more') {
@@ -13227,6 +13609,7 @@ window.HELP_TOPICS = [
     S.preview = false;
     S.evalPending = {}; S.evalErrors = {}; S.evalTry = {}; S.sharing = {};
     S.data = null;
+    setArea(null); S.biz = null; S.business = null; S.bizFilter = ''; S.bizNote = '';
     document.getElementById('evaluationNotice').hidden = true;
     S.email = null;
     S.people = null;
@@ -13408,6 +13791,7 @@ window.HELP_TOPICS = [
     if (settings && settings.helpSiteUrl) HELP_SITE = settings.helpSiteUrl;
     if (settings && settings.programName) { document.getElementById('loginTitle').textContent = settings.programName; document.title = settings.programName; }
     var demo = !!(settings && settings.demoMode);
+    HELP_DEMO = demo || !!window.PUBLIC_DEMO;
     document.getElementById('demoBtn').hidden = !demo || !!window.PUBLIC_DEMO;
     document.getElementById('demoNote').hidden = !demo;
   }
