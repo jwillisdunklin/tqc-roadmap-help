@@ -3219,7 +3219,7 @@ function fmtDateTime_(v) {
  * Nobody else, administrators included, is told these courses exist: getCourses_ leaves them out and courseByCode_ answers
  * "Unknown course" for them.
  */
-var BUSINESS_DEFAULT_EMAILS = 'joe@thequalitycoach.com';
+var BUSINESS_DEFAULT_EMAILS = 'joe@thequalitycoach.com, lori@thequalitycoach.com';
 var BUSINESS_MAX_COURSES = 1000;
 function businessEmails_() {
   var s = getSettings_();
@@ -10727,7 +10727,7 @@ function sandboxSignIn_(role) {
             <div>
               <div class="brand-row">
                 <span class="wordmark" id="orgName">The Quality Coach</span>
-                <span class="eyebrow">Aligned to DESE Standards · AASA Crosswalk · Fits Your Evaluation</span>
+                <span class="eyebrow" id="siteEyebrow">Aligned to DESE Standards · AASA Crosswalk · Fits Your Evaluation</span>
               </div>
               <h1 id="programName">TQC Leadership Roadmap</h1>
             </div>
@@ -10809,7 +10809,7 @@ function sandboxSignIn_(role) {
           <span class="wordmark">The Quality Coach</span>
         </div>
         <p class="tagline">Grow. Transform. Succeed.</p>
-        <p class="fine">Badges aligned to the Missouri DESE Standards and Competencies (2022), cross-referenced to the AASA Professional Standards for the Superintendency · New and Early Career Superintendent Pathway from the MASA Pathway Planning Meetings (Oct and Nov 2026) · 19 Authentic Learning Experiences coded to the DESE Superintendent Performance Indicators · Badges can be aligned to the MSBA, MCE Policy 1720, or a local superintendent evaluation · Live sessions: SuperSprints (0.5 hours) and Leadership 90s (1.5 hours) · The MASA/TQC Pathway Certificate of Completion is professional learning recognition from MASA and The Quality Coach. It is not a Missouri educator certificate, license, or endorsement, and it is not issued, approved, or endorsed by DESE.</p>
+        <p class="fine" id="footerFine">Badges aligned to the Missouri DESE Standards and Competencies (2022), cross-referenced to the AASA Professional Standards for the Superintendency · New and Early Career Superintendent Pathway from the MASA Pathway Planning Meetings (Oct and Nov 2026) · 19 Authentic Learning Experiences coded to the DESE Superintendent Performance Indicators · Badges can be aligned to the MSBA, MCE Policy 1720, or a local superintendent evaluation · Live sessions: SuperSprints (0.5 hours) and Leadership 90s (1.5 hours) · The MASA/TQC Pathway Certificate of Completion is professional learning recognition from MASA and The Quality Coach. It is not a Missouri educator certificate, license, or endorsement, and it is not issued, approved, or endorsed by DESE.</p>
         <p class="fine policy-links" id="footerPolicies"></p>
       </div>
     </footer>
@@ -11075,11 +11075,11 @@ window.HELP_TOPICS = [
       '**Audio**: choose **Resource** (or an assignment) and use **Attach a file** with an MP3 or M4A file up to 10 MB. People see **▶ Play recording** and listen right in the course. Other formats (WAV, AAC) need to be saved as MP3 or M4A first; an iPhone Voice Memo shared to Files is already M4A.',
       '**Check videos** (on **Classes**, and on the Business courses list) asks YouTube whether every course video still plays here and lists any that are private, deleted, or blocked from embedding, with the courses that use them.'] },
   { id: 'business-area', roles: ['admin'], title: 'Business courses (for approved business sign-ins)', requires: ['getBusinessCourses', 'importBusinessCourses', 'removeBusinessCourse', 'listCourseVideos'],
-    steps: ['Approved business sign-ins choose **Education** (the superintendent program), **Business** (corporate leadership courses), or **Business roadmap (sample)** (the Meridian Group sample, described below) after signing in. To switch, click **Education · Switch** or **Business · Switch** at the top.',
+    steps: ['Approved business sign-ins choose **Education** (the superintendent program), **Business** (corporate leadership courses), or **Leadership Roadmap Sample Client** (the Meridian Group sample, described below) after signing in. To switch, click **Education · Switch** or **Business · Switch** at the top.',
       'The **Business courses** list groups courses by client category. Type in the search box to find a course by name, code, or client; click a course to open it, build its modules, and add content the same way as any course.',
       '**Add courses from a TalentLMS report**: in TalentLMS open **Reports → Courses → Save as CSV**, then choose that file (CSV, up to 2 MB). Each course’s name, code, and category come across; courses already here are skipped. A file that isn’t a TalentLMS course report is refused with a message.',
       '**Remove** takes a course off the list but keeps its content; it can be put back on the spreadsheet’s Courses tab (Active = TRUE). **Check videos** checks this area’s course videos.',
-      '**Business roadmap (sample)**, or the **Sample client: TQC Pathways at Meridian Group** card at the top of the Business list, opens a sample with 16 fictional people. Choose anyone to see what they see: employees see only their own pathway, plan, and learning; supervisors also see their team; HR sees everyone; the IT administrator sees only accounts and settings; the TQC coach sees their coaching clients. Switch with **View as someone else**. A TQC workshop that matches a business course has **Open the course**. Nothing in the sample is saved.',
+      '**Leadership Roadmap Sample Client** (on the choice screen, or the card at the top of the Business list) opens a sample with 16 fictional people. Choose anyone to see what they see: employees see only their own pathway, plan, and learning; supervisors also see their team; HR sees everyone; the IT administrator sees only accounts and settings; the TQC coach sees their coaching clients. Switch with **View as someone else**. A TQC workshop that matches a business course has **Open the course**. Nothing in the sample is saved. What it shows: **Leadership Roadmap for Business**, a concept for a company’s own talent and leadership development alongside a TQC coach. HR uploads a job description (Word or text) in **Pathway Builder** to draft a four-stage competency rubric; plans, workshops, and future roles follow from it. Progress is competency based: in **Administration → Progress and credit** the company chooses whether stages are for development only, promotion readiness, or promotion and pay, whether a TQC coach or HR must confirm a supervisor’s rating, and which workshops count at completion versus only when the skill is shown on the job. The TQC coach logs sessions as in person, video, or in the system. It is a sample: changes are not saved.',
       'Business courses never appear in the superintendent pathway, its catalog, or its reports, and administrators who aren’t approved business sign-ins don’t see them.'] },
   { id: 'course-publish', video: 'course-building', roles: ['coach'], title: 'Drafts, publishing, dates, and learner preview', requires: ['saveCourseSettings', 'itemOpen_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
@@ -11580,6 +11580,7 @@ window.HELP_TOPICS = [
     var nav = document.getElementById('adminNav');
     // A business login (Settings BUSINESS_EMAILS) chooses Education or Business; the pathway's tabs belong to Education.
     var areaBtn = document.getElementById('areaBtn');
+    setAreaText();
     areaBtn.hidden = !D.viewer.business || !S.area;
     areaBtn.innerHTML = icon('grid') + ' <span class="btn-label">' + (S.area === 'business' ? 'Business' : 'Education') + ' · Switch</span>';
     if (D.viewer.business && S.area !== 'education') { nav.hidden = true; bar.hidden = true; back.hidden = !S.area || (!S.biz && S.view !== 'help'); return; }
@@ -13249,7 +13250,7 @@ window.HELP_TOPICS = [
     return '<section class="card section area-pick"><div class="section-head"><h2>Where would you like to go?</h2><p>You can switch any time with the button at the top of the page.</p></div>' +
       '<div class="area-grid">' + card('education', 'map', 'Education', 'The superintendent pathway: roster, classes, calendar, and reports.') +
       card('business', 'grid', 'Business', 'Corporate leadership and apprenticeship courses brought over from TalentLMS.') +
-      card('business', 'users', 'Business roadmap (sample)', 'TQC Pathways at Meridian Group, a fictional client: see what employees, supervisors, HR, and a TQC coach each see.', 'area-sample') + '</div></section>';
+      card('business', 'users', 'Leadership Roadmap Sample Client', 'Leadership Roadmap for Business, shown with Meridian Group, a fictional client: job descriptions become competency rubrics, each person gets a development plan and a TQC coach, and progress is proven, not just completed.', 'area-sample') + '</div></section>';
   }
   function businessListHtml() {
     var B = S.business, q = (S.bizFilter || '').trim().toLowerCase();
@@ -13270,7 +13271,7 @@ window.HELP_TOPICS = [
     }).join('');
     return '<section class="card section"><div class="section-head"><h2>Business courses</h2>' +
       '<p>Only approved business sign-ins see this area. These courses are separate from the superintendent pathway and never appear in it, in its catalog, or in its reports.</p></div>' +
-      '<div class="biz-sample-card"><div><b>Sample client: TQC Pathways at Meridian Group</b><p class="small muted">See how a client company uses TQC Pathways: 16 fictional people, each with their own view and goals: employees, supervisors, HR, administrators, and a TQC coach. Its TQC workshops open the matching courses here.</p></div>' +
+      '<div class="biz-sample-card"><div><b>Leadership Roadmap Sample Client</b><p class="small muted"><b>Leadership Roadmap for Business</b> (concept preview) is a company’s own talent and leadership development system, run alongside a TQC coach. HR uploads a job description and gets a competency rubric; each person builds a Leadership Development Plan and chooses the sessions they attend; a TQC coach works with them in the system and in person. Progress is competency based (some items count at completion, others only when the skill is shown and confirmed), so a company can tie it to promotion or pay if it chooses. See it with Meridian Group: 16 fictional people, each with their own view and goals. Its TQC workshops open the matching courses here.</p></div>' +
         '<button class="btn btn-primary" type="button" data-act="biz-sample">' + icon('users') + ' Open the sample</button></div>' +
       '<div class="roster-tools"><label class="search">' + icon('search') + '<input id="bizFilter" placeholder="Course name, code, or client" aria-label="Find a business course" value="' + esc(S.bizFilter || '') + '"></label>' +
         '<button class="btn btn-ghost" type="button" data-act="biz-file">' + icon('upload') + ' Add courses from a TalentLMS report</button><input id="bizFile" type="file" accept=".csv,text/csv" hidden>' +
@@ -13287,7 +13288,7 @@ window.HELP_TOPICS = [
    */
   function renderPathwaysSample() {
     $app.innerHTML = '<section class="card section biz-sample-view"><button class="linkish back" type="button" data-act="biz-sample-close">' + icon('chevron') + ' Business courses</button>' +
-      '<div class="section-head"><h2>Sample client: Meridian Group</h2><p class="muted small">TQC Pathways with fictional people. Choose someone to see what they see; switch with <b>View as someone else</b>. Nothing here is saved.</p></div>' +
+      '<div class="section-head"><h2>Leadership Roadmap Sample Client</h2><p class="muted small">Leadership Roadmap for Business (concept preview), shown with Meridian Group, a fictional client. Choose someone to see what they see; switch with <b>View as someone else</b>. Try HR (upload a job description in Pathway Builder), a supervisor, the TQC coach, or Administration → Progress and credit. Nothing here is saved.</p></div>' +
       '<div id="pwFrameWrap"><p class="muted" role="status">Loading the sample…</p></div></section>';
     var mount = function () {
       var wrap = document.getElementById('pwFrameWrap');
@@ -13295,10 +13296,37 @@ window.HELP_TOPICS = [
       var links = {};
       Object.keys(S.pathways.map || {}).forEach(function (k) { links[k] = true; });
       var frame = document.createElement('iframe');
-      frame.title = 'TQC Pathways sample: Meridian Group';
+      frame.title = 'Leadership Roadmap Sample Client: Meridian Group';
       frame.className = 'pw-frame';
-      frame.srcdoc = String(S.pathways.html).replace('<head>', '<head><script>window.TQC_MAP=' + JSON.stringify(links) + ';<\/script>');
-      wrap.innerHTML = '';
+      var failed = function (why) {
+        var note = document.getElementById('pwNote');
+        if (note) note.innerHTML = '<p class="form-error" role="alert">The sample couldn’t start: ' + esc(why) + '</p>';
+      };
+      // The sample's script is a type="text/plain" block: this page starts it once the frame's real page is there, first
+      // as a script element it adds (allowed under Apps Script's page security), then by evaluating it in the frame if
+      // that didn't run. Some browsers (Safari) report the frame's empty placeholder page as loaded first and reuse its
+      // window for the real page, so this waits for the sample's own markup and marks the document, not the window.
+      var tries = 0, start = function () {
+        var w = frame.contentWindow, d = frame.contentDocument;
+        var src = d && d.getElementById('pw-js');
+        if (!w || !src) return false;
+        if (d.__pwStarted) return true;
+        d.__pwStarted = true;
+        var code = 'window.TQC_MAP=' + JSON.stringify(links) + ';window.onerror=function(m,s,l){try{parent.postMessage({tqcPathways:"error",msg:String(m)+(l?" (line "+l+")":"")},"*")}catch(e){}};\n' +
+          src.textContent + '\n;window.__pwReady=true;';
+        try { var sc = d.createElement('script'); sc.textContent = code; d.body.appendChild(sc); } catch (e) { /* tried below */ }
+        setTimeout(function () {
+          if (!w.__pwReady) { try { w.eval(code); } catch (e) { failed((e && e.message) || String(e)); return; } }
+          if (!w.__pwReady) failed('this browser blocked it.');
+        }, 400);
+        return true;
+      };
+      frame.addEventListener('load', start);
+      var poll = setInterval(function () {
+        if (start() || ++tries > 40 || !frame.isConnected) { clearInterval(poll); if (tries > 40 && !(frame.contentDocument || {}).__pwStarted) failed('it took too long to load. Reload the page and try again.'); }
+      }, 250);
+      frame.srcdoc = String(S.pathways.html);
+      wrap.innerHTML = '<div id="pwNote"></div>';
       wrap.appendChild(frame);
       S.pwFrame = frame;
     };
@@ -13307,7 +13335,9 @@ window.HELP_TOPICS = [
   }
   window.addEventListener('message', function (e) {
     if (!S.pwFrame || e.source !== S.pwFrame.contentWindow) return; // only the sample frame this page made
-    var d = e.data || {}, hit = d.tqcPathways === 'open' && S.pathways && S.pathways.map ? S.pathways.map[d.ws] : null;
+    var d = e.data || {};
+    if (d.tqcPathways === 'error') { var note = document.getElementById('pwNote'); if (note) note.innerHTML = '<p class="form-error" role="alert">Something in the sample stopped working: ' + esc(String(d.msg || '')) + '</p>'; return; }
+    var hit = d.tqcPathways === 'open' && S.pathways && S.pathways.map ? S.pathways.map[d.ws] : null;
     if (!hit) return;
     S.bizSample = false; S.pwFrame = null;
     go({ biz: hit.code, cwTab: 'home', cwItem: '' });
@@ -14213,6 +14243,7 @@ window.HELP_TOPICS = [
     document.getElementById('portal').hidden = true;
     document.getElementById('demoToolbar').hidden = true;
     document.getElementById('login').hidden = false;
+    setAreaText();
     loginMode(mode || 'signin');
   }
   function loginMode(mode) {
@@ -14340,11 +14371,34 @@ window.HELP_TOPICS = [
   });
 
   /** Terms of Use / Privacy Notice links (TERMS_URL, PRIVACY_URL on Settings) and the no-student-data rule. */
+  var AREA_TEXT = {
+    business: { eyebrow: 'Leadership Development · Apprenticeship · Coaching',
+      fine: 'Leadership development and apprenticeship programs from The Quality Coach for business clients: courses, coaching, and leader growth for supervisors, managers, and emerging leaders.',
+      rule: 'Please don\'t enter or upload confidential employee information, such as performance ratings, pay, or medical details.' },
+    neutral: { eyebrow: 'Leadership Development from The Quality Coach',
+      fine: 'The Quality Coach\'s leadership programs: the New/Early Career Superintendent Pathway and leadership training for business clients.',
+      rule: 'Please don\'t enter or upload confidential information about students or employees.' }
+  };
+  /** Which wording the header and footer use: the superintendent program's, the business area's, or neutral (the choice screen). */
+  function areaTextKey() {
+    var v = S.data && S.data.viewer, login = document.getElementById('login');
+    if (!v || (login && !login.hidden)) return 'neutral'; // the sign-in page serves both programs
+    if (!v.business) return 'education';
+    return S.area === 'business' ? 'business' : S.area === 'education' ? 'education' : 'neutral';
+  }
+  function setAreaText() {
+    var key = areaTextKey(), eb = document.getElementById('siteEyebrow'), fine = document.getElementById('footerFine');
+    if (eb) { if (eb.dataset.edu === undefined) eb.dataset.edu = eb.textContent; eb.textContent = key === 'education' ? eb.dataset.edu : AREA_TEXT[key].eyebrow; }
+    if (fine) { if (fine.dataset.edu === undefined) fine.dataset.edu = fine.innerHTML; fine.innerHTML = key === 'education' ? fine.dataset.edu : esc(AREA_TEXT[key].fine); }
+    if (setPolicyLinks.last) setPolicyLinks(setPolicyLinks.last);
+  }
   function setPolicyLinks(settings) {
     var st = settings || {};
+    setPolicyLinks.last = st;
     var links = [st.termsUrl ? '<a href="' + esc(st.termsUrl) + '" target="_blank" rel="noopener">Terms of Use</a>' : '',
       st.privacyUrl ? '<a href="' + esc(st.privacyUrl) + '" target="_blank" rel="noopener">Privacy Notice</a>' : ''].filter(String);
-    var rule = 'Please don\'t enter or upload student names or other information that identifies a student.';
+    var areaKey = areaTextKey();
+    var rule = areaKey === 'education' ? 'Please don\'t enter or upload student names or other information that identifies a student.' : AREA_TEXT[areaKey].rule;
     var login = document.getElementById('loginPolicies'), foot = document.getElementById('footerPolicies');
     if (login) login.innerHTML = (links.length ? 'By signing in you agree to the ' + links.join(' and ') + '. ' : '') + rule;
     if (foot) foot.innerHTML = (links.length ? links.join(' · ') + ' · ' : '') + rule;
