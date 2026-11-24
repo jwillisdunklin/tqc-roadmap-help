@@ -1167,6 +1167,10 @@
     .demo-toolbar select { flex: 1 1 auto; min-width: 0; min-height: 44px; }
     .demo-toolbar span { font-size: 12px; }
   }
+  /* Business: the TQC Pathways sample card and its frame */
+  .biz-sample-card { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 16px; margin: 0 0 16px; border: 1px solid var(--line, #dce0e8); border-left: 4px solid var(--accent, #b8935a); border-radius: 10px; }
+  .biz-sample-card p { margin: 4px 0 0; max-width: 62ch; }
+  .pw-frame { display: block; width: 100%; height: 82vh; min-height: 560px; border: 1px solid var(--line, #dce0e8); border-radius: 10px; background: #fff; }
 </style>
 
 <script>/* demo mode */
@@ -1450,7 +1454,9 @@ window.PUBLIC_DEMO = true; window.PUBLIC_DEMO_LIVE_URL = "https://script.google.
         var o = { content: c, getContent: function () { return c; }, setWidth: function () { return o; }, setHeight: function () { return o; },
           setTitle: function (t) { o.title = t; return o; }, addMetaTag: function () { return o; }, setXFrameOptionsMode: function () { return o; } };
         return o;
-      }
+      },
+      // Project HTML files the tests or the preview provide in __HTML_FILES (name → content).
+      createHtmlOutputFromFile: function (name) { return api.HtmlService.createHtmlOutput((root.__HTML_FILES || {})[name] || ''); }
     }
   };
   Object.keys(api).forEach(function (k) { root[k] = api[k]; });
@@ -3351,6 +3357,34 @@ function addBusinessVideos_(by) {
   return res;
 }
 /**
+ * The TQC Pathways sample (a fictional client, Meridian Group) for business logins: the page (PathwaysSample.html,
+ * built by dev/pathways/build-sample.js) and, for each of its TQC workshops that matches a business course, that
+ * course's Roadmap code, so "Open the course" opens the real course. Matches are by the course's TalentLMS code.
+ */
+var PATHWAYS_WORKSHOP_COURSES = {
+  w15: 'AUTHLEADLD1.0Course',     // New Leader Launch → Authentic Leadership
+  w16: 'LBSLD1.0(Course)',        // Leading with Your Style (DISC) → Leveraging Behavioral Styles
+  w11: 'QCommLD1.0Course',        // MEET: Leading Meetings That Matter → Quality Communication
+  w1: 'Coach&CommLD1.0BFC2',      // Leading Through Coaching → Coaching and Communication Tools
+  w2: 'LD2.0COMM-CR(Pub3)',       // Difficult Conversations Lab → Communication and Conflict Resolution
+  w19: 'LD2.0(1)EQLeadByFeel',    // Emotional Intelligence for Leaders → EQ: Leading by Feel
+  w17: 'BSTCulture2.0(Pub3)',     // Culture Carriers → Building Strong Team Culture
+  w10: 'EffDelD1.0Pub12',         // Building the Leadership Pipeline → Effective Delegation
+  w7: 'ST&MASTERMND2.0Roto2'      // Strategic Planning Studio → Strategic Thinking and Masterminding
+};
+function getPathwaysSample() {
+  assertBusiness_();
+  var bySource = {};
+  getBusinessCourses_().forEach(function (c) { if (c.sourceCode) bySource[String(c.sourceCode).trim().toLowerCase()] = { code: c.code, title: c.title }; });
+  var map = {};
+  Object.keys(PATHWAYS_WORKSHOP_COURSES).forEach(function (ws) {
+    var hit = bySource[PATHWAYS_WORKSHOP_COURSES[ws].toLowerCase()];
+    if (hit) map[ws] = hit;
+  });
+  return { html: HtmlService.createHtmlOutputFromFile('PathwaysSample').getContent(), map: map };
+}
+
+/**
  * Admins (program courses) and business logins (business courses): every active Video item with its course, so the
  * page can check each YouTube link still plays (the check runs in the browser against YouTube's public oEmbed page,
  * which needs no extra permission for this script).
@@ -3371,7 +3405,10 @@ function listCourseVideos() {
 
 function businessKey_(code, title, category) {
   var norm = function (x) { return String(x || '').replace(/\s+/g, ' ').trim().toLowerCase(); }; // TalentLMS names sometimes carry double spaces
-  return code ? 'c:' + String(code).toLowerCase() : 't:' + norm(title) + '|' + norm(category);
+  // The sheet turns an all-digit code like "002" into the number 2, so all-digit codes are compared as numbers.
+  var cd = String(code === undefined || code === null ? '' : code).trim().toLowerCase();
+  if (/^\d+$/.test(cd)) cd = String(Number(cd));
+  return cd ? 'c:' + cd : 't:' + norm(title) + '|' + norm(category);
 }
 function addBusinessCourses_(v, csvText) {
   csvText = String(csvText || '');
@@ -4617,6 +4654,7 @@ function appFunctions_() {
     getEngagementReport: getEngagementReport,
     getBusinessCourses: getBusinessCourses,
     listCourseVideos: listCourseVideos,
+    getPathwaysSample: getPathwaysSample,
     importBusinessCourses: importBusinessCourses,
     loadBusinessSeed: loadBusinessSeed,
     removeBusinessCourse: removeBusinessCourse,
@@ -11038,6 +11076,7 @@ window.HELP_TOPICS = [
       'The **Business courses** list groups courses by client category. Type in the search box to find a course by name, code, or client; click a course to open it, build its modules, and add content the same way as any course.',
       '**Add courses from a TalentLMS report**: in TalentLMS open **Reports → Courses → Save as CSV**, then choose that file (CSV, up to 2 MB). Each course’s name, code, and category come across; courses already here are skipped. A file that isn’t a TalentLMS course report is refused with a message.',
       '**Remove** takes a course off the list but keeps its content; it can be put back on the spreadsheet’s Courses tab (Active = TRUE). **Check videos** checks this area’s course videos.',
+      '**Sample client: TQC Pathways at Meridian Group** (the card at the top of the list) opens a sample with 16 fictional people. Choose anyone to see what they see: employees see only their own pathway, plan, and learning; supervisors also see their team; HR sees everyone; the IT administrator sees only accounts and settings; the TQC coach sees their coaching clients. Switch with **View as someone else**. A TQC workshop that matches a business course has **Open the course**. Nothing in the sample is saved.',
       'Business courses never appear in the superintendent pathway, its catalog, or its reports, and administrators who aren’t approved business sign-ins don’t see them.'] },
   { id: 'course-publish', video: 'course-building', roles: ['coach'], title: 'Drafts, publishing, dates, and learner preview', requires: ['saveCourseSettings', 'itemOpen_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
@@ -13227,6 +13266,8 @@ window.HELP_TOPICS = [
     }).join('');
     return '<section class="card section"><div class="section-head"><h2>Business courses</h2>' +
       '<p>Only approved business sign-ins see this area. These courses are separate from the superintendent pathway and never appear in it, in its catalog, or in its reports.</p></div>' +
+      '<div class="biz-sample-card"><div><b>Sample client: TQC Pathways at Meridian Group</b><p class="small muted">See how a client company uses TQC Pathways: 16 fictional people, each with their own view and goals: employees, supervisors, HR, administrators, and a TQC coach. Its TQC workshops open the matching courses here.</p></div>' +
+        '<button class="btn btn-primary" type="button" data-act="biz-sample">' + icon('users') + ' Open the sample</button></div>' +
       '<div class="roster-tools"><label class="search">' + icon('search') + '<input id="bizFilter" placeholder="Course name, code, or client" aria-label="Find a business course" value="' + esc(S.bizFilter || '') + '"></label>' +
         '<button class="btn btn-ghost" type="button" data-act="biz-file">' + icon('upload') + ' Add courses from a TalentLMS report</button><input id="bizFile" type="file" accept=".csv,text/csv" hidden>' +
         '<button class="btn btn-ghost" type="button" data-act="videos-check">' + icon('check') + ' Check videos</button>' +
@@ -13235,7 +13276,41 @@ window.HELP_TOPICS = [
         'No business courses yet. In TalentLMS open Reports → Courses → Save as CSV, then add that file here.') + ' A report brings each course’s name, code, and category. Course content is built or added inside each course.</p>' +
       (S.bizNote ? '<p role="status"><b>' + esc(S.bizNote) + '</b></p>' : '') + groups + '</section>';
   }
+  /**
+   * The TQC Pathways sample (PathwaysSample.html, a fictional client) runs in its own frame, so its styles and code stay
+   * separate from the Roadmap's. It is fetched the first time it is opened, for business sign-ins only. Its "Open the
+   * course" buttons send a message asking this page to open the matching business course.
+   */
+  function renderPathwaysSample() {
+    $app.innerHTML = '<section class="card section biz-sample-view"><button class="linkish back" type="button" data-act="biz-sample-close">' + icon('chevron') + ' Business courses</button>' +
+      '<div class="section-head"><h2>Sample client: Meridian Group</h2><p class="muted small">TQC Pathways with fictional people. Choose someone to see what they see; switch with <b>View as someone else</b>. Nothing here is saved.</p></div>' +
+      '<div id="pwFrameWrap"><p class="muted" role="status">Loading the sample…</p></div></section>';
+    var mount = function () {
+      var wrap = document.getElementById('pwFrameWrap');
+      if (!wrap || !S.pathways) return;
+      var links = {};
+      Object.keys(S.pathways.map || {}).forEach(function (k) { links[k] = true; });
+      var frame = document.createElement('iframe');
+      frame.title = 'TQC Pathways sample: Meridian Group';
+      frame.className = 'pw-frame';
+      frame.srcdoc = String(S.pathways.html).replace('<head>', '<head><script>window.TQC_MAP=' + JSON.stringify(links) + ';<\/script>');
+      wrap.innerHTML = '';
+      wrap.appendChild(frame);
+      S.pwFrame = frame;
+    };
+    if (S.pathways) { mount(); return; }
+    api('getPathwaysSample').then(function (r) { S.pathways = r; if (S.bizSample) mount(); }, function (x) { var w = document.getElementById('pwFrameWrap'); if (w) w.innerHTML = '<p class="form-error">' + esc((x && x.message) || String(x)) + '</p>'; });
+  }
+  window.addEventListener('message', function (e) {
+    if (!S.pwFrame || e.source !== S.pwFrame.contentWindow) return; // only the sample frame this page made
+    var d = e.data || {}, hit = d.tqcPathways === 'open' && S.pathways && S.pathways.map ? S.pathways.map[d.ws] : null;
+    if (!hit) return;
+    S.bizSample = false; S.pwFrame = null;
+    go({ biz: hit.code, cwTab: 'home', cwItem: '' });
+    toast('Opened ' + hit.title + ' from the sample.');
+  });
   function renderBusiness() {
+    if (S.bizSample && !S.biz) { renderPathwaysSample(); return; }
     if (S.biz) { if (window.TQC_COURSE) window.TQC_COURSE.open(S.biz, ''); return; }
     $app.innerHTML = businessListHtml();
     if (!S.business && !S.bizLoading) {
@@ -13873,8 +13948,10 @@ window.HELP_TOPICS = [
     if (act && act.indexOf('cw-') === 0 && window.TQC_COURSE && window.TQC_COURSE.handle(act, el)) return;
     if (act === 'course-create') { window.TQC_COURSE.createCourse(); return; }
     if (act === 'import-open') { go({ view: 'import', course: null }); return; }
-    if (act === 'area-pick') { setArea(el.dataset.area); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
-    if (act === 'area-choose') { setArea(null); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; render(); window.scrollTo(0, 0); return; }
+    if (act === 'area-pick') { S.bizSample = false; setArea(el.dataset.area); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
+    if (act === 'area-choose') { S.bizSample = false; setArea(null); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; render(); window.scrollTo(0, 0); return; }
+    if (act === 'biz-sample') { S.bizSample = true; renderBusiness(); window.scrollTo(0, 0); return; }
+    if (act === 'biz-sample-close') { S.bizSample = false; S.pwFrame = null; renderBusiness(); window.scrollTo(0, 0); return; }
     if (act === 'biz-file') { var bf = document.getElementById('bizFile'); if (bf) { bf.value = ''; bf.click(); } return; }
     if (act === 'videos-check') { checkVideos(); return; }
     if (act === 'biz-seed') {
