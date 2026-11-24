@@ -83,6 +83,11 @@
   .login-sub { margin: 0; font-size: 17px; max-width: 32em; color: rgba(255,255,255,.88); }
   .login-points { list-style: none; padding: 0; margin: 8px 0 0; display: flex; gap: 12px; flex-wrap: wrap; font-weight: 500; }
   .login-points li { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); padding: 6px 14px; border-radius: 999px; }
+  .login-programs { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 10px; max-width: 34em; }
+  .login-programs li { display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,.12); padding: 12px 16px; border-radius: 12px; }
+  .login-programs .dot-ic { flex: none; margin-top: 6px; }
+  .login-programs b { display: block; font-size: 16px; }
+  .login-programs span:not(.dot-ic) { display: block; font-size: 14px; color: rgba(255,255,255,.85); margin-top: 2px; }
   .dot-ic { width: 10px; height: 10px; border-radius: 50%; background: var(--f); box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
   .dot-ic.ph-1 { background: #6FD0EA; } .dot-ic.ph-2 { background: #5FE3BF; } .dot-ic.ph-3 { background: #B8C8FA; } .dot-ic.ph-4 { background: #D3B8F5; }
   .dot-ic.lvl-1 { background: #5FE3BF; } .dot-ic.lvl-2 { background: #B8C8FA; }
@@ -520,7 +525,7 @@
   /* ---------- Embedded in another site (e.g. a Google Site): compact chrome so the roadmap fits the frame ---------- */
   body.embedded .login { min-height: 0; grid-template-columns: 1fr; }
   body.embedded .login-art { padding: 18px 24px; gap: 6px; }
-  body.embedded .login-art .login-sub, body.embedded .login-art .login-points, body.embedded .login-art .tagline { display: none; }
+  body.embedded .login-art .login-sub, body.embedded .login-art .login-points, body.embedded .login-art .login-programs, body.embedded .login-art .tagline { display: none; }
   body.embedded .login-title { font-size: 22px; max-width: none; }
   body.embedded .login-panel { padding: 22px 16px 28px; }
   body.embedded .topbar { padding: 10px 0 8px; gap: 10px; }
@@ -576,7 +581,7 @@
     .demo-flag { white-space: normal; font-size: 11px; padding: 4px 9px; letter-spacing: .04em; }
     dialog .two { grid-template-columns: 1fr; }
     .eval-opts { grid-template-columns: 1fr; }
-    .login-art .login-sub, .login-points { display: none; }
+    .login-art .login-sub, .login-points, .login-programs { display: none; }
   }
 
   .form-error { color: var(--danger); font-size: 13.5px; min-height: 1em; margin: 10px 0 0; }
@@ -10643,13 +10648,11 @@ function sandboxSignIn_(role) {
         <span class="wordmark">The Quality Coach</span>
       </div>
       <h1 class="login-title" id="loginTitle">TQC Leadership Roadmap</h1>
-      <p class="login-sub login-kicker">New/Early Career Superintendent Pathway</p>
-      <p class="login-sub">From the point of hire through Year 3: the 19 ALEs (live SuperSprints, Leadership 90s, and L90+ sessions), one path for Years 2 and 3, coaching and mentoring hours, yearly completion badges and Competency Series badges toward a certificate of completion, and a standards alignment report that connects to your board's evaluation (MSBA, MCE Policy 1720, or your district's own).</p>
-      <ul class="login-points">
-        <li><span class="dot-ic ph-1"></span>Onboarding</li>
-        <li><span class="dot-ic ph-2"></span>Year 1</li>
-        <li><span class="dot-ic ph-3"></span>Year 2</li>
-        <li><span class="dot-ic ph-4"></span>Year 3</li>
+      <p class="login-sub login-kicker">Leadership development from The Quality Coach</p>
+      <p class="login-sub">One sign-in for your TQC courses, coaching, and progress.</p>
+      <ul class="login-programs">
+        <li><span class="dot-ic ph-1"></span><div><b>New/Early Career Superintendent Pathway</b><span>From hire through Year 3, with completion badges, a certificate of completion, and a report for your board’s evaluation.</span></div></li>
+        <li><span class="dot-ic ph-4"></span><div><b>Business leadership training</b><span>Leadership development and apprenticeship courses for TQC’s business clients.</span></div></li>
       </ul>
       <p class="tagline">Grow. Transform. Succeed.</p>
     </div>
@@ -11072,11 +11075,11 @@ window.HELP_TOPICS = [
       '**Audio**: choose **Resource** (or an assignment) and use **Attach a file** with an MP3 or M4A file up to 10 MB. People see **▶ Play recording** and listen right in the course. Other formats (WAV, AAC) need to be saved as MP3 or M4A first; an iPhone Voice Memo shared to Files is already M4A.',
       '**Check videos** (on **Classes**, and on the Business courses list) asks YouTube whether every course video still plays here and lists any that are private, deleted, or blocked from embedding, with the courses that use them.'] },
   { id: 'business-area', roles: ['admin'], title: 'Business courses (for approved business sign-ins)', requires: ['getBusinessCourses', 'importBusinessCourses', 'removeBusinessCourse', 'listCourseVideos'],
-    steps: ['Approved business sign-ins choose **Education** (the superintendent program) or **Business** (corporate leadership courses) after signing in. To switch, click **Education · Switch** or **Business · Switch** at the top.',
+    steps: ['Approved business sign-ins choose **Education** (the superintendent program), **Business** (corporate leadership courses), or **Business roadmap (sample)** (the Meridian Group sample, described below) after signing in. To switch, click **Education · Switch** or **Business · Switch** at the top.',
       'The **Business courses** list groups courses by client category. Type in the search box to find a course by name, code, or client; click a course to open it, build its modules, and add content the same way as any course.',
       '**Add courses from a TalentLMS report**: in TalentLMS open **Reports → Courses → Save as CSV**, then choose that file (CSV, up to 2 MB). Each course’s name, code, and category come across; courses already here are skipped. A file that isn’t a TalentLMS course report is refused with a message.',
       '**Remove** takes a course off the list but keeps its content; it can be put back on the spreadsheet’s Courses tab (Active = TRUE). **Check videos** checks this area’s course videos.',
-      '**Sample client: TQC Pathways at Meridian Group** (the card at the top of the list) opens a sample with 16 fictional people. Choose anyone to see what they see: employees see only their own pathway, plan, and learning; supervisors also see their team; HR sees everyone; the IT administrator sees only accounts and settings; the TQC coach sees their coaching clients. Switch with **View as someone else**. A TQC workshop that matches a business course has **Open the course**. Nothing in the sample is saved.',
+      '**Business roadmap (sample)**, or the **Sample client: TQC Pathways at Meridian Group** card at the top of the Business list, opens a sample with 16 fictional people. Choose anyone to see what they see: employees see only their own pathway, plan, and learning; supervisors also see their team; HR sees everyone; the IT administrator sees only accounts and settings; the TQC coach sees their coaching clients. Switch with **View as someone else**. A TQC workshop that matches a business course has **Open the course**. Nothing in the sample is saved.',
       'Business courses never appear in the superintendent pathway, its catalog, or its reports, and administrators who aren’t approved business sign-ins don’t see them.'] },
   { id: 'course-publish', video: 'course-building', roles: ['coach'], title: 'Drafts, publishing, dates, and learner preview', requires: ['saveCourseSettings', 'itemOpen_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
@@ -13240,12 +13243,13 @@ window.HELP_TOPICS = [
   /* Business area: a business login (Settings BUSINESS_EMAILS) picks Education or Business after signing in. */
   function setArea(a) { S.area = a || null; try { if (a) sessionStorage.setItem('tqc.area', a); else sessionStorage.removeItem('tqc.area'); } catch (e) { /* not remembered */ } }
   function areaChooserHtml() {
-    var card = function (area, ic, title, text) {
-      return '<button type="button" class="area-card" data-act="area-pick" data-area="' + area + '">' + icon(ic) + '<b>' + title + '</b><span>' + text + '</span></button>';
+    var card = function (area, ic, title, text, act) {
+      return '<button type="button" class="area-card" data-act="' + (act || 'area-pick') + '" data-area="' + area + '">' + icon(ic) + '<b>' + title + '</b><span>' + text + '</span></button>';
     };
     return '<section class="card section area-pick"><div class="section-head"><h2>Where would you like to go?</h2><p>You can switch any time with the button at the top of the page.</p></div>' +
       '<div class="area-grid">' + card('education', 'map', 'Education', 'The superintendent pathway: roster, classes, calendar, and reports.') +
-      card('business', 'grid', 'Business', 'Corporate leadership and apprenticeship courses brought over from TalentLMS.') + '</div></section>';
+      card('business', 'grid', 'Business', 'Corporate leadership and apprenticeship courses brought over from TalentLMS.') +
+      card('business', 'users', 'Business roadmap (sample)', 'TQC Pathways at Meridian Group, a fictional client: see what employees, supervisors, HR, and a TQC coach each see.', 'area-sample') + '</div></section>';
   }
   function businessListHtml() {
     var B = S.business, q = (S.bizFilter || '').trim().toLowerCase();
@@ -13949,6 +13953,7 @@ window.HELP_TOPICS = [
     if (act === 'course-create') { window.TQC_COURSE.createCourse(); return; }
     if (act === 'import-open') { go({ view: 'import', course: null }); return; }
     if (act === 'area-pick') { S.bizSample = false; setArea(el.dataset.area); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
+    if (act === 'area-sample') { setArea('business'); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; S.bizSample = true; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
     if (act === 'area-choose') { S.bizSample = false; setArea(null); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; render(); window.scrollTo(0, 0); return; }
     if (act === 'biz-sample') { S.bizSample = true; renderBusiness(); window.scrollTo(0, 0); return; }
     if (act === 'biz-sample-close') { S.bizSample = false; S.pwFrame = null; renderBusiness(); window.scrollTo(0, 0); return; }
