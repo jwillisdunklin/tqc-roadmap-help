@@ -147,6 +147,7 @@
   .area-card:hover, .area-card:focus-visible { border-color: var(--dev); box-shadow: inset 4px 0 0 var(--dev); }
   .area-card b { font-size: 18px; } .area-card span { color: var(--muted); }
   .biz-group { border-top: 1px solid var(--line); padding: 8px 0; } .biz-group summary { cursor: pointer; padding: 4px 0; }
+  .biz-remove { margin-left: auto; color: var(--muted); }
   .biz-list { list-style: none; margin: 6px 0 4px; padding: 0; } .biz-list li { padding: 5px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
   .cat-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
   .cat-card.on { border-color: var(--dev); box-shadow: inset 4px 0 0 var(--dev); }
@@ -1397,6 +1398,7 @@ window.PUBLIC_DEMO = true; window.PUBLIC_DEMO_LIVE_URL = "https://script.google.
     LockService: { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } },
     Utilities: {
       getUuid: uid, computeHmacSha256Signature: hmac, base64Encode: b64enc, base64Decode: b64dec, sleep: function () {},
+      DigestAlgorithm: { SHA_256: 'sha256' }, computeDigest: function (alg, s) { return sha256(toBytes(String(s))).map(function (x) { return x > 127 ? x - 256 : x; }); },
       newBlob: function (b, t, n) { return new Blob(b, t, n); },
       // Local time stands in for the script time zone (America/Chicago).
       formatDate: function (d, tz, fmt) {
@@ -1438,7 +1440,7 @@ window.PUBLIC_DEMO = true; window.PUBLIC_DEMO_LIVE_URL = "https://script.google.
       newTrigger: function (fn) {
         var t = { fn: fn, uid: String(Math.floor(Math.random() * 1e15)), getHandlerFunction: function () { return fn; }, getUniqueId: function () { return t.uid; } };
         var b = { timeBased: function () { return b; }, everyDays: function (n) { t.days = n; return b; }, atHour: function (h) { t.hour = h; return b; },
-          inTimezone: function () { return b; }, onWeekDay: function (d) { t.weekDay = d; return b; }, create: function () { triggers.push(t); return t; } };
+          inTimezone: function () { return b; }, onWeekDay: function (d) { t.weekDay = d; return b; }, forSpreadsheet: function () { return b; }, onChange: function () { t.change = true; return b; }, create: function () { triggers.push(t); return t; } };
         return b;
       }
     },
@@ -2028,12 +2030,12 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.page === 'flyer') return flyerPage_(); // public program flyer (Flyer.js)
   if (e && e.parameter && e.parameter.page === 'catalog') return catalogPage_(); // public catalog and PD calendar (Catalog.js)
   if (e && e.parameter && e.parameter.page === 'health') return healthPage_(); // public pass/fail health check, no data (Health.js)
-  var settings = getSettings_();
+  var boot = bootCached_();
   var page = HtmlService.createTemplateFromFile('Index');
-  page.boot = bootJson_(settings);
+  page.boot = boot.json;
   return page
     .evaluate()
-    .setTitle(settings.PROGRAM_NAME || SITE_NAME)
+    .setTitle(boot.title)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -2043,6 +2045,20 @@ function doGet(e) {
  * sign-in is required and the public settings (names, links, demo on/off). Nothing private; the same settings the
  * sign-in page already received from getAppData. Escaped for an inline <script>.
  */
+/**
+ * The sign-in page's boot data, kept 5 minutes in the script cache so opening the site doesn't wait for a Settings read.
+ * Writing or editing the Settings tab drops it (invalidateSharedTabs_), so a change shows on the next page load.
+ */
+var BOOT_CACHE_KEY = 'tqc.boot.v1';
+function bootCached_() {
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); var hit = cache.get(BOOT_CACHE_KEY); if (hit) return JSON.parse(hit); } catch (e) { cache = null; }
+  var settings = getSettings_();
+  var out = { json: bootJson_(settings), title: String(settings.PROGRAM_NAME || SITE_NAME) };
+  try { if (cache) cache.put(BOOT_CACHE_KEY, JSON.stringify(out), 300); } catch (e) {}
+  return out;
+}
+
 function bootJson_(settings) {
   return JSON.stringify({ loginRequired: isTrue_(settings.LOGIN_REQUIRED), settings: publicSettings_(settings) })
     .replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
@@ -2097,7 +2113,7 @@ function buildAppData_() {
     var tctx = personContext_([], {}); // the catalog only: no one's pathway is shown
     return { viewer: { email: viewer.email, name: viewer.name || '', isAdmin: false, isVisitor: false, canBrowse: false, isSandbox: !!viewer.sandboxRole, demoRole: viewer.sandboxRole || '' },
       settings: publicSettings_(settings), tiers: getTiers_(), standards: getStandards_(), courses: publicCourses_(tctx.courses, false), pipeline: SEED.pipeline,
-      options: tctx.options, series: tctx.series, hoursCategories: HOURS_CATEGORIES, certificate: PATHWAY_CERTIFICATE, materials: getMaterials_(), indicators: SEED.evalIndicators,
+      options: tctx.options, series: tctx.series, hoursCategories: HOURS_CATEGORIES, certificate: PATHWAY_CERTIFICATE, materials: getMaterials_(true), indicators: SEED.evalIndicators,
       today: tctx.today, evaluationSystems: [], superintendents: [], teaching: teaching };
   }
   if (!supts.length && !viewer.isAdmin) {
@@ -2124,7 +2140,7 @@ function buildAppData_() {
     hoursCategories: HOURS_CATEGORIES,
     indicators: SEED.evalIndicators,
     certificate: PATHWAY_CERTIFICATE,
-    materials: getMaterials_(),
+    materials: getMaterials_(true), // program courses only: business courses load their content when opened
     today: ctx.today,
     evaluationSystems: evaluationSystemsFor_(viewer, align, me),
     superintendents: peopleFor_(viewer, vis, supts, ctx, align)
@@ -2733,6 +2749,9 @@ function rosterRows_() {
   return rows.filter(function (s) { return !isSampleEmail_(s.Email); });
 }
 
+/** True on a live site (DEMO_MODE FALSE) for everyone but a demo login: sample people and their work are not shown. */
+function sampleHidden_() { return !(SESSION_ && SESSION_.demoFor) && !isTrue_(getSettings_().DEMO_MODE); }
+
 function visibleSupts_(v) {
   var demo = isTrue_(getSettings_().DEMO_MODE);
   var records = rosterRows_().filter(function(s){return s.Email;});
@@ -2857,7 +2876,7 @@ function scriptProps_() {
  */
 var SHARED_TABS_ = [SHEETS.COURSES, SHEETS.TIERS, SHEETS.OPTIONS, SHEETS.SERIES, SHEETS.STANDARDS, SHEETS.ALIGN,
   SHEETS.COURSE_SETTINGS, SHEETS.MODULES, SHEETS.MATERIALS, SHEETS.RUBRICS, SHEETS.QUESTIONS, SHEETS.ANNOUNCEMENTS];
-var TAB_CACHE_SECONDS = 600;
+var TAB_CACHE_SECONDS = 21600; // 6 hours (the most the cache keeps); writes, edits, and sheet changes give tabs new versions sooner
 var TAB_CACHE_CHUNK = 30000;   // characters per cache value (values are limited to 100 KB)
 var TAB_CACHE_PREFETCH = 4;    // chunks per tab fetched in the first read; bigger tabs need one more call
 var TAB_CACHE_MAX_CHUNKS = 40; // larger tabs are simply read from the sheet
@@ -2868,6 +2887,7 @@ function tabDataKey_(name, ver) { return 'tqc.tab.' + name + '.' + ver; }
 
 /** Gives these tabs new cache versions (their cached copies are never read again). */
 function invalidateSharedTabs_(names) {
+  if ((names || []).indexOf(SHEETS.SETTINGS) > -1) { try { CacheService.getScriptCache().remove(BOOT_CACHE_KEY); } catch (e) {} }
   var put = {};
   (names || []).forEach(function (n) {
     if (!isSharedTab_(n)) return;
@@ -3100,9 +3120,13 @@ function writeTable_(name, headers, rows, dropColumn) {
     if (m > n) sheet.getRange(n + 1, 1, m - n, headers.length).clearContent();
     return;
   }
-  sheet.clearContents();
+  // Write over the old contents first, then clear only what is left past the new end: if the write fails, the tab still
+  // holds its earlier data instead of being blank.
+  var oldRows = isNew ? 0 : sheet.getLastRow(), oldCols = isNew ? 0 : sheet.getLastColumn();
   ensureRows_(sheet, values.length);
   sheet.getRange(1, 1, values.length, headers.length).setValues(values);
+  if (oldRows > values.length) sheet.getRange(values.length + 1, 1, oldRows - values.length, Math.max(oldCols, headers.length)).clearContent();
+  if (oldCols > headers.length) sheet.getRange(1, headers.length + 1, Math.min(oldRows, values.length) || 1, oldCols - headers.length).clearContent();
 }
 
 /** The header row as it is on the tab ([] for an empty tab). */
@@ -3205,8 +3229,11 @@ function businessReply_() {
   var items = {};
   if (tabByName_(SHEETS.MATERIALS)) readTable_(SHEETS.MATERIALS).forEach(function (r) { if (isTrue_(r.Active, true)) items[String(r.Code)] = (items[String(r.Code)] || 0) + 1; });
   return { courses: getBusinessCourses_().map(function (c) {
-    return { code: c.code, title: String(c.title || ''), category: c.category || 'No category', sourceCode: c.sourceCode, items: items[c.code] || 0 };
-  }) };
+    return { code: c.code, title: String(c.title || ''), category: c.category || 'No category', sourceCode: c.sourceCode, items: items[c.code] || 0,
+      // what the class editor and the course pages read from a course
+      link: c.link, sessionDate: c.sessionDate, sessionTime: c.sessionTime, provider: c.provider, modality: c.modality, indicator: String(c.indicator || ''),
+      evidence: String(c.evidence || ''), instructors: c.instructors, format: c.format, kind: c.kind, window: c.window, status: c.status, area: 'Business' };
+  }), seed: businessSeedCount_() };
 }
 /** Business login: the business courses, with their TalentLMS category and code. */
 function getBusinessCourses() {
@@ -3219,12 +3246,146 @@ function getBusinessCourses() {
  * TalentLMS code, or same name and category when it has no code) is skipped, so the same report can be loaded again.
  */
 function importBusinessCourses(csvText) {
+  return addBusinessCourses_(assertBusiness_(), csvText);
+}
+/**
+ * A course list read from TalentLMS on the business login's behalf (BUSINESS_SEED_CSV, a file pushed to the script but
+ * kept out of Git because it names clients). The Business screen offers it as one button until every course in it is here.
+ */
+function businessSeedCsv_() { return typeof BUSINESS_SEED_CSV === 'string' ? BUSINESS_SEED_CSV : ''; }
+function businessSeedCount_() {
+  var csv = businessSeedCsv_();
+  if (!csv) return 0;
+  var have = {};
+  // Every business row counts, removed ones too: a course the business login removed is not offered again.
+  readTable_(SHEETS.COURSES).forEach(function (r) { if (/^business$/i.test(String(r.Area || '').trim())) have[businessKey_(String(r['Source Code'] || '').trim(), r['Course Title'], r.Category)] = true; });
+  return parseTalent_({ 'courses.csv': csv }, []).courses.filter(function (c) { return !have[businessKey_(String((c.meta && c.meta.sourceCode) || '').trim().slice(0, 80), c.title, String((c.meta && c.meta.category) || '').trim().slice(0, 80))]; }).length;
+}
+/** Business login: take a course out of the business list. The row stays on the Courses tab with Active = FALSE, so it can be put back there. */
+function removeBusinessCourse(code) {
   var v = assertBusiness_();
+  code = String(code || '');
+  withLock_(function () {
+    var rows = readTable_(SHEETS.COURSES);
+    var r = rows.filter(function (x) { return String(x.Code) === code && /^business$/i.test(String(x.Area || '').trim()) && isTrue_(x.Active, true); })[0];
+    if (!r) throw new Error('That business course was not found.');
+    r.Active = false;
+    writeTable_(SHEETS.COURSES, HEADERS.COURSES, rows);
+  });
+  resetRequestMemo_();
+  log_(v.email, code, 'Business course removed', 'Active set to FALSE');
+  return businessReply_();
+}
+function loadBusinessSeed() {
+  var v = assertBusiness_();
+  if (!businessSeedCsv_()) throw new Error('No course list is waiting to be added.');
+  return addBusinessCourses_(v, businessSeedCsv_());
+}
+/** YouTube videos read from TalentLMS, per business course (BusinessVideos.js, pushed with clasp but kept out of Git). */
+function businessVideoSeed_() { return typeof BUSINESS_VIDEO_SEED === 'undefined' ? [] : [].concat(BUSINESS_VIDEO_SEED); }
+/**
+ * Adds the waiting TalentLMS videos to the matching courses as Video items, in TalentLMS order. A seed key is a business
+ * course key (businessKey_) or 'code:' + a program course code. Safe to run again: a video already in a course (same link,
+ * not removed) is not added twice. Keys that match no course are skipped.
+ */
+function addBusinessVideos_(by) {
+  var seed = businessVideoSeed_();
+  if (!seed.length) throw new Error('No video list is waiting to be added.');
+  var res = { added: 0, courses: 0, already: 0, noCourse: 0 };
+  withLock_(function () {
+    var byKey = {};
+    readTable_(SHEETS.COURSES).forEach(function (r) {
+      if (/^business$/i.test(String(r.Area || '').trim())) byKey[businessKey_(String(r['Source Code'] || '').trim(), r['Course Title'], r.Category)] = String(r.Code);
+      else if (isTrue_(r.Active, true)) byKey['code:' + String(r.Code)] = String(r.Code); // a program course, named by its Roadmap code
+    });
+    var mods = readTable_(SHEETS.MODULES), firstModule = {}, modCount = {};
+    mods.filter(function (m) { return isTrue_(m.Active, true); }).sort(function (a, b) { return (Number(a.Position) || 0) - (Number(b.Position) || 0); })
+      .forEach(function (m) { var c = String(m.Code); modCount[c] = (modCount[c] || 0) + 1; if (!firstModule[c]) firstModule[c] = String(m['Module ID']); });
+    var madeModules = false;
+    // Every item belongs to a module (the Modules page lists items by module); a course with none gets "Course materials".
+    var moduleFor = function (code) {
+      if (!firstModule[code]) {
+        firstModule[code] = 'm' + Utilities.getUuid().replace(/-/g, '').slice(0, 9);
+        mods.push({ 'Module ID': firstModule[code], 'Code': code, 'Title': 'Course materials', 'Position': (modCount[code] || 0) + 1, 'Published': true, 'Active': true });
+        madeModules = true;
+      }
+      return firstModule[code];
+    };
+    var rows = readTable_(SHEETS.MATERIALS), have = {}, count = {}, targets = {};
+    rows.forEach(function (r) {
+      var c = String(r.Code);
+      count[c] = (count[c] || 0) + 1;
+      if (isTrue_(r.Active, true) && r.Link) have[c + '|' + String(r.Link)] = true;
+    });
+    seed.forEach(function (s) {
+      var code = byKey[s.key], n = 0;
+      if (!code) { res.noCourse += (s.items || []).length; return; }
+      targets[code] = true;
+      (s.items || []).forEach(function (it) {
+        var link = String(it.link || ''), title = String(it.title || '').trim().slice(0, 200);
+        if (!title || !/^https:\/\/\S+$/.test(link) || !videoEmbed_(link)) return;
+        if (have[code + '|' + link]) { res.already++; return; }
+        have[code + '|' + link] = true;
+        count[code] = (count[code] || 0) + 1;
+        rows.push({ 'Material ID': Utilities.getUuid().slice(0, 8), 'Code': code, 'Type': 'Video', 'Title': title, 'Link': link, 'Active': true, 'Position': count[code],
+          'Published': true, 'Requirement': defaultRequirement_('Video'), 'Grading': 'none', 'Module ID': moduleFor(code) });
+        n++;
+      });
+      if (n) { res.courses++; res.added += n; }
+    });
+    // Repair: items in these courses that sit outside any module (added before modules were created) are filed into one.
+    var validModule = {};
+    mods.forEach(function (m) { if (isTrue_(m.Active, true)) validModule[String(m.Code) + '|' + String(m['Module ID'])] = true; });
+    res.filed = 0;
+    rows.forEach(function (r) {
+      var c = String(r.Code);
+      if (!targets[c] || !isTrue_(r.Active, true) || validModule[c + '|' + String(r['Module ID'] || '')]) return;
+      r['Module ID'] = moduleFor(c);
+      validModule[c + '|' + r['Module ID']] = true;
+      res.filed++;
+    });
+    if (madeModules) writeTable_(SHEETS.MODULES, HEADERS.MODULES, mods);
+    if (res.added || res.filed) writeTable_(SHEETS.MATERIALS, HEADERS.MATERIALS, rows);
+  });
+  log_(by, '', 'TalentLMS videos added', res.added + ' videos in ' + res.courses + ' courses');
+  return res;
+}
+/**
+ * Admins (program courses) and business logins (business courses): every active Video item with its course, so the
+ * page can check each YouTube link still plays (the check runs in the browser against YouTube's public oEmbed page,
+ * which needs no extra permission for this script).
+ */
+function listCourseVideos() {
+  var v = viewer_(), titles = {};
+  if (v.isAdmin && !v.isVisitor) getCourses_().forEach(function (c) { titles[c.code] = c.title; });
+  if (businessViewer_(v)) getBusinessCourses_().forEach(function (c) { titles[c.code] = c.title; });
+  if (!Object.keys(titles).length) throw new Error('Only administrators can check course videos.');
+  var out = [];
+  readTable_(SHEETS.MATERIALS).forEach(function (r) {
+    var code = String(r.Code || '');
+    if (!titles[code] || !isTrue_(r.Active, true) || !/^video$/i.test(String(r.Type || '').trim())) return;
+    out.push({ code: code, course: titles[code], item: String(r.Title || ''), link: String(r.Link || ''), published: isTrue_(r.Published, true) });
+  });
+  return out;
+}
+
+function businessKey_(code, title, category) {
+  var norm = function (x) { return String(x || '').replace(/\s+/g, ' ').trim().toLowerCase(); }; // TalentLMS names sometimes carry double spaces
+  return code ? 'c:' + String(code).toLowerCase() : 't:' + norm(title) + '|' + norm(category);
+}
+function addBusinessCourses_(v, csvText) {
   csvText = String(csvText || '');
   if (!csvText.trim()) throw new Error('Choose the course report you saved from TalentLMS (a CSV file).');
   if (csvText.length > 2 * 1024 * 1024) throw new Error('That file is larger than 2 MB. Save the course report as CSV and try again.');
+  // A TalentLMS course report has a Course (or Course name) column, or Name with Code or Category; anything else is
+  // refused rather than read as courses (a people list's Name column would otherwise become course titles).
+  var head = (parseCsv_(csvText.split(/\r?\n/)[0] || '')[0] || []).map(function (h) { return String(h).replace(/^\uFEFF/, '').trim().toLowerCase(); });
+  var has = function (h) { return head.indexOf(h) > -1; };
+  if (!(has('course') || has('course name') || has('course title') || (has('name') && (has('code') || has('course code') || has('category')))))
+    throw new Error('No courses were found in that file. Choose the CSV saved from TalentLMS: Reports → Courses → Save as CSV.');
   var plan = parseTalent_({ 'courses.csv': csvText }, []);
-  var keyOf = function (code, title, category) { return code ? 'c:' + code.toLowerCase() : 't:' + String(title).trim().toLowerCase() + '|' + String(category).trim().toLowerCase(); };
+  if (!plan.courses || !plan.courses.length) throw new Error('No courses were found in that file. Choose the CSV saved from TalentLMS: Reports → Courses → Save as CSV.');
+  var keyOf = businessKey_;
   var added = 0, skipped = 0;
   ensureSettingRow_('BUSINESS_EMAILS', BUSINESS_DEFAULT_EMAILS, 'Comma-separated emails of the logins that choose Education or Business after signing in. Business courses (Courses tab, Area = Business) are shown to these logins only.');
   withLock_(function () {
@@ -4455,7 +4616,10 @@ function appFunctions_() {
     submitFeedback: submitFeedback,
     getEngagementReport: getEngagementReport,
     getBusinessCourses: getBusinessCourses,
+    listCourseVideos: listCourseVideos,
     importBusinessCourses: importBusinessCourses,
+    loadBusinessSeed: loadBusinessSeed,
+    removeBusinessCourse: removeBusinessCourse,
     addSuperintendents: addSuperintendents,
     analyzeImport: analyzeImport,
     analyzeImportSample: analyzeImportSample,
@@ -4468,6 +4632,23 @@ function appFunctions_() {
     getImportJob: getImportJob,
     listImportJobs: listImportJobs
   };
+}
+
+/**
+ * Google's infrastructure errors ("Lock timeout…", "Service Spreadsheets timed out…" with the sheet ID, "Exceeded maximum
+ * execution time") become plain words; the page never shows internal IDs. Our own messages pass through unchanged.
+ */
+function friendlyServerError_(e) {
+  var msg = String((e && e.message) || e);
+  if (/Lock timeout|lock.*(wait|time)|another process|too many times/i.test(msg)) {
+    console.error(msg);
+    return new Error('The spreadsheet is busy with other saves. Please try again in a moment.');
+  }
+  if (/Service (Spreadsheets|Drive|invoked)|timed out|Exceeded maximum execution time|INTERNAL|Address unavailable|try again later/i.test(msg)) {
+    console.error(msg);
+    return new Error('Google’s servers were busy and didn’t finish. Please try again in a moment.');
+  }
+  return e instanceof Error ? e : new Error(msg);
 }
 
 /** Single entry point for the page: runs fn(args…) as the signed-in person. */
@@ -4485,6 +4666,8 @@ function callApp(token, fn, args, opts) {
     if (found && !SESSION_) signOut(token); // ended (password changed, account off, too old, demo off): forget it
     SESSION_TOKEN_ = SESSION_ ? String(token) : '';
     return f.apply(null, args || []);
+  } catch (e) {
+    throw friendlyServerError_(e);
   } finally {
     SESSION_ = null;
     SESSION_TOKEN_ = '';
@@ -4497,17 +4680,56 @@ function callApp(token, fn, args, opts) {
 /* Sign-in page (called directly, without a session)                */
 /* ---------------------------------------------------------------- */
 
-/** Email + password. Returns { token } or { error } with a message for the sign-in page. */
-function signIn(email, password) {
+/**
+ * Email + password. Returns { token } or { error } with a message for the sign-in page. With opts.withData the reply
+ * also carries the person's app data (what getAppData returns), built in this same call: one round trip instead of two,
+ * reusing the spreadsheet already open and the Accounts and Settings rows already read. If building the data fails, the
+ * reply is just { token } and the page asks for the data the usual way.
+ */
+function signIn(email, password, opts) {
   beginRequest_();
-  try { ensureReady_(); return signIn_(email, password); } finally { endRequest_(); }
+  try {
+    ensureReady_();
+    var res = signIn_(email, password);
+    if (res && res.token && opts && opts.withData) {
+      try { res.data = asSession_(res.token, opts, buildAppData_); } catch (e) { console.error('Sign-in data not built: ' + e); }
+    }
+    return res;
+  } finally { endRequest_(); }
+}
+
+/** Runs fn as the person signed in with token, the way callApp does (used to return data with the sign-in reply). */
+function asSession_(token, opts, fn) {
+  REQ_.lean = !!(opts && opts.lean);
+  IN_CALL_APP_ = true;
+  try {
+    SESSION_ = liveSession_(readSession_(token));
+    SESSION_TOKEN_ = SESSION_ ? String(token) : '';
+    if (!SESSION_) throw new Error('Please sign in again.');
+    return fn();
+  } finally { SESSION_ = null; SESSION_TOKEN_ = ''; IN_CALL_APP_ = false; }
+}
+
+/**
+ * Called by the sign-in page as soon as it shows (no session, returns nothing): starts the server and loads the shared
+ * tabs into the cache while the person types, so the sign-in that follows is faster. At most once a minute.
+ */
+function warmUp() {
+  var cache = CacheService.getScriptCache();
+  if (cache.get('tqc.warm')) return { ok: true };
+  cache.put('tqc.warm', '1', 60);
+  beginRequest_();
+  try { ensureReady_(); getSettings_(); getCourses_(); findAccount_('warm-up@invalid'); } catch (e) { console.error('Warm-up: ' + e); } finally { endRequest_(); }
+  return { ok: true };
 }
 
 function signIn_(email, password) {
   email = norm_(email);
   password = String(password || '');
   if (!email || !password) return { error: 'Please enter your email and password.' };
-  if (failedSignIns_(email) >= MAX_FAILED_SIGNINS) return { error: 'Too many attempts. Please wait 15 minutes and try again.' };
+  if (siteSignInsPaused_()) return { error: 'Too many sign-in attempts on the site right now. Please wait a minute and try again.' };
+  var wait = signInWait_(email);
+  if (wait) return { error: tooManyMessage_(wait) };
   var user = findAccount_(email);
   var stored = user && user['Password Hash'] ? String(user['Password Hash']) : '';
   // Always run the full hash (a dummy salt for unknown emails or accounts without a password), so the reply takes
@@ -4526,7 +4748,7 @@ function signIn_(email, password) {
     return { error: 'That email and password don’t match an active account. First time here? Use the link below to set your password.' };
   }
   clearFailedSignIns_(email);
-  updateAccount_(email, { 'Last Sign-in': new Date() });
+  noteLastSignIn_(email, user);
   var role = accountRole_(user);
   log_('Sign-in', email, 'Signed in', role);
   return { token: startSession_({ role: role, email: email, name: String(user.Name || '') || email }) };
@@ -4555,7 +4777,8 @@ function requestPasswordReset(email) {
     email = norm_(email);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, message: 'Please enter the email address you use for the program.' };
     var reply = { ok: true, message: 'If ' + email + ' is part of the program, a link to set your password is on its way. It works once and expires in ' +
-      RESET_HOURS + ' hours. Check your spam folder if it doesn’t arrive in a few minutes.' };
+      RESET_HOURS + ' hours. Check your spam folder if it doesn’t arrive in a few minutes.' +
+      (getSettings_().SUPPORT_EMAIL ? ' Still nothing? Email ' + String(getSettings_().SUPPORT_EMAIL).trim() + ' and say which address you used.' : ' Still nothing? Ask the program team which address they have for you.') };
     if (isSampleEmail_(email)) return reply; // sample people can't receive email
     var cache = CacheService.getScriptCache();
     var sent = Number(cache.get(RESET_PREFIX + email) || 0);
@@ -4589,7 +4812,8 @@ function completeSetup(email, code, password) {
   try {
     ensureReady_(); // the page may not have loaded app data first (the sign-in form shows at once)
     email = norm_(email);
-    if (failedSignIns_('setup_' + email) >= MAX_FAILED_SIGNINS) return { error: 'Too many attempts. Please wait 15 minutes and try again.' };
+    var setupWait = signInWait_('setup_' + email);
+    if (setupWait) return { error: 'Too many tries. Please wait ' + setupWait + ' minute' + (setupWait === 1 ? '' : 's') + ', then use the newest link in your email.' };
     var problem = passwordProblem_(password);
     if (problem) return { error: problem };
     var user = findAccount_(email);
@@ -4626,10 +4850,11 @@ function changePassword(current, next) {
   if (!SESSION_ || !v.email || v.isVisitor) throw new Error('The demo has no password to change.');
   var problem = passwordProblem_(next);
   if (problem) throw new Error(problem);
-  if (failedSignIns_(v.email) >= MAX_FAILED_SIGNINS) throw new Error('Too many attempts. Please wait 15 minutes and try again.');
+  var changeWait = signInWait_('change_' + v.email); // its own counter: wrong guesses on the sign-in page don't block this
+  if (changeWait) throw new Error('Too many tries. Please wait ' + changeWait + ' minute' + (changeWait === 1 ? '' : 's') + ' and try again.');
   var user = findAccount_(v.email);
   if (!user || !user['Password Hash'] || !safeEqual_(hashPassword_(String(current || ''), user.Salt), String(user['Password Hash']))) {
-    recordFailedSignIn_(v.email);
+    recordFailedSignIn_('change_' + v.email);
     throw new Error('Your current password isn’t right.');
   }
   var salt = Utilities.getUuid(), now = new Date();
@@ -4755,6 +4980,26 @@ function createAccount_(email, name, role, by) {
   log_(by || '', email, 'Account added', normRole_(role));
 }
 
+/**
+ * Records "Last Sign-in" by writing that one cell, without the script-wide lock, so a sign-in never waits behind other
+ * saves (an import, a bulk change). Skipped when the stored time is under an hour old; a failure never blocks sign-in.
+ */
+function noteLastSignIn_(email, user) {
+  try {
+    var last = user && user['Last Sign-in'] ? new Date(user['Last Sign-in']).getTime() || 0 : 0;
+    if (last && Date.now() - last < 3600000) return;
+    var sh = ss_().getSheetByName(SHEETS.ACCOUNTS);
+    if (!sh || sh.getLastRow() < 2) return;
+    var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    var ec = head.indexOf('Email') + 1, lc = head.indexOf('Last Sign-in') + 1;
+    if (!ec || !lc) return;
+    var emails = sh.getRange(2, ec, sh.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < emails.length; i++) {
+      if (norm_(emails[i][0]) === email) { sh.getRange(i + 2, lc).setValue(new Date()); return; }
+    }
+  } catch (e) { console.error('Last sign-in not recorded: ' + e); }
+}
+
 function updateAccount_(email, fields) {
   withLock_(function () {
     var rows = readTable_(SHEETS.ACCOUNTS);
@@ -4822,7 +5067,9 @@ function demoLoginFor_(email) {
     var m = part.match(/^\s*(.*?)\s*<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/) || part.match(/^\s*()([^<>\s]+@[^<>\s]+)\s*$/);
     if (!m || hit || norm_(m[2]) !== email) return;
     var local = email.split('@')[0].replace(/[^a-z0-9]/g, '') || 'user';
-    hit = { name: m[1] || email, email: email, sample: 'demo.' + local + '@example.org' };
+    // A short fingerprint of the whole email keeps two logins (j.smith@a.org, jsmith@b.org) from sharing one sample person.
+    var tag = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email).slice(0, 3).map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+    hit = { name: m[1] || email, email: email, sample: 'demo.' + local + '.' + tag + '@example.org' };
   });
   return hit;
 }
@@ -4872,7 +5119,21 @@ function passwordProblem_(pw) {
   if (pw.length < MIN_PASSWORD) return 'Please use at least ' + MIN_PASSWORD + ' characters.';
   if (pw.length > 200) return 'Please use 200 characters or fewer.';
   if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return 'Please include at least one letter and one number.';
+  if (commonPassword_(pw)) return 'That password is too easy to guess. Please avoid common words like “password”, “welcome”, or the program’s name, and simple patterns like 123.';
   return '';
+}
+
+/** Passwords built from a common word and simple digits/symbols (Password123, Welcome2026!, Roadmap1234…). */
+var COMMON_PASSWORD_WORDS = ['password', 'passw0rd', 'welcome', 'letmein', 'qwerty', 'asdf', 'abc', 'admin', 'changeme', 'iloveyou', 'monkey', 'dragon',
+  'football', 'baseball', 'sunshine', 'princess', 'superintendent', 'superman', 'roadmap', 'qualitycoach', 'thequalitycoach', 'tqc', 'leadership', 'school',
+  'teacher', 'student', 'district', 'missouri', 'masa', 'summer', 'winter', 'spring', 'autumn', 'fall', 'secret', 'trustno1', 'login', 'user'];
+function commonPassword_(pw) {
+  var p = String(pw || '').toLowerCase();
+  if (/(password|qwerty|123456|abcdef|letmein)/.test(p)) return true;
+  var core = p.replace(/[^a-z]/g, '');
+  if (core.length < 4) return true; // mostly digits and symbols
+  if (/^(.)\1+$/.test(core)) return true;
+  return COMMON_PASSWORD_WORDS.indexOf(core) > -1;
 }
 
 function pepper_() {
@@ -4963,12 +5224,44 @@ function isTokenShaped_(t) {
   return /^[0-9a-f-]{36}$/i.test(String(t || ''));
 }
 
-function failedSignIns_(key) {
-  return Number(CacheService.getScriptCache().get(FAIL_PREFIX + String(key).slice(0, 200)) || 0);
+/*
+ * Guessing limits. Per email (or setup link, or password change): after MAX_FAILED_SIGNINS wrong tries, each further
+ * try waits longer since the last wrong one (1, 2, 4, 8 minutes, at most 15), instead of a fixed lockout someone else
+ * could keep renewing; a password set from an emailed link clears it. Site-wide: more than SITE_FAILS_PER_MINUTE wrong
+ * tries in one minute (password spraying across many emails) pauses every sign-in for the rest of that minute.
+ * Counters are updated under a short lock so a burst of simultaneous tries can't all read the same count.
+ */
+var SITE_FAILS_PER_MINUTE = 30;
+function failState_(key) {
+  var raw = CacheService.getScriptCache().get(FAIL_PREFIX + String(key).slice(0, 200));
+  if (!raw) return { n: 0, last: 0 };
+  if (/^\d+$/.test(raw)) return { n: Number(raw), last: Date.now() }; // older plain counts
+  try { var o = JSON.parse(raw); return { n: Number(o.n) || 0, last: Number(o.last) || 0 }; } catch (e) { return { n: 0, last: 0 }; }
+}
+function failedSignIns_(key) { return failState_(key).n; }
+/** Minutes this key must still wait (0: try now). */
+function signInWait_(key) {
+  var st = failState_(key);
+  if (st.n < MAX_FAILED_SIGNINS) return 0;
+  var waitMs = Math.min(15, Math.pow(2, st.n - MAX_FAILED_SIGNINS)) * 60000;
+  var left = st.last + waitMs - Date.now();
+  return left > 0 ? Math.ceil(left / 60000) : 0;
+}
+function siteBusyKey_() { return FAIL_PREFIX + 'all_' + Math.floor(Date.now() / 60000); }
+function siteSignInsPaused_() { return Number(CacheService.getScriptCache().get(siteBusyKey_()) || 0) > SITE_FAILS_PER_MINUTE; }
+function tooManyMessage_(minutes) {
+  return 'Too many tries. Please wait ' + minutes + ' minute' + (minutes === 1 ? '' : 's') + ' and try again, or use “First time here, or forgot your password?” to get a link that sets a new password and unlocks your sign-in.';
 }
 
 function recordFailedSignIn_(key) {
-  CacheService.getScriptCache().put(FAIL_PREFIX + String(key).slice(0, 200), String(failedSignIns_(key) + 1), FAILED_SIGNIN_WINDOW);
+  var lock = LockService.getScriptLock(), locked = false;
+  try { locked = lock.tryLock(2000); } catch (e) {}
+  try {
+    var cache = CacheService.getScriptCache(), st = failState_(key);
+    cache.put(FAIL_PREFIX + String(key).slice(0, 200), JSON.stringify({ n: st.n + 1, last: Date.now() }), FAILED_SIGNIN_WINDOW);
+    var site = siteBusyKey_();
+    cache.put(site, String(Number(cache.get(site) || 0) + 1), 120);
+  } finally { if (locked) lock.releaseLock(); }
 }
 
 function clearFailedSignIns_(key) {
@@ -5019,6 +5312,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Go live: remove sample people and turn off the demo…', 'menuGoLive')
     .addItem('Remove sample course content…', 'menuRemoveSampleContent')
+    .addItem('Add TalentLMS videos to courses…', 'menuAddBusinessVideos')
+    .addItem('Archive activity log rows older than 12 months…', 'menuArchiveLog')
     .addItem('Reload demo superintendents', 'reloadDemoData')
     .addItem('Show web app link', 'showWebAppUrl')
     .addToUi();
@@ -5089,7 +5384,24 @@ function backupNow_() {
 /** Weekly trigger. */
 function scheduledBackup(e) {
   assertSheetOrTrigger_(e, 'scheduledBackup');
+  try { ensureChangeWatch_(); } catch (err) {}
   try { backupNow_(); } catch (err) { log_('Backup', '', 'Backup failed', err.message); throw err; }
+}
+
+/**
+ * Installable trigger: the spreadsheet's structure changed (rows inserted or removed, a sort, a tab added or renamed),
+ * which onEdit doesn't report. Drops every shared cached tab so the site reads the sheet again on the next click.
+ */
+function onSheetChange(e) {
+  assertSheetOrTrigger_(e, 'onSheetChange');
+  invalidateSharedTabs_(SHARED_TABS_.concat([SHEETS.SETTINGS]));
+}
+
+/** Installs onSheetChange once (the menu's trigger items, Go live, and the weekly backup call this). */
+function ensureChangeWatch_() {
+  if (ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'onSheetChange'; })) return false;
+  ScriptApp.newTrigger('onSheetChange').forSpreadsheet(ss_()).onChange().create();
+  return true;
 }
 
 function menuBackupNow() {
@@ -5102,6 +5414,7 @@ function installWeeklyBackup() {
   assertSheetOrTrigger_();
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'scheduledBackup') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('scheduledBackup').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+  ensureChangeWatch_();
   SpreadsheetApp.getUi().alert('Weekly backup is on (Sundays about 2 a.m.). Backups are in the "Growth Roadmap - Backups" folder in Drive.');
 }
 
@@ -5110,6 +5423,7 @@ function installCourseReminders() {
   assertSheetOrTrigger_();
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendCourseReminders') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('sendCourseReminders').timeBased().everyDays(1).atHour(7).create();
+  ensureChangeWatch_();
   SpreadsheetApp.getUi().alert('Course due-date reminders are on. Each morning, people with an assignment or quiz due the next day get one email, in courses whose Settings have reminders turned on.');
 }
 
@@ -5421,6 +5735,7 @@ function ensureDemoProfile_(d) {
 function reloadDemoData() {
   assertSheetOrTrigger_();
   var ui = SpreadsheetApp.getUi();
+  if (!isTrue_(getSettings_().DEMO_MODE)) { ui.alert('The site is live', 'Sample superintendents belong to the demo, and this site is live (DEMO_MODE is FALSE), so they are not reloaded here. The demo logins still get their own sample superintendent when they sign in.', ui.ButtonSet.OK); return; }
   if (ui.alert('Reload demo superintendents?', 'Replaces every sample person (any @example.org email) and their demo progress with the ' +
       SEED.demoSuperintendents.length + ' sample superintendents in Seed.gs. Real superintendents are not touched.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
   var demoEmails = SEED.demoSuperintendents.map(function (d) { return d.email; });
@@ -5662,6 +5977,7 @@ function menuGoLive() {
   var have = {};
   ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = true; });
   Object.keys(jobs).forEach(function (h) { if (!have[h]) jobs[h](); });
+  ensureChangeWatch_();
   var after = goLivePlan_();
   var msg = 'The site is live.\n\nBackup saved first: ' + backup.name + '\nSample people left: ' + after.people + '\nSample rows left: ' + after.total +
     '\nWeekly backup and daily course reminders are on.';
@@ -5685,6 +6001,46 @@ function menuRemoveSampleContent() {
       (plan.kept ? '\n\n' + plan.kept + ' sample items are kept because a real person has work in them.' : '') + '\n\nCourses and real content are not changed.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
   var r = removeSampleContent_();
   ui.alert(r.remove + ' sample items removed.');
+}
+
+function menuAddBusinessVideos() {
+  assertSheetOrTrigger_();
+  var ui = SpreadsheetApp.getUi();
+  var seed = businessVideoSeed_();
+  if (!seed.length) { ui.alert('No video list is waiting to be added.'); return; }
+  var n = seed.reduce(function (t, s) { return t + (s.items || []).length; }, 0);
+  if (ui.alert('Add TalentLMS videos?', 'Adds up to ' + n + ' YouTube videos to ' + seed.length + ' courses, in the same order as in TalentLMS. ' +
+      'Videos already in a course are not added again. A course with no modules gets a "Course materials" module, and items in these courses that sit outside a module are placed in it so they show on the Modules page.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  var r = addBusinessVideos_(Session.getActiveUser().getEmail() || 'spreadsheet');
+  ui.alert(r.added + ' videos added to ' + r.courses + ' courses.' + (r.already ? '\n' + r.already + ' were already there.' : '') +
+    (r.filed ? '\n' + r.filed + ' items were placed into a module so they show on the Modules page.' : '') +
+    (r.noCourse ? '\n' + r.noCourse + ' were skipped because their course was not found.' : ''));
+}
+
+/** Sheet menu: move Sync Log rows older than 12 months to the "Archived - Sync Log" tab (nothing is deleted). */
+function menuArchiveLog() {
+  assertSheetOrTrigger_();
+  var ui = SpreadsheetApp.getUi(), n = archiveLog_(true).moved;
+  if (!n) { ui.alert('Nothing to archive: the activity log has no rows older than 12 months.'); return; }
+  if (ui.alert('Archive the activity log?', n + ' rows older than 12 months move to the "Archived - Sync Log" tab. Nothing is deleted, and reports keep reading the recent rows faster.', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  ui.alert(archiveLog_(false).moved + ' rows moved to "Archived - Sync Log".');
+}
+
+/** Moves Sync Log rows dated more than 365 days ago to "Archived - Sync Log" (dryRun: only counts them). */
+function archiveLog_(dryRun) {
+  var ARCHIVE = 'Archived - Sync Log', cutoff = Date.now() - 365 * 86400000, res = { moved: 0 };
+  withLock_(function () {
+    var rows = readTable_(SHEETS.LOG);
+    var old = rows.filter(function (r) { var t = r.Timestamp ? new Date(r.Timestamp).getTime() : NaN; return t > 0 && t < cutoff; });
+    res.moved = old.length;
+    if (dryRun || !old.length) return;
+    var keep = rows.filter(function (r) { return old.indexOf(r) === -1; });
+    var archived = tabByName_(ARCHIVE) ? readTable_(ARCHIVE) : [];
+    writeTable_(ARCHIVE, HEADERS.LOG, archived.concat(old)); // the archive is written first, so a failure loses nothing
+    writeTable_(SHEETS.LOG, HEADERS.LOG, keep);
+  });
+  if (!dryRun && res.moved) log_('Archive', '', 'Activity log archived', res.moved + ' rows older than 12 months');
+  return res;
 }
 
 function showWebAppUrl() {
@@ -5960,10 +6316,15 @@ function renderFlyer_() {
 var CLASS_PAGES_PROP = 'CLASS_PAGES';
 
 /** { code: [ { type, title, details, link, dueDays } ] } from the Course Materials tab (active rows, https links only). */
-function getMaterials_() {
-  var out = {};
+function getMaterials_(programOnly) {
+  var out = {}, mayHave = {};
+  // Only the program's courses (and, for a business login, the business courses): never another area's content.
+  // programOnly: the sign-in data leaves business courses out (their workspace loads its own content when opened).
+  getCourses_().forEach(function (c) { mayHave[c.code] = true; });
+  if (!programOnly && SESSION_ && businessViewer_(viewer_())) getBusinessCourses_().forEach(function (c) { mayHave[c.code] = true; });
   readTable_(SHEETS.MATERIALS).forEach(function (r) {
     var code = String(r.Code || '').trim();
+    if (!mayHave[code]) return;
     if (!code || !String(r.Title || '').trim() || !isTrue_(r.Active, true)) return;
     if (r.Published !== '' && r.Published !== undefined && !isTrue_(r.Published, true)) return; // drafts appear only in the course workspace for its editors
     if (r['Available From'] && ymd_(r['Available From']) > todayYmd_()) return;
@@ -6523,7 +6884,7 @@ function assertCanTeach_(code) {
   var v = viewer_();
   var c = courseByCode_(code);
   if (v.isVisitor || !v.email) throw new Error('The demo is view-only.');
-  if (!v.isAdmin && c.instructors.indexOf(v.email) === -1) throw new Error('Only this class’s instructors or a program administrator can do that.');
+  if (!v.isAdmin && c.instructors.indexOf(v.email) === -1 && !(c.area === 'Business' && businessViewer_(v))) throw new Error('Only this class’s instructors or a program administrator can do that.');
   return { viewer: v, course: c };
 }
 
@@ -6688,6 +7049,7 @@ function getDiscussion(code, boardId) {
   var posts = readTable_(SHEETS.DISCUSSIONS).filter(function (r) {
     if (String(r.Code) !== a.course.code || String(r['Board ID']) !== String(boardId)) return false;
     if (a.sampleOnly && !isSampleEmail_(r.Email)) return false;
+    if (!a.sampleOnly && sampleHidden_() && isSampleEmail_(r.Email)) return false;
     return String(r.Status) !== 'Hidden' || a.moderate;
   }).map(function (r) {
     var mine = !!a.viewer.email && norm_(r.Email) === a.viewer.email;
@@ -6851,7 +7213,7 @@ function seedSampleDiscussionRows_() {
 var COURSE_ITEM_TYPES = ['Page', 'Resource', 'Video', 'Slides', 'Discussion', 'Assignment', 'Quiz'];
 var REQUIREMENTS = { '': 'None', view: 'View it', mark_done: 'Mark it done', contribute: 'Post in the discussion', submit: 'Turn it in', min_score: 'Score at least' };
 var SUBSTANTIVE_REQUIREMENTS = ['submit', 'min_score', 'contribute'];
-var COURSE_FILE_TYPES = /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|presentationml\.presentation|spreadsheetml\.sheet)|application\/vnd\.ms-powerpoint|application\/vnd\.ms-excel|text\/plain|image\/(png|jpeg|gif))$/;
+var COURSE_FILE_TYPES = /^(audio\/(mpeg|mp3|mp4|x-m4a)|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|presentationml\.presentation|spreadsheetml\.sheet)|application\/vnd\.ms-powerpoint|application\/vnd\.ms-excel|text\/plain|image\/(png|jpeg|gif))$/;
 
 /* ------------------------------------------------------------------ */
 /* Access                                                              */
@@ -7471,6 +7833,13 @@ function sendCourseReminders(e) {
 }
 
 function sendCourseReminders_() {
+  // A trigger runs outside a page call: give it one request, so each tab is read once instead of once per course.
+  var own = !REQ_;
+  if (own) beginRequest_();
+  try { return sendCourseRemindersRun_(); } finally { if (own) endRequest_(); }
+}
+
+function sendCourseRemindersRun_() {
   var tomorrow = addDaysYmd_(todayYmd_(), 1);
   getCourses_().forEach(function (c) {
     if (!courseSettings_(c.code).notifyDue) return;
@@ -7494,7 +7863,14 @@ function sendCourseReminders_() {
  */
 function usableTemplates_(v) {
   var mine = v.isAdmin ? null : teachingCodes_(v.email);
-  return readTable_(SHEETS.TEMPLATES).filter(function (r) { return r['Template ID'] && (!mine || mine.indexOf(String(r['From Course'])) > -1); });
+  // A template saved from a business course holds its content, so only a business login may use it.
+  var biz = {}, seeBiz = businessViewer_(v);
+  getBusinessCourses_().forEach(function (c) { biz[c.code] = true; });
+  return readTable_(SHEETS.TEMPLATES).filter(function (r) {
+    var from = String(r['From Course']);
+    if (biz[from]) return !!r['Template ID'] && seeBiz;
+    return r['Template ID'] && (!mine || mine.indexOf(from) > -1);
+  });
 }
 
 function listTemplates() {
@@ -7617,9 +7993,11 @@ function courseFilesFolder_() {
 function storeFile_(file, prefix) {
   if (!file || !file.data) throw new Error('Please choose a file.');
   var type = String(file.mimeType || '');
-  if (!COURSE_FILE_TYPES.test(type)) throw new Error('Please upload a PDF, Word, PowerPoint, Excel, text, or image file.');
+  if (/^video\//.test(type)) throw new Error('Video files can’t be uploaded here. Put the video on YouTube (Unlisted), Vimeo, Loom, or Google Drive, then add it as a Video item with that link.');
+  if (/^audio\//.test(type) && !COURSE_FILE_TYPES.test(type)) throw new Error('Audio can be attached as an MP3 or M4A file. Save or export the recording in one of those formats first.');
+  if (!COURSE_FILE_TYPES.test(type)) throw new Error('That kind of file can’t be attached. Use a PDF, Word, PowerPoint, Excel, text file, a PNG, JPG, or GIF image, or an MP3 or M4A audio recording.');
   var bytes = Utilities.base64Decode(String(file.data));
-  if (bytes.length > UPLOAD_MAX_BYTES) throw new Error('That file is larger than 10 MB.');
+  if (bytes.length > UPLOAD_MAX_BYTES) throw new Error('That file is larger than 10 MB. Save a smaller copy, or share it from Google Drive and add the link instead.');
   var name = String(file.name || 'file').replace(/[\\/:*?"<>|]/g, '_').slice(0, 120);
   var saved = courseFilesFolder_().createFile(Utilities.newBlob(bytes, type, prefix + ' - ' + name));
   return { id: saved.getId(), name: name };
@@ -7656,9 +8034,13 @@ function getCourseFile(code, fileId) {
     if (!a.edit && !(a.subject === owner && a.notes)) throw new Error('That file isn’t shared with you.');
   } else {
     var b = courseAccess_(code, '');
-    if (!b.edit && !b.learner) {
+    if (!b.edit) {
+      // Learners and visitors: only a file on an item they can open (published, course published, available today).
       // A course document, or a file linked from a page (imported pages link files as #cw-file-<id>).
-      var item = itemsOf_(code).filter(function (it) { return it.published && (it.fileId === String(fileId) || String(it.body || '').indexOf('#cw-file-' + fileId) > -1); })[0];
+      var today = todayYmd_();
+      var item = itemsOf_(code).filter(function (it) {
+        return it.published && (!it.availableFrom || it.availableFrom <= today) && (it.fileId === String(fileId) || String(it.body || '').indexOf('#cw-file-' + fileId) > -1);
+      })[0];
       if (!item || !courseSettings_(code).published) throw new Error('That file isn’t available.');
     }
   }
@@ -7746,6 +8128,7 @@ function unreadCounts_(code, email, sampleOnly) {
   readTable_(SHEETS.DISCUSSIONS).forEach(function (p) {
     if (String(p.Code) !== String(code) || String(p.Status) === 'Hidden' || norm_(p.Email) === email) return;
     if (sampleOnly && !isSampleEmail_(p.Email)) return; // demo logins only ever see sample posts
+    if (!sampleOnly && sampleHidden_() && isSampleEmail_(p.Email)) return; // a live site never shows sample people to real ones
     var b = String(p['Board ID']), t = p['Posted On'] instanceof Date ? p['Posted On'].getTime() : new Date(p['Posted On']).getTime();
     if (!last[b] || t > last[b]) out[b] = (out[b] || 0) + 1;
   });
@@ -10157,7 +10540,9 @@ function sandboxSignIn_(role) {
     var as = (location.search.match(/[?&]as=(\w+)/) || [])[1] || (window.PUBLIC_DEMO ? 'login' : 'admin');
     if (as === 'masa') __GAS.asOwner(function () { ensureSettingRow_('MASA_EMAILS', 'staff@masa.example', ''); var sh = ss_().getSheetByName('Settings'); sh.data.forEach(function (r) { if (r[0] === 'MASA_EMAILS') r[1] = 'staff@masa.example'; }); });
     var who = { login: ['', 'none', ''], setup: ['', 'none', ''], admin: ['owner@example.com', 'admin', 'Owner'], sup: ['wpayton.sample@example.org', 'superintendent', 'Walter Payton'], visitor: ['visitor@example.com', 'visitor', 'Visitor'], board: ['board.president@example.org','member','Sample Board President'],
-      coach: ['demo.coach@example.org', 'none', 'Demo Coach'], mentor: ['mentor.a@example.org', 'none', 'Dr. Sample Mentor A'], masa: ['staff@masa.example', 'none', 'MASA Staff'], business: ['joe@thequalitycoach.com', 'admin', 'Joe (business)'] }[as];
+      coach: ['demo.coach@example.org', 'none', 'Demo Coach'], mentor: ['mentor.a@example.org', 'none', 'Dr. Sample Mentor A'], masa: ['staff@masa.example', 'none', 'MASA Staff'], business: ['joe@thequalitycoach.com', 'admin', 'Joe (business)'], live: ['owner@example.com', 'admin', 'Owner'] }[as];
+    // ?as=live: the site right after Go live (no sample people, demo off), as its administrator.
+    if (as === 'live') __GAS.asOwner(function () { goLiveApply_(); removeSampleContent_(); });
     // Preview accounts: the owner gets a password so the sign-in page can be tried; links are logged, not emailed.
     __GAS.asOwner(function () {
       var salt = 'preview-salt';
@@ -10253,7 +10638,7 @@ function sandboxSignIn_(role) {
 
         <form id="setupForm" hidden>
           <h2>Set your password</h2>
-          <p class="muted">For <b id="setupEmail"></b>. Use at least 10 characters, with at least one letter and one number.</p>
+          <p class="muted">For <b id="setupEmail"></b>. Use at least 10 characters, with at least one letter and one number. Avoid common words like “password” or “welcome”; a short phrase works well (for example <i>maple-harbor-47</i>).</p>
           <label>New password<input name="password" id="setupPass" type="password" required minlength="10" autocomplete="new-password"></label>
           <label>Type it again<input name="confirm" id="setupConfirm" type="password" required minlength="10" autocomplete="new-password"></label>
           <p class="login-error" id="setupError" role="alert"></p>
@@ -10271,7 +10656,7 @@ function sandboxSignIn_(role) {
         </div>
         <p class="fine demo-live" id="demoLive" hidden>This is the public demo; it has no sign-in. Program members and staff: <a id="demoLiveLink" href="#" target="_top">sign in on the program site</a>.</p>
         <p class="fine" id="demoNote" hidden>The demo shows sample people only. The board president view shows only what the superintendent chooses to share.</p>
-        <p class="fine">Passwords are stored only as salted, scrambled hashes, never as text.</p>
+        <p class="fine">Your password is never stored in readable form.</p>
         <p class="fine policy-links" id="loginPolicies"></p>
         <button class="btn btn-ghost btn-block flyer-btn" type="button" id="loginHelpLink">How-to guide</button>
         <a class="btn btn-ghost btn-block flyer-btn" id="flyerBtn" href="#" target="_blank" rel="noopener">See the program flyer</a>
@@ -10282,6 +10667,13 @@ function sandboxSignIn_(role) {
 
   <div id="portal" hidden>
     <div class="preview-bar" id="previewBar" hidden></div>
+    <div class="preview-bar demo-tour" id="demoTour" hidden>
+      <span>You are signed in to the demo as a sample superintendent. To see the full demo with the sample roster, open it as:</span>
+      <button class="btn" type="button" data-demo-role="coach">Mentor/coach</button>
+      <button class="btn" type="button" data-demo-role="board">Board president</button>
+      <button class="btn" type="button" data-demo-role="sup">Superintendent</button>
+      <button class="btn" type="button" data-demo-role="admin">Site administrator</button>
+    </div>
 
     <header class="band">
       <div class="wrap">
@@ -10393,6 +10785,7 @@ function sandboxSignIn_(role) {
         <label>Start date (hire)<input name="startDate" type="date"></label>
         <label>Year 1 starts<input name="year1" type="date"></label>
       </div>
+      <p class="small muted">Start date is the day they became superintendent. Year 1 starts is the day their Year 1 phase begins (usually July 1 after hire); phase dates count from it.</p>
       <div class="two">
         <label>Coach<input name="coach" autocomplete="off"></label>
         <label>Coach's email<input name="coachEmail" type="email" autocomplete="off"></label>
@@ -10448,17 +10841,18 @@ window.HELP_TOPICS = [
     steps: ['On the sign-in page, click **First time here, or forgot your password?**',
       'Type the email address the program has for you and click **Email me a link**.',
       'Open the email (check spam if it isn’t there in a few minutes) and click the link. It works once and lasts 24 hours.',
-      'Choose a password with at least 10 characters, including a letter and a number, type it twice, and click **Set password and sign in**.'] },
+      'Choose a password with at least 10 characters, including a letter and a number (not a common word like “password” or “welcome”; a short phrase such as maple-harbor-47 works well), type it twice, and click **Set password and sign in**.'] },
   { id: 'signin', video: 'signing-in', roles: ['all'], title: 'Sign in', fig: 'signin', requires: ['signIn'],
     steps: ['Type your email address and password and click **Sign in**.',
-      'Five wrong tries lock the email for 15 minutes. If you forgot your password, use **First time here, or forgot your password?** to get a new link.'] },
+      'After five wrong tries, each next try for that email has to wait a little longer (1, 2, 4, then up to 15 minutes); the message says how long. If you forgot your password, use **First time here, or forgot your password?**: the link sets a new password and unlocks your sign-in.',
+      'Didn’t get the email? Check spam, wait a few minutes, and make sure you typed the address the program has for you. Still nothing? Contact the program (the support address is at the bottom of the sign-in page).'] },
   { id: 'demo', video: 'demo-roles', roles: ['all'], title: 'Try the demo', fig: 'signin', requires: ['signInDemo', 'demoLoginFor_'],
     steps: ['**Explore the demo** opens four choices: **View as a mentor/coach**, **View as a board president**, **View as a superintendent**, and **View as a site administrator**. Use the demo role selector to switch; mentor/coach offers separate coach and mentor views. All are view only. Board president is a sample preview, not a board sign-in.',
-      'Demo superintendent logins sign in with their own email and the shared demo password. They act as their own sample superintendent and can click everything: enroll, mark sessions complete, turn in work.',
+      'Demo superintendent logins sign in with their own email and the shared demo password. They act as their own sample superintendent and can click everything: enroll, mark sessions complete, turn in work. After the site goes live, **Explore the demo** is off, but these demo logins keep working, and only their own sample superintendent is shown to them.',
       'The demo never shows real people.'] },
   { id: 'getting-around', video: 'getting-around', roles: ['all'], title: 'Get around: tabs, Back, Help, and Sign out', fig: 'header',
     show: { view: 'roadmap', target: '#adminNav', tip: 'Tabs open your pathway, calendar, catalog, phases, badges, hours, evaluation, and standards alignment.' },
-    steps: ['The tabs under the title switch between **My Pathway**, **Calendar**, **Course Catalog**, **Phases**, **Badges**, **Hours**, **Evaluation**, and **Standards Alignment**. Evaluation is private to authorized roles; mentors do not see it. On a phone the tabs are one row: swipe it sideways for more.',
+    steps: ['The tabs under the title switch between **My Pathway**, **Calendar**, **Course Catalog**, **Phases**, **Badges**, **Hours**, **Evaluation**, **Standards Alignment**, and **Sharing & goals**. Evaluation is private to authorized roles; mentors do not see it. Instructors also see **Classes** (the courses they teach). On a phone the tabs are one row: swipe it sideways for more.',
       'Administrators see four groups: **Program** (Roster Dashboard, Classes, People & sign-in, Import courses), **Learner view** (one superintendent’s Individual Pathway, Phases, Badges, Hours, Evaluation, Standards Alignment, and Sharing), **Calendar**, and **Course Catalog**. Click a group to show its tabs on the second row.',
       '**Back** (top right) goes back one screen, for example from a class page to the calendar.',
       '**Help** opens this guide. On a phone, **Feedback**, **Change password**, and **Sign out** are in the **⋯** menu at the top right. **Sign out** ends your session; you stay signed in for up to 2 hours of no use otherwise (and never more than 30 days in all). If you are still signed in when you come back, the site shows **Restoring your sign-in…** while it checks.',
@@ -10544,7 +10938,7 @@ window.HELP_TOPICS = [
   { id: 'assignment', video: 'course-learner', roles: ['sup'], title: 'Turn in assignments and take quizzes', requires: ['submitWork', 'getQuiz', 'submitQuiz'],
     show: { view: 'roadmap', course: 'upcoming', target: '.cw-nav', tip: 'Assignments lists every assignment and quiz, with due dates and status.' },
     steps: ['Open the assignment from **Modules** or **Assignments**. Read the instructions, rubric, and due date.',
-      'Write your response, add a link, or upload a file (PDF, Word, PowerPoint, Excel, or an image, up to 10 MB), then click **Turn in**.',
+      'Write your response, add a link, or upload a file (PDF, Word, PowerPoint, Excel, text, a PNG, JPG, or GIF image, or an MP3/M4A recording; up to 10 MB), then click **Turn in**. iPhone photos (HEIC) need to be saved as JPG first. A file can take up to a minute; the button counts the seconds.',
       'Status shows **Submitted**, **Submitted late**, **Missing**, **Needs revision** (turn in a revision; earlier attempts are kept), or **Reviewed** with your score and feedback.',
       'For a quiz, click **Start the quiz**, answer, and **Submit**. Most questions are scored at once; essay answers wait for your instructor. Your attempts and scores are listed.'] },
   { id: 'enroll', video: 'enrolling', roles: ['sup'], title: 'Enroll in courses and events', fig: 'catalogcard', requires: ['enrollIn', 'dropEnrollment'],
@@ -10578,8 +10972,10 @@ window.HELP_TOPICS = [
       'It is a certificate of completion for a series of professional learning trainings, not a Missouri educator certificate, license, or endorsement, and not issued or endorsed by DESE.'] },
   { id: 'evaluation', video: 'evaluation', roles: ['sup', 'coach'], title: 'Connect your badges to your board’s evaluation', requires: ['setEvaluationSystem', 'uploadEvaluationFile'],
     show: { view: 'evaluation', target: '[data-act="eval-pick"]', tip: 'Choose your evaluation.' },
-    steps: ['Open the **Evaluation** tab and choose MSBA, MCE Policy 1720 (the MARE-endorsed policy service), your district’s own tool, or standards only. For a local tool, the superintendent or an administrator gives it a name and uploads a blank copy with no ratings or board comments. Ask the program team to add the alignment. Each course also lists the MSBA/DESE/MASA evaluation performance indicators it supports (for example, Evaluation 2a, 2d) on its row and its class page.',
-      'Open the **Standards Alignment** tab to see completed work grouped by DESE standard. Click **Print report** to bring it to your board. Your selected tool and alignment labels update immediately. **Aligning evaluation…** stays visible while the choice saves; you can browse other tabs. Wait for **Evaluation saved** before making another change for that person. If saving cannot be confirmed, the previous alignment is restored and a message explains how to refresh or retry. Mentors do not see this tab; coach and public demo choices are not saved.'] },
+    steps: ['Open the **Evaluation** tab and choose MSBA, MCE Policy 1720 (the MARE-endorsed policy service), your district’s own tool, or standards only.',
+      'For your district’s own tool: give it a name and upload a blank copy with no ratings or board comments (PDF, Word, or a PNG/JPG image, up to 10 MB; save iPhone photos as JPG first). It shows **Uploaded. The program team is aligning it to the standards.** until they do.',
+      'Each course lists the evaluation performance indicators it supports (for example, Evaluation 2a, 2d) on its row and its class page. Open **Standards Alignment** to see completed work grouped by DESE standard, and click **Print report** to bring it to your board.',
+      'After you choose, **Aligning evaluation…** shows while it saves (you can keep browsing); wait for **Evaluation saved** before changing it again. If it can’t be saved, the earlier choice comes back with a message. Mentors don’t see this tab; coach and public demo choices are not saved.'] },
 
   { id: 'standards-alignment', video: 'standards-alignment', roles: ['sup', 'coach', 'masa'], title: 'Use Standards Alignment and print your report', requires: ['buildAppData_'],
     show: { view: 'standards', target: '[data-act="expand"]', tip: 'Expand the standards to review your evidence.' },
@@ -10628,9 +11024,21 @@ window.HELP_TOPICS = [
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course you teach, then Modules.' },
     steps: ['Open **My classes** and a course, then **Modules**. Click **Add module** for each week, unit, or topic.',
       'In a module, click **Add to this module** and choose **Page**, **Video**, **Slide show**, **Resource**, **Assignment**, **Quiz**, or **Discussion**.',
-      'Pages use the editor: bold, italic, headings, lists, links, **Image** (an https image link), **Video** (YouTube, Vimeo, Loom, or Google Drive), and **Document** links. To attach a file, use **Attach a document** on a resource or assignment (PDF, Word, PowerPoint, Excel; up to 10 MB).',
+      'Pages use the editor: bold, italic, headings, lists, links, **Image** (an https image link), **Video** (YouTube, Vimeo, Loom, or Google Drive), and **Document** links. To attach a file, use **Attach a file** on a resource or assignment: PDF, Word, PowerPoint, Excel, text, a PNG/JPG/GIF image, or an MP3/M4A audio recording, up to 10 MB. **Save** waits until the file is attached.',
+      'Every item belongs to a module. If a course shows **Course materials** or **Other items**, those are items placed there for you (for example, videos brought over from TalentLMS); use **Edit** on an item to move it to another module.',
       'Use **↑ ↓** to reorder modules and items, **Edit** to change them, and **Duplicate** to copy a module here or into another course you teach.',
       '**All classes** (or **My classes**) at the top of a course goes back to your class list. Clicking the **Classes** tab always opens the list, too. Switching between a course’s tabs (Home, Modules, Assignments, and so on) keeps your place on the page.'] },
+  { id: 'add-video-audio', video: 'course-building', roles: ['coach', 'admin'], title: 'Add a video or audio recording', requires: ['saveItem', 'videoEmbed_', 'storeFile_', 'listCourseVideos'],
+    steps: ['**Video**: put the video on YouTube (set it to **Unlisted**, not Private, so people in the course can watch it), Vimeo, Loom, or Google Drive. In the course, click **Add to this module**, choose **Video**, give it a title, and paste the link. Links that work: youtube.com/watch?v=…, youtu.be/…, YouTube Shorts, live, or embed links, vimeo.com/123456, loom.com/share/…, drive.google.com/file/d/… (shared “Anyone with the link”), or a direct https link ending in .mp4 or .webm.',
+      'Video files can’t be uploaded into a course (they are far over the 10 MB limit), so always use a link.',
+      '**Audio**: choose **Resource** (or an assignment) and use **Attach a file** with an MP3 or M4A file up to 10 MB. People see **▶ Play recording** and listen right in the course. Other formats (WAV, AAC) need to be saved as MP3 or M4A first; an iPhone Voice Memo shared to Files is already M4A.',
+      '**Check videos** (on **Classes**, and on the Business courses list) asks YouTube whether every course video still plays here and lists any that are private, deleted, or blocked from embedding, with the courses that use them.'] },
+  { id: 'business-area', roles: ['admin'], title: 'Business courses (for approved business sign-ins)', requires: ['getBusinessCourses', 'importBusinessCourses', 'removeBusinessCourse', 'listCourseVideos'],
+    steps: ['Approved business sign-ins choose **Education** (the superintendent program) or **Business** (corporate leadership courses) after signing in. To switch, click **Education · Switch** or **Business · Switch** at the top.',
+      'The **Business courses** list groups courses by client category. Type in the search box to find a course by name, code, or client; click a course to open it, build its modules, and add content the same way as any course.',
+      '**Add courses from a TalentLMS report**: in TalentLMS open **Reports → Courses → Save as CSV**, then choose that file (CSV, up to 2 MB). Each course’s name, code, and category come across; courses already here are skipped. A file that isn’t a TalentLMS course report is refused with a message.',
+      '**Remove** takes a course off the list but keeps its content; it can be put back on the spreadsheet’s Courses tab (Active = TRUE). **Check videos** checks this area’s course videos.',
+      'Business courses never appear in the superintendent pathway, its catalog, or its reports, and administrators who aren’t approved business sign-ins don’t see them.'] },
   { id: 'course-publish', video: 'course-building', roles: ['coach'], title: 'Drafts, publishing, dates, and learner preview', requires: ['saveCourseSettings', 'itemOpen_'],
     show: { view: 'teaching', target: '[data-act="teach-open"]', tip: 'Open a course; the buttons are at the top.' },
     steps: ['New courses and anything you uncheck **Published** on are drafts: only instructors and administrators see them. Click **Publish course** (top right of the course) when it’s ready. The page asks you to confirm before it publishes; **Unpublish course** asks too, and hides the course from learners until you publish it again.',
@@ -10693,7 +11101,9 @@ window.HELP_TOPICS = [
       'Everyone checked gets credit at once. To credit one person, open their pathway and click **Grant credit** on the event.'] },
   { id: 'admin-add', video: 'admin-roster', roles: ['admin'], title: 'Add a superintendent', requires: ['addSuperintendent'],
     show: { view: 'roster', target: '[data-act="add"]', tip: 'Add a superintendent here.' },
-    steps: ['Click **Add superintendent**, fill in name, email, district, dates, and their coach and mentor (with emails).',
+    steps: ['On the roster, click **Add superintendent**. **Full name** and **Email** are required; add the **District** too.',
+      '**Start date (hire)** is the day they became superintendent. **Year 1 starts** is the day their Year 1 phase begins (usually July 1 after hire); their phase dates are counted from it.',
+      'Add their **Coach** and **Mentor** with emails (these decide who can see their pathway), then click **Add to roster**.',
       'Leave **Email a link to set a password** checked so they can sign in.'] },
   { id: 'admin-cohort', video: 'admin-roster', roles: ['admin'], title: 'Add a cohort (for example, the spring hires)', requires: ['addSuperintendents'],
     show: { view: 'roster', target: '[data-act="cohort"]', tip: 'Add many superintendents at once.' },
@@ -10722,7 +11132,7 @@ window.HELP_TOPICS = [
   { id: 'admin-instructors', video: 'course-admin', roles: ['admin'], title: 'Create a course and assign instructors', requires: ['createCourse', 'updateClass'],
     show: { view: 'teaching', target: '[data-act="course-create"]', tip: 'Create a course here.' },
     steps: ['Open the **Classes** tab and click **Create a course**: code (like LDR 301), title, phase, status, DESE standard, hours, and instructors’ emails. You can start from a template. It starts as a draft.',
-      'To change instructors later, open the course, then **Settings › Edit class details and instructors**. Instructor assignments are separate from coach and mentor roster assignments; any coach or mentor can also be an instructor.',
+      'To change instructors later, open the course, then **Settings › Edit class details and instructors** (instructors see **Edit class details**, without the instructor list). Instructor assignments are separate from coach and mentor roster assignments; any coach or mentor can also be an instructor.',
       'Instructors get a sign-in link from “First time here, or forgot your password?”. Administrators can open, edit, and grade every course.'] },
   { id: 'admin-import', video: 'admin-import', roles: ['admin'], title: 'Import courses from Canvas, Google Classroom, or TalentLMS', requires: ['analyzeImport', 'startImport', 'uploadImportFile', 'runImportBatch', 'getImportJob'],
     show: { view: 'teaching', target: '[data-act="import-open"]', tip: 'Import courses here.' },
@@ -10766,7 +11176,7 @@ window.HELP_TOPICS = [
       '**Settings**: BRAND_NAME, BRAND_LOGO_URL, BRAND_PRIMARY, and BRAND_ACCENT brand the public catalog and PD calendar.',
       '**Course Materials**: each class’s materials and assignment (Type Resource or Assignment).',
       '**Settings**: PROGRAM_NAME (site name), DEMO_MODE, DEMO_LOGINS and DEMO_LOGIN_PASSWORD, COMPLETION_APPROVAL, SUPPORT_EMAIL, TERMS_URL and PRIVACY_URL.',
-      'Sheet menu **Growth Roadmap**: add a sign-in account, back up the spreadsheet, and mark courses complete. These menu items run only for the spreadsheet’s owner.',
+      'Sheet menu **Growth Roadmap** (these run only for the spreadsheet’s owner): **Run initial setup**; **Add a sign-in account / get a sign-in link**; **Mark courses complete**; **Back up the spreadsheet now**; **Turn on weekly backup** and **Turn on course due-date reminders** (both also turn on the sheet-change watch that keeps the site’s fast copies up to date); **Go live**; **Remove sample course content**; **Add TalentLMS videos to courses** (adds the YouTube videos read from TalentLMS to the matching courses in TalentLMS order and files any loose items into a module; safe to run again); **Archive activity log rows older than 12 months** (moves them to an "Archived - Sync Log" tab; nothing is deleted); **Reload demo superintendents**; and **Show web app link**.',
       '**Going live**: when the demo is over, the owner picks **Growth Roadmap → Go live**. It lists what will change, saves a backup first, removes every sample person (the @example.org addresses) and their sample records from every tab, turns off **Explore the demo**, and turns on the weekly backup and daily course reminders. Real people, accounts, and courses are not changed. The demo logins (DEMO_LOGINS on Settings) keep working: each one sees only its own sample superintendent, and no real person ever sees a sample one. Clear DEMO_LOGIN_PASSWORD to turn them off. It then offers to remove the sample course content the demo added; anything a real person has work in is kept.',
       '**Health check**: add **?page=health** to the end of the web app link to see whether everything is working (tabs, administrators, catalog, last backup, scheduled jobs, Drive folders, emails left today). It needs no sign-in and shows OK / Check / Problem only, never names or data.'] }
 ];
@@ -10881,7 +11291,7 @@ window.HELP_TOPICS = [
   /* ---------------- Server bridge ---------------- */
   // window.MOCK_API is only defined in the local preview build; in Apps Script this uses google.script.run.
   // Sign-in calls go straight to the server; everything else goes through callApp with the session token.
-  var DIRECT = { signIn: 1, signOut: 1, redeemHandoff: 1, signInDemo: 1, requestPasswordReset: 1, completeSetup: 1 };
+  var DIRECT = { signIn: 1, signOut: 1, redeemHandoff: 1, signInDemo: 1, requestPasswordReset: 1, completeSetup: 1, warmUp: 1 };
   /*
    * Every call is numbered when it starts. Replies that are objects carry that number (__seq, not enumerable), so load()
    * can ignore a full-data reply that started before the data already on screen (a stale reply never overwrites newer
@@ -10907,9 +11317,17 @@ window.HELP_TOPICS = [
         window.MOCK_API._opts = LEAN;
         return window.MOCK_API[fn].apply(null, args).then(ok, reject);
       }
-      var runner = google.script.run.withSuccessHandler(ok).withFailureHandler(reject);
-      if (DIRECT[fn]) runner[fn].apply(runner, args);
-      else runner.callApp(token, fn, args, LEAN);
+      // A read that fails for a passing reason (dropped connection, busy server) is tried once more before showing an error.
+      var tries = 0, send = function () {
+        var runner = google.script.run.withSuccessHandler(ok).withFailureHandler(function (err) {
+          var m = (err && err.message) || String(err);
+          if (!save && tries++ < 1 && /NetworkError|HTTP 0|connection|busy|timed out|try again/i.test(m)) return setTimeout(send, 1500);
+          reject(err);
+        });
+        if (DIRECT[fn]) runner[fn].apply(runner, args);
+        else runner.callApp(token, fn, args, LEAN);
+      };
+      send();
     });
     if (!QUIET[fn] && !DIRECT[fn]) netTrack(save, p);
     if (key) { INFLIGHT[key] = p; var done = function () { delete INFLIGHT[key]; }; p.then(done, done); }
@@ -10963,7 +11381,19 @@ window.HELP_TOPICS = [
   }
   function fail(err) {
     S.busy = false;
-    toast((err && err.message) || String(err), true);
+    var msg = (err && err.message) || String(err);
+    // An ended sign-in (expired, signed out elsewhere, password changed): go back to the sign-in page instead of a dead end.
+    if (/^Please sign in again\.?$/.test(msg) && S.data) {
+      var btn = document.getElementById('logoutBtn');
+      if (btn) { btn.click(); toast('Your sign-in ended. Please sign in again.', true); return; }
+    }
+    toast(friendlyError(msg), true);
+  }
+  /** Google's own errors (network drop, busy spreadsheet, time limit) in words people can act on; the server translates most already. */
+  function friendlyError(msg) {
+    if (/NetworkError|Failed to fetch|HTTP 0|connection/i.test(msg)) return 'The connection dropped. Check your internet connection and try again.';
+    if (/Lock timeout|too many times|timed out|Exceeded maximum execution time|Service Spreadsheets|INTERNAL/i.test(msg)) return 'Google’s servers were busy and didn’t finish. Please try again in a moment.';
+    return msg;
   }
 
   function current() {
@@ -11012,7 +11442,7 @@ window.HELP_TOPICS = [
       ['', 'Standards only', 'Badges are aligned to the DESE superintendent standards (with the AASA crosswalk) without naming an evaluation tool.'],
       ['MSBA', 'MSBA evaluation', 'The MSBA / DESE / MASA superintendent evaluation.'],
       ['MARE', 'MCE Policy 1720 evaluation', 'The Missouri Consultants for Education board-policy evaluation (Policy 1720, Form 1720.1), used by districts on the MCE policy service that MARE endorses.'],
-      ['LOCAL', 'Our local evaluation', 'Upload your district\'s tool and your coach will align it to the standards.']
+      ['LOCAL', 'Our local evaluation', 'Upload your district\'s tool and the program team will align it to the standards.']
     ].map(function (c) {
       var on = ev.system === c[0];
       return '<button type="button" class="eval-opt' + (on ? ' on' : '') + '" data-act="eval-pick" data-sys="' + c[0] + '" aria-pressed="' + on + '"' + (aligning ? ' disabled' : '') + '>' +
@@ -11025,14 +11455,14 @@ window.HELP_TOPICS = [
       var status = n
         ? '<span class="status done">' + icon('checkCircle') + ' Aligned: ' + n + ' of ' + total + ' standards</span>'
         : ev.hasFile
-          ? '<span class="status partial">' + icon('clock') + ' Uploaded. Your coach is aligning it to the standards.</span>'
+          ? '<span class="status partial">' + icon('clock') + ' Uploaded. The program team is aligning it to the standards.</span>'
           : '<span class="status lock">No evaluation uploaded yet</span>';
       detail = '<div class="eval-local">' +
         '<div class="eval-status">' + status +
           (V.canEdit && ev.fileUrl ? ' <a class="btn btn-ghost btn-sm" href="' + esc(ev.fileUrl) + '" target="_blank" rel="noopener">' + icon('file') + ' Open uploaded file</a>' : '') + '</div>' +
         (save
           ? '<div class="eval-upload"><label>Name of your evaluation<input id="evalLocalName" maxlength="120" placeholder="e.g. Board Evaluation of the Superintendent" value="' + esc(ev.localName) + '"></label>' +
-            '<label>' + (ev.hasFile ? 'Replace the uploaded copy' : 'Upload a copy (PDF, Word, or image, up to 10 MB)') +
+            '<label>' + (ev.hasFile ? 'Replace the uploaded copy (PDF, Word, or a PNG/JPG image, up to 10 MB)' : 'Upload a copy (PDF, Word, or a PNG/JPG image, up to 10 MB; iPhone photos: save as JPG first)') +
               '<input id="evalFile" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"></label>' +
             '<button class="btn btn-primary btn-sm" type="button" data-act="eval-upload">' + icon('upload') + ' Save &amp; upload</button>' +
             '<p class="muted small">Upload the blank evaluation tool only: no ratings, board comments, or student information.</p></div>'
@@ -11077,6 +11507,7 @@ window.HELP_TOPICS = [
     flag.innerHTML = '<span class="flag-long">' + esc(flagText) + '</span><span class="flag-short" aria-hidden="true">Demo</span>';
     flag.title = flagText;
     if (D.viewer.isDemoLogin) flag.hidden = false;
+    document.getElementById('demoTour').hidden = !D.viewer.isDemoLogin; // demo logins keep the way into the full demo after the site is live
     var logout = document.getElementById('logoutBtn');
     logout.hidden = !st.loginRequired;
     logout.innerHTML = icon('logout') + ' <span class="btn-label">Sign out</span>';
@@ -11240,8 +11671,13 @@ window.HELP_TOPICS = [
     if (S.view === 'import' && viewer().canEdit && !viewer().visitor && !D.viewer.isSandbox && window.TQC_IMPORT) { window.TQC_IMPORT.render(); return; }
     if (S.view === 'teaching' && (D.teaching || []).length) { renderTeaching(); return; }
     if (!D.superintendents.length) {
-      $app.innerHTML = '<div class="card notice"><h2>No superintendents yet</h2><p class="muted">Add people on the roster to begin tracking.</p>' +
-        (viewer().canEdit ? '<p><button class="btn btn-primary" data-act="add">' + icon('plus') + ' Add superintendent</button></p>' : '') + '</div>';
+      if (S.view === 'help') { renderHelp(); return; } // the guide is always reachable, even before anyone is on the roster
+      // A new live site: nobody on the roster yet. Administrators get the first steps; anyone else is told who to ask.
+      $app.innerHTML = viewer().canEdit
+        ? '<div class="card notice"><h2>No superintendents yet</h2><p class="muted">The site is ready. Start by adding the people in the program.</p>' +
+          '<p><button class="btn btn-primary" data-act="cohort">' + icon('users') + ' Add a cohort</button> <button class="btn btn-ghost" data-act="add">' + icon('plus') + ' Add one superintendent</button></p>' +
+          '<p class="muted small">A cohort is several people at once, pasted from a spreadsheet. After they are added, send their sign-in links from <b>People &amp; sign-in</b>. Courses are under <b>Classes</b>.</p></div>'
+        : '<div class="card notice"><h2>No superintendents yet</h2><p class="muted">Nobody is assigned to you yet. Please contact ' + esc(D.settings.supportEmail || 'your program administrator') + '.</p></div>';
       return;
     }
     if (['help','roster','people','teaching'].indexOf(S.view)<0 && permittedViews(current()).indexOf(S.view)<0) {
@@ -11289,7 +11725,10 @@ window.HELP_TOPICS = [
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function monthYear(ymd) { if (!ymd) return ''; var p = ymd.split('-'); return MON[Number(p[1]) - 1] + ' ' + p[0]; }
   function hrs(n) { if (n === null || n === undefined || n === '') return ''; var v = Math.round(Number(n) * 100) / 100; return v + ' hr' + (v === 1 ? '' : 's'); }
-  function courseByCode(code) { return S.data.courses.filter(function (c) { return c.code === code; })[0]; }
+  function courseByCode(code) {
+    return S.data.courses.filter(function (c) { return c.code === code; })[0] ||
+      ((S.business && S.business.courses) || []).filter(function (c) { return c.code === code; })[0]; // a business login's business course
+  }
   function optionById(id) { return (S.data.options || []).filter(function (o) { return o.id === id; })[0]; }
   function seriesById(id) { return (S.data.series || []).filter(function (o) { return o.id === id; })[0]; }
   /** A path's standalone session (its menu), as opposed to one of its core sessions. Mirrors isMenuCourse_ on the server. */
@@ -11917,6 +12356,40 @@ window.HELP_TOPICS = [
     if (!d.open) d.showModal();
     return d;
   }
+  /**
+   * "Check videos": lists every course video and asks YouTube (its public oEmbed page, from this browser) whether each
+   * still plays here. A private or deleted video, or one whose owner turned off embedding, is listed with its course.
+   */
+  function checkVideos() {
+    openDlg('<h3>Check course videos</h3><p id="vcStatus" role="status">Listing the videos…</p><div id="vcOut"></div>' +
+      '<div class="dialog-actions"><button class="btn btn-primary" type="button" data-act="dlg-close">Close</button></div>');
+    var status = function (t) { var el = document.getElementById('vcStatus'); if (el) el.textContent = t; };
+    api('listCourseVideos').then(function (list) {
+      var ytId = function (u) { var m = String(u).match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([\w-]{11})/); return m ? m[1] : ''; };
+      var ids = {}, other = 0;
+      list.forEach(function (v) { var id = ytId(v.link); if (id) (ids[id] = ids[id] || []).push(v); else other++; });
+      var keys = Object.keys(ids), done = 0, bad = [], next = 0;
+      if (!keys.length) { status(list.length ? (list.length === 1 ? 'The one course video isn’t on YouTube' : 'None of the ' + list.length + ' course videos are on YouTube') + ', so there is nothing to check here; open ' + (list.length === 1 ? 'it' : 'them') + ' to be sure ' + (list.length === 1 ? 'it plays.' : 'they play.') : 'No course videos yet.'); return; }
+      status('Checking ' + keys.length + ' YouTube videos…');
+      var one = function () {
+        if (next >= keys.length) return Promise.resolve();
+        var id = keys[next++];
+        return fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + id))
+          .then(function (r) { if (!r.ok) bad.push({ id: id, why: r.status === 401 || r.status === 403 ? 'embedding is turned off, or the video is private' : r.status === 404 || r.status === 400 ? 'not found: deleted, private, or a mistyped link' : 'YouTube said ' + r.status }); },
+            function () { bad.push({ id: id, why: 'could not be checked (no connection)' }); })
+          .then(function () { done++; status('Checked ' + done + ' of ' + keys.length + '…'); return one(); });
+      };
+      return Promise.all([one(), one(), one(), one(), one(), one()]).then(function () {
+        var rows = bad.map(function (b) {
+          return '<li><b>' + esc(b.why) + '</b> · <a href="https://www.youtube.com/watch?v=' + esc(b.id) + '" target="_blank" rel="noopener">youtube.com/watch?v=' + esc(b.id) + '</a><br><span class="small muted">' +
+            ids[b.id].map(function (v) { return esc(v.course) + ' (' + esc(v.code) + '): ' + esc(v.item); }).slice(0, 6).join('; ') + (ids[b.id].length > 6 ? '; and ' + (ids[b.id].length - 6) + ' more' : '') + '</span></li>';
+        }).join('');
+        status(bad.length ? bad.length + ' of ' + keys.length + ' YouTube videos won’t play in the courses. Make each one Unlisted (not Private) on YouTube with embedding allowed, or replace its link.'
+          : 'All ' + keys.length + ' YouTube videos play (' + list.length + ' video items' + (other ? '; ' + other + ' on other sites were not checked' : '') + ').');
+        var out = document.getElementById('vcOut'); if (out && rows) out.innerHTML = '<ul class="vc-list">' + rows + '</ul>';
+      });
+    }).catch(function (x) { status((x && x.message) || String(x)); });
+  }
   function closeDlg() { var d = document.getElementById('pwDialog'); if (d.open) d.close(); }
   function openLogHours(category, level) {
     var sup = current(), P = sup.pathway;
@@ -12226,7 +12699,7 @@ window.HELP_TOPICS = [
       '<label>Current password<input name="current" type="password" required autocomplete="current-password"></label>' +
       '<label>New password<input name="next" type="password" required minlength="10" autocomplete="new-password"></label>' +
       '<label>Type it again<input name="confirm" type="password" required minlength="10" autocomplete="new-password"></label>' +
-      '<p class="muted small">At least 10 characters, with at least one letter and one number. Forgot it? Sign out and use “First time here, or forgot your password?”.</p>' +
+      '<p class="muted small">At least 10 characters, with at least one letter and one number, and not a common word like “password”. Forgot it? Sign out and use “First time here, or forgot your password?”.</p>' +
       '<p class="form-error" id="cpError"></p><div class="dialog-actions"><button class="btn btn-ghost" type="button" data-act="dlg-close">Cancel</button><button class="btn btn-primary" type="submit">Change password</button></div></form>');
     var f = document.getElementById('cpForm');
     f.addEventListener('submit', function (e) {
@@ -12324,7 +12797,9 @@ window.HELP_TOPICS = [
   /** The guide. signedIn = false on the sign-in page (only the sign-in topics, no Show me). */
   var HELP_DEMO = true; // false on a live site (DEMO_MODE off): the guide leaves out the "Explore the demo" topics
   function helpHtml(signedIn) {
-    var topics = (window.HELP_TOPICS || []).filter(function (t) { return HELP_DEMO || !/^demo(-|$)/.test(t.id); });
+    // On a live site the "Explore the demo" topics are left out, except the one about demo logins for a demo login itself.
+    var demoLogin = !!(S.data && S.data.viewer && S.data.viewer.isDemoLogin);
+    var topics = (window.HELP_TOPICS || []).filter(function (t) { return HELP_DEMO || !/^demo(-|$)/.test(t.id) || (t.id === 'demo' && demoLogin); });
     var mine = signedIn ? helpRoles() : ['all'];
     var groups = HELP_GROUPS.filter(function (g) { return mine.indexOf(g[0]) > -1; });
     var toc = groups.map(function (g) {
@@ -12673,7 +13148,11 @@ window.HELP_TOPICS = [
       ['title', 'sessionDate', 'sessionTime', 'link', 'provider', 'modality', 'indicator', 'evidence'].forEach(function (k) { fields[k] = form.elements[k].value; });
       if (admin) fields.instructors = form.elements.instructors.value;
       var btn = form.querySelector('[type=submit]'); btn.disabled = true;
-      api('updateClass', code, fields).then(function (data) { closeDlg(); if (window.TQC_COURSE) window.TQC_COURSE.reset(); load(data); toast('Class saved.'); },
+      api('updateClass', code, fields).then(function (data) {
+        closeDlg(); if (window.TQC_COURSE) window.TQC_COURSE.reset();
+        if (S.biz) { var bc = courseByCode(code); if (bc) Object.keys(fields).forEach(function (k) { bc[k] = k === 'instructors' ? String(fields[k]).split(/[,;\s]+/).filter(String) : fields[k]; }); }
+        load(data); toast('Class saved.');
+      },
         function (x) { btn.disabled = false; document.getElementById('classError').textContent = x.message || String(x); });
     });
   }
@@ -12742,13 +13221,16 @@ window.HELP_TOPICS = [
         '<ul class="biz-list">' + list.map(function (c) {
           return '<li><button type="button" class="title-link" data-act="biz-open" data-code="' + esc(c.code) + '">' + esc(c.title) + '</button> ' +
             (c.sourceCode ? '<span class="chip chip-mono">' + esc(c.sourceCode) + '</span> ' : '') +
-            '<span class="muted small">' + (c.items ? c.items + ' item' + (c.items === 1 ? '' : 's') : 'No content yet') + '</span></li>';
+            '<span class="muted small">' + (c.items ? c.items + ' item' + (c.items === 1 ? '' : 's') : 'No content yet') + '</span>' +
+            '<button type="button" class="linkish small biz-remove" data-act="biz-remove" data-code="' + esc(c.code) + '" aria-label="Remove ' + esc(c.title) + '">Remove</button></li>';
         }).join('') + '</ul></details>';
     }).join('');
     return '<section class="card section"><div class="section-head"><h2>Business courses</h2>' +
-      '<p>Only the sign-ins listed under BUSINESS_EMAILS on the Settings tab see this area. These courses are separate from the superintendent pathway and never appear in it, in its catalog, or in its reports.</p></div>' +
+      '<p>Only approved business sign-ins see this area. These courses are separate from the superintendent pathway and never appear in it, in its catalog, or in its reports.</p></div>' +
       '<div class="roster-tools"><label class="search">' + icon('search') + '<input id="bizFilter" placeholder="Course name, code, or client" aria-label="Find a business course" value="' + esc(S.bizFilter || '') + '"></label>' +
-        '<label class="btn btn-ghost" for="bizFile">' + icon('upload') + ' Add courses from a TalentLMS report</label><input id="bizFile" type="file" accept=".csv,text/csv" hidden></div>' +
+        '<button class="btn btn-ghost" type="button" data-act="biz-file">' + icon('upload') + ' Add courses from a TalentLMS report</button><input id="bizFile" type="file" accept=".csv,text/csv" hidden>' +
+        '<button class="btn btn-ghost" type="button" data-act="videos-check">' + icon('check') + ' Check videos</button>' +
+        (B.seed ? '<button class="btn btn-primary" type="button" data-act="biz-seed">' + icon('plus') + ' Add the ' + B.seed + ' courses read from TalentLMS</button>' : '') + '</div>' +
       '<p class="muted small" id="bizStatus" role="status">' + (B.courses.length ? shown.length + ' of ' + B.courses.length + ' courses' + (q ? ' match' : '') + '.' :
         'No business courses yet. In TalentLMS open Reports → Courses → Save as CSV, then add that file here.') + ' A report brings each course’s name, code, and category. Course content is built or added inside each course.</p>' +
       (S.bizNote ? '<p role="status"><b>' + esc(S.bizNote) + '</b></p>' : '') + groups + '</section>';
@@ -12770,7 +13252,8 @@ window.HELP_TOPICS = [
     if (file) file.addEventListener('change', function () {
       var f = file.files && file.files[0], status = document.getElementById('bizStatus');
       if (!f) return;
-      if (f.size > 2 * 1024 * 1024) { toast('That file is larger than 2 MB. Save the course report as CSV and try again.'); return; }
+      if (f.size > 2 * 1024 * 1024) { file.value = ''; toast('That file is larger than 2 MB. Save the course report as CSV and try again.', true); return; }
+      if (!/\.csv$/i.test(f.name)) { file.value = ''; toast('Choose the CSV file saved from TalentLMS (Reports → Courses → Save as CSV).', true); return; }
       var reader = new FileReader();
       reader.onload = function () {
         if (status) status.textContent = 'Adding courses…';
@@ -12789,7 +13272,8 @@ window.HELP_TOPICS = [
     var mine = D.courses.filter(function (c) { return codes.indexOf(c.code) > -1; });
     return '<section class="card section"><div class="section-head"><h2>' + (viewer().canEdit ? 'Classes' : 'My classes') + '</h2>' +
       (viewer().canEdit ? '<p><button class="btn btn-primary btn-sm" type="button" data-act="course-create">' + icon('plus') + ' Create a course</button>' +
-        (viewer().visitor || D.viewer.isSandbox ? '' : ' <button class="btn btn-ghost btn-sm" type="button" data-act="import-open">' + icon('upload') + ' Import courses</button>') + '</p>' : '') +
+        (viewer().visitor || D.viewer.isSandbox ? '' : ' <button class="btn btn-ghost btn-sm" type="button" data-act="import-open">' + icon('upload') + ' Import courses</button>' +
+          ' <button class="btn btn-ghost btn-sm" type="button" data-act="videos-check">' + icon('check') + ' Check videos</button>') + '</p>' : '') +
       '<p>' + (viewer().canEdit ? 'Every course in the program. Open one to build its modules, pages, assignments, quizzes, and discussions, and to review work.' :
         'The courses you teach. Open one to build its modules, pages, assignments, quizzes, and discussions, see who is taking it, and review their work.') + '</p></div>' +
       '<div class="cat-grid">' + mine.map(function (c) {
@@ -13391,6 +13875,20 @@ window.HELP_TOPICS = [
     if (act === 'import-open') { go({ view: 'import', course: null }); return; }
     if (act === 'area-pick') { setArea(el.dataset.area); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; S.bizNote = ''; if (window.TQC_COURSE) window.TQC_COURSE.reset(); render(); window.scrollTo(0, 0); return; }
     if (act === 'area-choose') { setArea(null); S.stack = []; S.biz = null; S.course = null; S.view = 'roadmap'; render(); window.scrollTo(0, 0); return; }
+    if (act === 'biz-file') { var bf = document.getElementById('bizFile'); if (bf) { bf.value = ''; bf.click(); } return; }
+    if (act === 'videos-check') { checkVideos(); return; }
+    if (act === 'biz-seed') {
+      el.disabled = true; var bst = document.getElementById('bizStatus'); if (bst) bst.textContent = 'Adding courses…';
+      api('loadBusinessSeed').then(function (r) { S.business = r; S.bizNote = r.added + ' course' + (r.added === 1 ? '' : 's') + ' added' + (r.skipped ? '; ' + r.skipped + ' were already here' : '') + '.'; renderBusiness(); },
+        function (x) { el.disabled = false; if (bst) bst.textContent = x.message || String(x); });
+      return;
+    }
+    if (act === 'biz-remove') {
+      var gone = courseByCode(code);
+      if (!gone || !confirm('Remove “' + gone.title + '” from the business courses? Its content is kept, and it can be put back from the Courses tab of the spreadsheet (Active = TRUE).')) return;
+      api('removeBusinessCourse', code).then(function (r) { S.business = r; S.bizNote = '“' + gone.title + '” was removed.'; renderBusiness(); }, fail);
+      return;
+    }
     if (act === 'biz-open') { go({ biz: code, cwTab: 'home', cwItem: '' }); return; }
     if (act && act.indexOf('im-') === 0 && window.TQC_IMPORT && window.TQC_IMPORT.handle(act, el)) return;
     if (act === 'catalog') { go({ view: 'catalog', course: null }); return; }
@@ -13557,7 +14055,7 @@ window.HELP_TOPICS = [
       var data = String(reader.result).split(',')[1] || '';
       api('uploadEvaluationFile', sup.email, { name: file.name, mimeType: type, data: data }, localName).then(function (res) {
         applyReply(res);
-        toast('Evaluation uploaded. Your coach will align it to the DESE standards.');
+        toast('Evaluation uploaded. The program team will align it to the DESE standards.');
       }, function (err) { restore(); fail(err); });
     };
     reader.onerror = function () { restore(); toast('Could not read that file.', true); };
@@ -13627,6 +14125,8 @@ window.HELP_TOPICS = [
   /* ---------------- Sign-in page ---------------- */
   /** mode: 'signin' (default), 'reset' (get a link by email), or 'setup' (set a password from a link). */
   function showLogin(mode) {
+    // While the person types, start the server and load the shared tabs (once per page; nothing private comes back).
+    if (!showLogin.warmed && (!window.MOCK_API || window.MOCK_API.warmUp)) { showLogin.warmed = true; api('warmUp').catch(function () {}); }
     Array.prototype.forEach.call(document.querySelectorAll('dialog[open]'), function (d) { d.close(); });
     document.getElementById('portal').hidden = true;
     document.getElementById('demoToolbar').hidden = true;
@@ -13650,9 +14150,10 @@ window.HELP_TOPICS = [
     setTimeout(function () { var el = document.getElementById(focus); if (el) el.focus(); }, 50);
   }
   /** After any successful sign-in: remember the session and open the portal. */
-  function enterWith(token, onError) {
+  function enterWith(token, onError, data) {
     store.set(TOKEN_KEY, token);
-    return api('getAppData').then(function (data) {
+    // The sign-in reply may already carry the data (one round trip); otherwise ask for it.
+    return (data && data.viewer ? Promise.resolve(data) : api('getAppData')).then(function (data) {
       if (data.needsLogin) { onError('Your sign-in expired. Please try again.'); return; }
       if (window.TQC_COURSE) window.TQC_COURSE.reset();
       showPortal();
@@ -13737,10 +14238,10 @@ window.HELP_TOPICS = [
     btn.textContent = 'Signing in…';
     err.textContent = '';
     var reset = function () { btn.disabled = false; btn.textContent = 'Sign in'; };
-    api('signIn', document.getElementById('loginUser').value, document.getElementById('loginPass').value).then(function (res) {
+    api('signIn', document.getElementById('loginUser').value, document.getElementById('loginPass').value, { lean: 1, withData: 1 }).then(function (res) {
       if (!res || !res.token) { reset(); err.textContent = (res && res.error) || 'Sign-in failed. Please try again.'; return; }
       document.getElementById('loginPass').value = '';
-      return enterWith(res.token, function (m) { err.textContent = m; }).then(reset);
+      return enterWith(res.token, function (m) { err.textContent = m; }, res.data).then(reset);
     }).catch(function (e2) { reset(); err.textContent = (e2 && e2.message) || String(e2); });
   });
   document.getElementById('addCancel').addEventListener('click', function () { document.getElementById('addDialog').close(); });
@@ -13834,7 +14335,12 @@ window.HELP_TOPICS = [
     PARAMS = p || {};
     if (!PARAMS.handoff) return;
     bootScreen('Opening the full window…');
-    return api('redeemHandoff', PARAMS.handoff).then(function (res) { if (res && res.token) store.set(TOKEN_KEY, res.token); });
+    var before = store.get(TOKEN_KEY);
+    return api('redeemHandoff', PARAMS.handoff).then(function (res) {
+      if (!res || !res.token) return;
+      PARAMS.handedOff = true; PARAMS.replaced = before && before !== res.token ? before : '';
+      store.set(TOKEN_KEY, res.token);
+    });
   }).catch(function () {}).then(function () {
     if (PARAMS.setup) return { needsLogin: true, setup: true };
     if (BOOT && BOOT.loginRequired && !store.get(TOKEN_KEY)) return { needsLogin: true, settings: BOOT.settings, fromBoot: true };
@@ -13853,6 +14359,20 @@ window.HELP_TOPICS = [
       return;
     }
     if (data.needsLogin) { store.del(TOKEN_KEY); setLoginHelp(data.settings); showLogin(); return; }
+    // Opened from a link that carries a sign-in (the embedded page's "open in a full window"): say whose it is, and if it
+    // would replace a different sign-in already on this device, ask first, so a link from someone else can't quietly
+    // swap accounts.
+    if (PARAMS.handedOff && data.viewer) {
+      var who = data.viewer.name ? data.viewer.name + ' (' + data.viewer.email + ')' : data.viewer.email;
+      if (PARAMS.replaced && !confirm('This link signs you in as ' + who + '. Continue as this person?\n\nChoose Cancel to stay signed in as before.')) {
+        var mine = PARAMS.replaced;
+        api('signOut', store.get(TOKEN_KEY)).catch(function () {});
+        store.set(TOKEN_KEY, mine); PARAMS.handedOff = false;
+        bootScreen('Restoring your sign-in…');
+        return api('getAppData').then(function (d2) { if (d2.needsLogin) { store.del(TOKEN_KEY); setLoginHelp(d2.settings); showLogin(); return; } showPortal(); load(d2); }, bootFailed);
+      }
+      setTimeout(function () { toast('Signed in as ' + who + '. Not you? Use Sign out.'); }, 400);
+    }
     showPortal();
     load(data);
   }, bootFailed);
@@ -13978,10 +14498,10 @@ window.HELP_TOPICS = [
   function headHtml() {
     var d = CW.data, c = T.courseByCode(d.code) || {};
     var p = d.progress;
-    var V = T.viewer(), classes = (S.data.teaching || []).length && !V.previewing;
+    var V = T.viewer(), classes = ((S.data.teaching || []).length || c.area === 'Business') && !V.previewing;
     var pub = d.settings.published;
     return '<div class="cw-head"><nav class="cw-crumbs" aria-label="Breadcrumb"><button class="linkish back" data-act="go-back">' + icon('chevron') + ' Back</button>' +
-      (classes ? '<span class="cw-crumb-sep" aria-hidden="true">/</span><button class="linkish" type="button" data-act="classes-all">' + (V.canEdit ? 'All classes' : 'My classes') + '</button>' +
+      (classes ? '<span class="cw-crumb-sep" aria-hidden="true">/</span><button class="linkish" type="button" data-act="classes-all">' + (c.area === 'Business' ? 'Business courses' : V.canEdit ? 'All classes' : 'My classes') + '</button>' +
         '<span class="cw-crumb-sep" aria-hidden="true">/</span><span class="cw-crumb-here" aria-current="page">' + esc(d.code) + '</span>' : '') + '</nav>' +
       '<div class="ev-tags"><span class="chip chip-mono">' + esc(d.code) + '</span>' + (c.code ? T.fmtTag(c) : '') +
         (d.canEdit ? '<span class="chip st ' + (d.settings.published ? 'ok' : 'warn') + '">' + (d.settings.published ? 'Published' : 'Draft: learners can’t see it') + '</span>' : '') +
@@ -14086,6 +14606,11 @@ window.HELP_TOPICS = [
         (list.length ? '<ul class="mod-items">' + list.map(itemRow).join('') + '</ul>' : '<p class="muted small">' + (ed() ? 'Nothing here yet.' : 'Nothing has been posted in this module yet.') + '</p>') +
         (ed() ? '<button class="btn btn-ghost btn-sm" type="button" data-act="cw-add-item" data-mod="' + m.id + '">' + icon('plus') + ' Add to this module</button>' : '') + '</div>';
     }).join('');
+    // Items that belong to no module (for example added in bulk before the course had one) still show, never silently hidden.
+    var loose = items.filter(function (it) { return !d.modules.some(function (m) { return m.id === it.moduleId; }); });
+    if (loose.length) html += '<div class="module"><div class="mod-head"><div><h3>' + (mods.length ? 'Other items' : 'Course materials') + '</h3>' +
+      (ed() ? '<div class="mod-meta"><span class="small muted">Not in a module yet. Add a module, then use Edit on an item to move it there.</span></div>' : '') + '</div></div>' +
+      '<ul class="mod-items">' + loose.map(itemRow).join('') + '</ul></div>';
     return (ed() ? '<div class="cw-sec-head"><p class="muted small">Organize by week, unit, or topic. Learners see only published items on or after their available date.</p><button class="btn btn-primary btn-sm" type="button" data-act="cw-mod-new">' + icon('plus') + ' Add module</button></div>' : '') +
       (html || '<div class="empty-state"><h3>No modules yet</h3><p class="muted">' + (ed() ? 'Add a module (for example “Week 1”), then add pages, videos, assignments, discussions, and quizzes to it.' : 'Content will appear here when your instructor posts it.') + '</p></div>');
   }
@@ -14125,7 +14650,24 @@ window.HELP_TOPICS = [
       '<p class="small"><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + icon('external') + ' Open in a new tab</a></p>';
     return '<a class="btn btn-ghost btn-sm" href="' + esc(e.src) + '" target="_blank" rel="noopener">' + icon('external') + ' Open the slide show</a>';
   }
-  function fileBtn(it) { return it.fileId ? '<button class="btn btn-ghost btn-sm" type="button" data-act="cw-file" data-file="' + esc(it.fileId) + '">' + icon('file') + ' ' + esc(it.fileName || 'Download') + '</button>' : ''; }
+  function fileBtn(it) {
+    if (!it.fileId) return '';
+    var dl = '<button class="btn btn-ghost btn-sm" type="button" data-act="cw-file" data-file="' + esc(it.fileId) + '">' + icon('file') + ' ' + esc(it.fileName || 'Download') + '</button>';
+    // Audio plays in the page: the first click loads it (as a download would) and shows a player.
+    if (/\.(mp3|m4a)$/i.test(it.fileName || '')) return '<span class="cw-audio" data-audio="' + esc(it.fileId) + '"><button class="btn btn-primary btn-sm" type="button" data-act="cw-audio" data-file="' + esc(it.fileId) + '">▶ Play recording</button></span> ' + dl;
+    return dl;
+  }
+  function playAudio(fileId, btn) {
+    btn.disabled = true; btn.textContent = 'Loading the recording…';
+    api('getCourseFile', CW.code, fileId).then(function (f) {
+      var bin = atob(f.data), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([bytes], { type: f.mimeType || 'audio/mpeg' }));
+      var holder = btn.parentNode;
+      holder.innerHTML = '<audio controls autoplay preload="auto" style="width:100%;max-width:520px" aria-label="' + esc(f.name) + '"></audio>';
+      holder.querySelector('audio').src = url;
+    }, function (x) { btn.disabled = false; btn.textContent = '▶ Play recording'; T.fail(x); });
+  }
 
   function statusOf(it) {
     var d = CW.data;
@@ -14167,8 +14709,8 @@ window.HELP_TOPICS = [
     var types = it.submissionTypes || ['text'];
     var form = canTurnIn ? '<form class="asg-form cw-submit" data-id="' + esc(it.id) + '"><h4>' + (last && last.status === 'Needs revision' ? 'Turn in a revision' : last ? 'Replace what you turned in' : 'Turn it in') + '</h4>' +
       (types.indexOf('text') > -1 ? '<label>Your response<textarea name="response" rows="6" maxlength="8000" placeholder="Describe your work or paste your draft."></textarea></label>' : '') +
-      (types.indexOf('link') > -1 ? '<label>Link to a document (optional)<input name="link" type="url" placeholder="https://"></label>' : '') +
-      (types.indexOf('file') > -1 ? '<label>Upload a file (PDF, Word, PowerPoint, Excel, or image; up to 10 MB)<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.gif"></label>' : '') +
+      (types.indexOf('link') > -1 ? '<label>Link to a document' + (types.length > 1 ? ' (optional)' : '') + '<input name="link" type="url" placeholder="https://"></label>' : '') +
+      (types.indexOf('file') > -1 ? '<label>Upload a file (PDF, Word, PowerPoint, Excel, text, a PNG/JPG/GIF image, or an MP3/M4A recording; up to 10 MB)<input name="file" type="file" accept="' + FILE_ACCEPT + '"></label>' : '') +
       '<p class="muted small">Seen by you, this course’s instructors, program administrators, and a coach you share submitted work with. Don\'t include student names or other information that identifies a student.</p>' +
       '<p class="form-error"></p><button class="btn btn-primary" type="submit">' + icon('upload') + ' Turn in</button></form>'
       : d.isLearner && last && last.status === 'Reviewed' ? '<p class="small muted">Reviewed. If you’d like to resubmit, ask your instructor to request a revision.</p>'
@@ -14401,8 +14943,8 @@ window.HELP_TOPICS = [
       '<div class="two"><label>Type<select name="type"' + (item ? ' disabled' : '') + '>' + Object.keys(TYPE).map(function (t) { return opt(t, TYPE[t][1], it.type); }).join('') + '</select></label>' +
       '<label>Module<select name="moduleId">' + d.modules.map(function (m) { return opt(m.id, m.title, it.moduleId); }).join('') + '</select></label></div>' +
       '<label>Title<input name="title" required maxlength="200" value="' + esc(it.title || '') + '"></label>' +
-      '<div data-for="Video Slides Resource"><label>Link (https://)<input name="link" type="url" value="' + esc(it.link || '') + '" placeholder="YouTube, Vimeo, Loom, Google Drive or Slides, PDF, or any https link"></label></div>' +
-      '<div data-for="Resource Assignment"><label>Attach a document (PDF, Word, PowerPoint, Excel; up to 10 MB)<input name="file" type="file"></label><input type="hidden" name="fileId" value="' + esc(it.fileId || '') + '"><input type="hidden" name="fileName" value="' + esc(it.fileName || '') + '"><p class="small muted" id="fileNote">' + (it.fileId ? 'Attached: ' + esc(it.fileName) : '') + '</p></div>' +
+      '<div data-for="Video Slides Resource"><label>Link (https://)<input name="link" type="url" value="' + esc(it.link || '') + '" placeholder="https://…"></label><p class="small muted" id="linkHint"></p></div>' +
+      '<div data-for="Resource Assignment"><label>Attach a file (PDF, Word, PowerPoint, Excel, text, a PNG/JPG/GIF image, or an MP3/M4A audio recording; up to 10 MB)<input name="file" type="file" accept="' + FILE_ACCEPT + '"></label><p class="small muted">Audio plays right in the course. A video? Put it on YouTube (Unlisted), Vimeo, Loom, or Google Drive and add it as a <b>Video</b> item with that link.</p><input type="hidden" name="fileId" value="' + esc(it.fileId || '') + '"><input type="hidden" name="fileName" value="' + esc(it.fileName || '') + '"><p class="small muted" id="fileNote">' + (it.fileId ? 'Attached: ' + esc(it.fileName) : '') + '</p></div>' +
       '<div data-for="Page Assignment Resource Discussion"><label id="bodyLabel">Content</label>' + rteHtml('itemBody', it.body || '') + '</div>' +
       '<label>Short description<input name="details" maxlength="2000" value="' + esc(it.details || '') + '"></label>' +
       '<div data-for="Quiz"><fieldset class="quiz-pick"><legend>Questions from the question bank</legend>' + (bankHtml || '<p class="muted small">Add questions on Settings › Quiz question bank first.</p>') + '</fieldset>' +
@@ -14427,17 +14969,23 @@ window.HELP_TOPICS = [
       f.elements.requirement.innerHTML = reqs[t].map(function (r) { return opt(r, REQ[r], cur); }).join('');
       if (reqs[t].indexOf(cur) === -1) f.elements.requirement.value = reqs[t][0];
       f.querySelector('[data-for-req]').hidden = f.elements.requirement.value !== 'min_score';
+      var hint = { Video: 'A YouTube, Vimeo, Loom, or Google Drive video link, or a direct link ending in .mp4 or .webm.', Slides: 'A Google Slides link, a PowerPoint or PDF in Google Drive, or a link to a PDF.', Resource: 'Any https link (optional if you attach a document below).' }[t] || '';
+      document.getElementById('linkHint').textContent = hint;
     };
     f.elements.type.addEventListener('change', sync);
     f.elements.requirement.addEventListener('change', sync);
     sync();
     f.elements.file.addEventListener('change', function () {
-      var file = f.elements.file.files[0]; if (!file) return;
-      if (file.size > 10 * 1024 * 1024) { document.getElementById('fileNote').textContent = 'That file is larger than 10 MB.'; return; }
-      document.getElementById('fileNote').textContent = 'Uploading ' + file.name + '…';
-      readFile(file).then(function (data) { return api('uploadCourseFile', CW.code, data); }).then(function (r) {
-        f.elements.fileId.value = r.id; f.elements.fileName.value = r.name; document.getElementById('fileNote').textContent = 'Attached: ' + r.name;
-      }, function (x) { document.getElementById('fileNote').textContent = x.message || String(x); });
+      var file = f.elements.file.files[0], note = document.getElementById('fileNote'), save = f.querySelector('[type=submit]'); if (!file) return;
+      var problem = fileProblem(file);
+      if (problem) { note.textContent = problem; f.elements.file.value = ''; return; }
+      save.disabled = true;
+      var started = Date.now(), tick = setInterval(function () { note.textContent = 'Uploading ' + file.name + '… ' + Math.round((Date.now() - started) / 1000) + ' s (larger files can take a minute). Please wait before saving.'; }, 1000);
+      note.textContent = 'Uploading ' + file.name + '…';
+      readFile(file).then(function (data) { return uploadOnceMore(function () { return api('uploadCourseFile', CW.code, data); }); }).then(function (r) {
+        clearInterval(tick); save.disabled = false;
+        f.elements.fileId.value = r.id; f.elements.fileName.value = r.name; note.textContent = 'Attached: ' + r.name;
+      }, function (x) { clearInterval(tick); save.disabled = false; f.elements.file.value = ''; note.textContent = 'Not attached: ' + (x.message || String(x)) + ' Choose the file again to retry.'; });
     });
     if (item) document.getElementById('itemRemove').addEventListener('click', function () {
       if (!confirm('Remove “' + it.title + '” from the course? Work already turned in is kept.')) return;
@@ -14515,10 +15063,33 @@ window.HELP_TOPICS = [
   }
 
   /* ---------------- Files ---------------- */
+  var FILE_TYPES = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', txt: 'text/plain', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    mp3: 'audio/mpeg', m4a: 'audio/mp4' };
+  var FILE_ACCEPT = Object.keys(FILE_TYPES).map(function (x) { return '.' + x; }).join(',');
+  function extOf(name) { var m = String(name || '').match(/\.([a-z0-9]+)$/i); return m ? m[1].toLowerCase() : ''; }
+  // Checked before uploading, so people learn at once what to do instead (the server checks again).
+  function fileProblem(file) {
+    var ext = extOf(file.name);
+    if (/^(mp4|mov|m4v|webm|avi|wmv|mkv)$/.test(ext) || /^video\//.test(file.type || '')) return 'Video files can’t be uploaded here. Put the video on YouTube (Unlisted), Vimeo, Loom, or Google Drive, then add it as a Video item with that link.';
+    if (/^(wav|aac|ogg|aiff?|wma|flac)$/.test(ext)) return 'Audio can be attached as an MP3 or M4A file. Save or export the recording in one of those formats first (for a Voice Memo, Share › Save to Files gives an M4A).';
+    if (!FILE_TYPES[ext]) return 'That kind of file can’t be attached. Use a PDF, Word, PowerPoint, Excel, text file, a PNG, JPG, or GIF image, or an MP3/M4A audio recording. (iPhone HEIC photos: save or share them as JPG first.)';
+    if (file.size > 10 * 1024 * 1024) return 'That file is ' + (file.size / 1048576).toFixed(1) + ' MB; the limit is 10 MB. Save a smaller copy (for a PowerPoint, File › Compress Pictures; for a PDF, a reduced-size PDF) or share it from Google Drive as a link.';
+    return '';
+  }
+  /** Runs an upload; if it fails for a passing reason (dropped connection, busy server), tries once more after 2 seconds. */
+  function uploadOnceMore(send) {
+    return send().catch(function (x) {
+      var m = (x && x.message) || String(x);
+      if (!/NetworkError|HTTP 0|connection|busy|timed out|try again/i.test(m)) throw x;
+      return new Promise(function (r) { setTimeout(r, 2000); }).then(send);
+    });
+  }
   function readFile(file) {
     return new Promise(function (res, rej) {
       var r = new FileReader();
-      r.onload = function () { res({ name: file.name, mimeType: file.type || 'application/octet-stream', data: String(r.result).split(',')[1] || '' }); };
+      r.onload = function () { res({ name: file.name, mimeType: FILE_TYPES[extOf(file.name)] || file.type || 'application/octet-stream', data: String(r.result).split(',')[1] || '' }); };
       r.onerror = function () { rej(new Error('Could not read that file.')); };
       r.readAsDataURL(file);
     });
@@ -14555,11 +15126,15 @@ window.HELP_TOPICS = [
     if (sub) sub.addEventListener('submit', function (e) {
       e.preventDefault();
       var btn = sub.querySelector('[type=submit]'), err = sub.querySelector('.form-error'), file = sub.elements.file && sub.elements.file.files[0];
-      if (file && file.size > 10 * 1024 * 1024) { err.textContent = 'That file is larger than 10 MB.'; return; }
-      btn.disabled = true; btn.textContent = 'Turning in…';
+      var problem = file ? fileProblem(file) : '';
+      if (problem) { err.textContent = problem; return; }
+      btn.disabled = true; btn.textContent = file ? 'Uploading and turning in…' : 'Turning in…';
+      var started = Date.now(), tick = file ? setInterval(function () { err.textContent = ''; btn.textContent = 'Uploading and turning in… ' + Math.round((Date.now() - started) / 1000) + ' s'; }, 1000) : null;
+      var stop = function () { if (tick) clearInterval(tick); };
       (file ? readFile(file) : Promise.resolve(null)).then(function (fd) {
-        return api('submitWork', d.code, sub.dataset.id, { response: sub.elements.response ? sub.elements.response.value : '', link: sub.elements.link ? sub.elements.link.value : '', file: fd });
-      }).then(function (nd) { took(nd); T.toast('Turned in. Your instructor will review it.'); }, function (x) { btn.disabled = false; btn.textContent = 'Turn in'; err.textContent = x.message || String(x); });
+        var payload = { response: sub.elements.response ? sub.elements.response.value : '', link: sub.elements.link ? sub.elements.link.value : '', file: fd };
+        return api('submitWork', d.code, sub.dataset.id, payload); // never retried automatically: a retry could turn in twice
+      }).then(function (nd) { stop(); took(nd); T.toast('Turned in. Your instructor will review it.'); }, function (x) { stop(); btn.disabled = false; btn.textContent = 'Turn in'; err.textContent = (x.message || String(x)) + ' Reload the page to see whether it was turned in before trying again.'; });
     });
     var qf = root.querySelector('form.quiz-form');
     if (qf) qf.addEventListener('submit', function (e) {
@@ -14642,6 +15217,7 @@ window.HELP_TOPICS = [
       case 'cw-add-item': openItemEditor(null, el.dataset.mod, el.dataset.type); return true;
       case 'cw-done': api('markItemDone', d.code, id).then(function (nd) { took(nd); T.toast('Marked done.'); }, T.fail); return true;
       case 'cw-file': download(el.dataset.file); return true;
+      case 'cw-audio': playAudio(el.dataset.file, el); return true;
       case 'cw-quiz-start':
         el.disabled = true;
         api('getQuiz', d.code, id).then(function (q) { CW.quiz = q; CW.quizResult = null; draw(); }, function (x) { el.disabled = false; T.fail(x); }); return true;
@@ -14726,7 +15302,7 @@ window.HELP_TOPICS = [
       steps: ['Go to <b>takeout.google.com</b> signed in as the teacher, choose <b>Deselect all</b>, then check only <b>Classroom</b>.', 'Create the export and download the .zip.', 'Classroom lists attached Drive files by name but doesn’t include them: download those files from Drive (or add Drive to the same Takeout) and add them in the review step.'],
       note: 'Classes become courses, topics become modules, materials become pages, assignments stay assignments, and announcements come across unpublished. Google Forms quizzes, practice sets, video questions, and add-ons are listed for you to rebuild. Student work is never imported.' },
     talentlms: { label: 'TalentLMS', accept: '.csv,.xlsx', multiple: false, what: 'A TalentLMS course list exported as CSV or XLSX, plus any files you downloaded from the courses.',
-      steps: ['In TalentLMS, open <b>Courses</b> and export the list (CSV or XLSX), or use <b>Account &amp; Settings → Import - Export</b> to export courses.', 'Download the files you uploaded to each course (PDFs, slides, documents) from the course units.', 'Choose the course list below; add each course’s files and links in the review step.'],
+      steps: ['In TalentLMS, open <b>Reports → Courses</b> and click <b>Save as CSV</b> (the icon below the table). An XLSX course list works too.', 'Download the files you uploaded to each course (PDFs, slides, documents) from the course units.', 'Choose the course list below; add each course’s files and links in the review step.'],
       note: 'TalentLMS exports course details (name, code, description, category), not the units built in its editor, so that content has to be rebuilt. TalentLibrary courses are licensed inside TalentLMS and can’t be transferred. SCORM, xAPI, and cmi5 packages are detected but not played here.' }
   };
   var STAGES = [['Source & upload', 1, 2], ['Check & choose', 3, 5], ['Preview & confirm', 6, 7], ['Build & report', 8, 9]];
@@ -14847,7 +15423,7 @@ window.HELP_TOPICS = [
     var s = SOURCES[IM.source];
     return '<p class="im-picked">Source: <b>' + esc(s.label) + '</b> <button class="linkish" type="button" data-act="im-back">Change</button></p><h3 class="sub-h">Upload the ' + esc(s.label) + ' export</h3><ol class="im-how">' + s.steps.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' +
       '<p class="muted small">' + esc(s.note) + '</p>' +
-      '<label class="im-field"><span>' + esc(s.what) + ' Up to 100 MB; files inside can be up to 10 MB each.</span><input type="file" id="imFile" accept="' + s.accept + '"' + (s.multiple ? ' multiple' : '') + '></label>' +
+      '<label class="im-field"><span>' + esc(s.what) + (IM.source === 'talentlms' ? ' A CSV or XLSX course list up to 8 MB; course files up to 10 MB each.' : ' Up to 100 MB; files inside can be up to 10 MB each.') + '</span><input type="file" id="imFile" accept="' + s.accept + '"' + (s.multiple ? ' multiple' : '') + '></label>' +
       (IM.files.length ? '<p class="small">' + IM.files.map(function (f) { return esc(f.name) + ' (' + mb(f.size) + ')'; }).join(', ') + '</p>' : '') +
       '<p><button class="btn btn-primary" type="button" data-act="im-analyze"' + (IM.files.length ? '' : ' disabled') + '>' + icon('check') + ' Check this export</button> <button class="btn btn-ghost" type="button" data-act="im-back">Back</button></p>';
   }

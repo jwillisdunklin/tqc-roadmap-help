@@ -37,7 +37,7 @@
       {
         "file": "shots/signing-in-06.png",
         "title": "Set your password",
-        "text": "The link opens this page. Choose 10+ characters with a letter and a number, type it twice, and click Set password and sign in."
+        "text": "The link opens this page. Choose 10+ characters with a letter and a number (not a common word like “password”), type it twice, and click Set password and sign in."
       },
       {
         "file": "shots/signing-in-07.png",
@@ -673,7 +673,7 @@
       {
         "file": "shots/course-building-06.png",
         "title": "The editor",
-        "text": "Format text, add images, links, YouTube or Vimeo videos, and documents. Set dates and the completion requirement."
+        "text": "Format text, add images, links, YouTube, Vimeo, Loom, or Google Drive videos, and documents. Set dates and the completion requirement."
       },
       {
         "file": "shots/course-building-07.png",
